@@ -1,0 +1,54 @@
+{% extends "analitica/admin/_base_analitica.html" %}
+
+{% block title %}Analítica · Música — Ecualizer{% endblock %}
+{% block topbar_title %}Analítica · Música{% endblock %}
+{% block breadcrumb %}Admin / Analítica / Música{% endblock %}
+{% block nav_analitica_open %}open{% endblock %}
+{% block nav_an_musica %}active{% endblock %}
+
+{% block content %}
+
+<div class="an-tabs" style="margin-bottom:1rem;">
+  <a href="?periodo=semana" class="an-tab {% if periodo == 'semana' %}active{% endif %}">Última semana</a>
+  <a href="?periodo=mes"    class="an-tab {% if periodo == 'mes' %}active{% endif %}">Último mes</a>
+  <a href="?periodo=año"    class="an-tab {% if periodo == 'año' %}active{% endif %}">Último año</a>
+  <a href="?periodo=todo"   class="an-tab {% if periodo == 'todo' %}active{% endif %}">Histórico</a>
+</div>
+
+<div class="an-grid an-grid--equal-2">
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">favorite</span> Canciones más likeadas</div>
+    </div>
+    <table class="an-table">
+      <thead><tr><th>#</th><th>Canción</th><th>Artista</th><th class="num">Likes</th><th class="num">Plays</th></tr></thead>
+      <tbody>
+        {% for c in top_likes %}
+        <tr><td>{{ forloop.counter }}</td><td>{{ c.Cancion }}</td><td>{{ c.Artista }}</td>
+            <td class="num accent">{{ c.TotalLikes }}</td><td class="num">{{ c.Reproducciones }}</td></tr>
+        {% empty %}
+        <tr><td colspan="5" class="an-empty"><span class="material-icons">music_off</span>Sin datos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">trending_up</span> Ranking global · {{ periodo|capfirst }}</div>
+    </div>
+    <table class="an-table">
+      <thead><tr><th>#</th><th>Canción</th><th>Artista</th><th class="num">Reprods</th><th class="num">Oyentes</th></tr></thead>
+      <tbody>
+        {% for c in ranking %}
+        <tr><td>{{ forloop.counter }}</td><td>{{ c.Cancion }}</td><td>{{ c.Artista }}</td>
+            <td class="num accent">{{ c.TotalReproduccionesGlobales }}</td><td class="num">{{ c.OyentesUnicos }}</td></tr>
+        {% empty %}
+        <tr><td colspan="5" class="an-empty"><span class="material-icons">queue_music</span>Sin reproducciones en el periodo.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

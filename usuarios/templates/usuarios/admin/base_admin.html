@@ -1,0 +1,271 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Panel Admin — Ecualizer{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'usuarios/admin_panel.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="admin-layout">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <img src="{% static 'img/EcualizerLogo.png' %}" alt="Ecualizer Logo" style="height: 90px; width: auto; object-fit: contain;">
+    </div>
+
+    <!-- Navegación principal -->
+    <nav class="sidebar-nav">
+
+      <!-- Dashboard directo -->
+      <a href="{% url 'admin_dashboard' %}"
+         class="sidebar-direct {% block nav_dashboard %}{% endblock %}">
+        <span class="material-icons">dashboard</span>
+        <span>Dashboard</span>
+      </a>
+
+      <!-- ══ Analítica ════════════════════════════════════ -->
+      <div class="nav-group {% block nav_analitica_open %}{% endblock %}">
+        <button class="nav-group__header" type="button">
+          <span class="material-icons">insights</span>
+          <span class="nav-group__label">Analítica</span>
+          <span class="material-icons nav-group__arrow">chevron_right</span>
+        </button>
+        <div class="nav-group__items">
+          <a href="{% url 'analitica:resumen' %}" class="nav-item {% block nav_an_resumen %}{% endblock %}">
+            <span class="material-icons">space_dashboard</span> Resumen General
+          </a>
+          <a href="{% url 'analitica:usuarios' %}" class="nav-item {% block nav_an_usuarios %}{% endblock %}">
+            <span class="material-icons">groups</span> Usuarios
+          </a>
+          <a href="{% url 'analitica:musica' %}" class="nav-item {% block nav_an_musica %}{% endblock %}">
+            <span class="material-icons">music_note</span> Música
+          </a>
+          <a href="{% url 'analitica:albumes' %}" class="nav-item {% block nav_an_albumes %}{% endblock %}">
+            <span class="material-icons">album</span> Álbumes
+          </a>
+          <a href="{% url 'analitica:reproducciones' %}" class="nav-item {% block nav_an_reproducciones %}{% endblock %}">
+            <span class="material-icons">play_circle</span> Reproducciones
+          </a>
+          <a href="{% url 'analitica:generos' %}" class="nav-item {% block nav_an_generos %}{% endblock %}">
+            <span class="material-icons">graphic_eq</span> Géneros
+          </a>
+          <a href="{% url 'analitica:artistas' %}" class="nav-item {% block nav_an_artistas %}{% endblock %}">
+            <span class="material-icons">mic</span> Artistas
+          </a>
+          <a href="{% url 'analitica:actividad' %}" class="nav-item {% block nav_an_actividad %}{% endblock %}">
+            <span class="material-icons">history</span> Actividad
+          </a>
+          <a href="{% url 'analitica:reportes' %}" class="nav-item {% block nav_an_reportes %}{% endblock %}">
+            <span class="material-icons">assessment</span> Reportes
+          </a>
+          
+        </div>
+      </div>
+
+      <!-- ══ Biblioteca ═══════════════════════════════════ -->
+      <div class="nav-group {% block nav_biblioteca_open %}{% endblock %}">
+        <button class="nav-group__header" type="button">
+          <span class="material-icons">library_music</span>
+          <span class="nav-group__label">Biblioteca</span>
+          <span class="material-icons nav-group__arrow">chevron_right</span>
+        </button>
+        <div class="nav-group__items">
+          <a href="{% url 'catalogo:admin_album_list' %}" class="nav-item {% block nav_albumes %}{% endblock %}">
+            <span class="material-icons">album</span> Álbumes
+          </a>
+          <a href="{% url 'catalogo:admin_cancion_list' %}" class="nav-item {% block nav_canciones %}{% endblock %}">
+            <span class="material-icons">music_note</span> Canciones
+          </a>
+          <a href="{% url 'catalogo:admin_genero_list' %}" class="nav-item {% block nav_generos %}{% endblock %}">
+            <span class="material-icons">graphic_eq</span> Géneros
+          </a>
+          <a href="{% url 'catalogo:admin_tipo_album_list' %}" class="nav-item {% block nav_tipos_album %}{% endblock %}">
+            <span class="material-icons">category</span> Tipos Álbum
+          </a>
+        </div>
+      </div>
+
+      <!-- ══ Usuarios ═════════════════════════════════════ -->
+      <div class="nav-group {% block nav_usuarios_open %}{% endblock %}">
+        <button class="nav-group__header" type="button">
+          <span class="material-icons">people</span>
+          <span class="nav-group__label">Usuarios</span>
+          <span class="material-icons nav-group__arrow">chevron_right</span>
+        </button>
+        <div class="nav-group__items">
+          <a href="{% url 'admin_oyente_list' %}" class="nav-item {% block nav_oyentes %}{% endblock %}">
+            <span class="material-icons">headphones</span> Oyentes
+          </a>
+          <a href="{% url 'admin_artista_list' %}" class="nav-item {% block nav_artistas_users %}{% endblock %}">
+            <span class="material-icons">mic</span> Artistas
+          </a>
+          <a href="{% url 'admin_persona_list' %}" class="nav-item {% block nav_personas %}{% endblock %}">
+            <span class="material-icons">badge</span> Personas
+          </a>
+          <a href="{% url 'admin_admin_list' %}" class="nav-item {% block nav_admins %}{% endblock %}">
+            <span class="material-icons">admin_panel_settings</span> Administradores
+          </a>
+        </div>
+      </div>
+
+      <!-- ══ Comercial ════════════════════════════════════ -->
+      <div class="nav-group {% block nav_comercial_open %}{% endblock %}">
+        <button class="nav-group__header" type="button">
+          <span class="material-icons">storefront</span>
+          <span class="nav-group__label">Comercial</span>
+          <span class="material-icons nav-group__arrow">chevron_right</span>
+        </button>
+        <div class="nav-group__items">
+          <a href="{% url 'industria:discografica_list' %}" class="nav-item {% block nav_discograficas %}{% endblock %}">
+            <span class="material-icons">domain</span> Discográficas
+          </a>
+          <a href="{% url 'industria:contrato_list' %}" class="nav-item {% block nav_contratos %}{% endblock %}">
+            <span class="material-icons">description</span> Contratos
+          </a>
+          <a href="{% url 'analitica:regalias' %}" class="nav-item {% block nav_regalias %}{% endblock %}">
+            <span class="material-icons">payments</span> Regalías
+          </a>
+          <a href="{% url 'analitica:planes' %}" class="nav-item {% block nav_planes %}{% endblock %}">
+            <span class="material-icons">card_membership</span> Planes
+          </a>
+          <a href="{% url 'analitica:suscripciones' %}" class="nav-item {% block nav_suscripciones %}{% endblock %}">
+            <span class="material-icons">subscriptions</span> Suscripciones
+          </a>
+          <a href="{% url 'admin_pagos_list' %}" class="nav-item {% block nav_pagos %}{% endblock %}">
+            <span class="material-icons">receipt_long</span> Pagos
+          </a>
+        </div>
+      </div>
+      <div class="nav-group {% block nav_config_open %}{% endblock %}">
+       
+
+    </nav>
+
+    <!-- Usuario y logout -->
+    <div class="sidebar-footer">
+      {% if admin_persona %}
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">{{ admin_persona.primer_nombre|first|upper }}</div>
+        <div class="sidebar-user__info">
+          <div class="sidebar-user__name">{{ admin_persona.primer_nombre }} {{ admin_persona.primer_apellido }}</div>
+          <div class="sidebar-user__role">
+            {% if admin_perfil %}{{ admin_perfil.get_rol_admin_display }}{% else %}Administrador{% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      <a href="{% url 'logout' %}" class="sidebar-logout">
+        <span class="material-icons">logout</span>
+        <span>Cerrar sesión</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ══ CONTENIDO PRINCIPAL ══════════════════════════════ -->
+  <div class="main-wrapper">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="sidebar-toggle" id="sidebarToggle" type="button" title="Colapsar menú">
+          <span class="material-icons">menu</span>
+        </button>
+        <div>
+          <h1 class="topbar__title">{% block topbar_title %}Panel Admin{% endblock %}</h1>
+          <div class="topbar__breadcrumb">{% block breadcrumb %}Admin{% endblock %}</div>
+        </div>
+      </div>
+      <div class="topbar__right">
+        {% if admin_persona %}
+        <div class="topbar-user">
+          <div class="topbar-avatar">{{ admin_persona.primer_nombre|first|upper }}</div>
+          <span class="topbar-user__name">{{ admin_persona.primer_nombre }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- Mensajes flash -->
+    {% if messages %}
+    <div class="flash-bar">
+      {% for msg in messages %}
+      <div class="flash flash--{{ msg.tags|default:'info' }}">
+        <span class="material-icons flash__icon">
+          {% if msg.tags == 'success' %}check_circle{% elif msg.tags == 'error' or msg.tags == 'danger' %}error{% else %}info{% endif %}
+        </span>
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Contenido -->
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  // ── Toggle sidebar collapse ─────────────────────────────
+  const sidebar = document.getElementById('sidebar');
+  const toggleBtn = document.getElementById('sidebarToggle');
+
+  toggleBtn.addEventListener('click', function () {
+    sidebar.classList.toggle('sidebar--collapsed');
+  });
+
+  // ── Grupos colapsables ──────────────────────────────────
+  document.querySelectorAll('.nav-group__header').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const group = btn.closest('.nav-group');
+      const isOpen = group.classList.contains('open');
+
+      // Cerrar todos los demás
+      document.querySelectorAll('.nav-group.open').forEach(function (g) {
+        if (g !== group) g.classList.remove('open');
+      });
+
+      group.classList.toggle('open', !isOpen);
+    });
+  });
+
+  // Abrir el grupo que contiene el link activo al cargar
+  document.querySelectorAll('.nav-item.active').forEach(function (link) {
+    const group = link.closest('.nav-group');
+    if (group) group.classList.add('open');
+  });
+
+  // Abrir grupos marcados como abiertos por el template
+  document.querySelectorAll('.nav-group.open').forEach(function (group) {
+    // ya están marcados — nada que hacer
+  });
+
+  // Auto-ocultar flash messages
+  setTimeout(function () {
+    document.querySelectorAll('.flash-bar').forEach(function (el) {
+      el.style.opacity = '0';
+      el.style.transition = 'opacity 0.4s';
+      setTimeout(function () { el.remove(); }, 400);
+    });
+  }, 4000);
+})();
+</script>
+{% block extra_js %}{% endblock %}
+
+{# Popups globales (success/error/info) — reusan los messages de Django. #}
+{% include "usuarios/_popups.html" %}
+</body>
+</html>

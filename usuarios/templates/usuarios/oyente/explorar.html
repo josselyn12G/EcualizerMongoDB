@@ -1,0 +1,83 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+
+{% block title %}Explorar — Ecualizer{% endblock %}
+{% block topbar_title %}Explorar{% endblock %}
+{% block breadcrumb %}Explorar{% endblock %}
+{% block nav_explorar %}active{% endblock %}
+
+{% block content %}
+<style>
+  .sp-hero {
+    border-radius: 18px;
+    padding: 1.75rem 1.75rem 1.5rem;
+    min-height: 180px;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #7c2d12 100%);
+    color: #fff;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .sp-hero__tag   { font-size:0.74rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:rgba(255,255,255,0.85); margin-bottom:0.5rem; }
+  .sp-hero__title { font-size:2.8rem; font-weight:800; letter-spacing:-0.03em; line-height:1; }
+  .sp-hero__sub   { font-size:0.85rem; color:rgba(255,255,255,0.85); margin-top:0.5rem; }
+
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+  .cat-card {
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 1;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .cat-card:hover { transform: scale(1.03); }
+  .cat-card__img { width:100%; height:100%; object-fit:cover; }
+  .cat-card__placeholder {
+    width:100%; height:100%;
+    background: linear-gradient(135deg, #f97316, #7c3aed);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cat-card__overlay {
+    position:absolute; inset:0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%);
+    display:flex; align-items:flex-end; padding:0.75rem;
+  }
+  .cat-card__name {
+    color:#fff; font-size:0.9rem; font-weight:800;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+</style>
+
+<div class="sp-hero">
+  <div class="sp-hero__tag">Ecualizer · Categorías</div>
+  <div class="sp-hero__title">Explorar</div>
+  <div class="sp-hero__sub">Descubre música por géneros y estados de ánimo</div>
+</div>
+
+{% if categorias %}
+<div class="cat-grid">
+  {% for cat in categorias %}
+  <div class="cat-card">
+    {% if cat.icons %}
+    <img class="cat-card__img" src="{{ cat.icons.0.url }}" alt="{{ cat.name }}">
+    {% else %}
+    <div class="cat-card__placeholder">
+      <span class="material-icons" style="font-size:3rem; color:rgba(255,255,255,0.5);">music_note</span>
+    </div>
+    {% endif %}
+    <div class="cat-card__overlay">
+      <div class="cat-card__name">{{ cat.name }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center; padding:3rem 1rem; color:rgba(255,255,255,0.4);">
+  <span class="material-icons" style="font-size:3rem; display:block; margin-bottom:0.6rem;">explore</span>
+  <p>No se pudieron cargar las categorías.</p>
+</div>
+{% endif %}
+{% endblock %}

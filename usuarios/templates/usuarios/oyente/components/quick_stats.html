@@ -1,0 +1,32 @@
+<!-- Componente: Tarjetas de estadísticas rápidas -->
+<div class="stats-grid">
+
+  <div class="stat-card">
+    <span class="material-icons stat-card__icon">favorite</span>
+    <div class="stat-card__label">Canciones Favoritas</div>
+    <div class="stat-card__value">{{ stats.canciones_favoritas|default:"0" }}</div>
+    <div class="stat-card__sub">En tu biblioteca</div>
+  </div>
+
+  <div class="stat-card">
+    <span class="material-icons stat-card__icon">queue_music</span>
+    <div class="stat-card__label">Playlists</div>
+    <div class="stat-card__value">{{ stats.playlists|default:"0" }}</div>
+    <div class="stat-card__sub">Listas creadas</div>
+  </div>
+
+  <div class="stat-card">
+    <span class="material-icons stat-card__icon">person_add</span>
+    <div class="stat-card__label">Artistas Seguidos</div>
+    <div class="stat-card__value">{{ stats.artistas_seguidos|default:"0" }}</div>
+    <div class="stat-card__sub">En tu red</div>
+  </div>
+
+  <div class="stat-card">
+    <span class="material-icons stat-card__icon">schedule</span>
+    <div class="stat-card__label">Tiempo Escuchado</div>
+    <div class="stat-card__value">{{ stats.horas_escuchadas|default:"0" }}<span style="font-size:1rem; font-weight:500;">h</span></div>
+    <div class="stat-card__sub">Este mes</div>
+  </div>
+
+</div>

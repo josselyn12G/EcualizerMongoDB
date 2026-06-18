@@ -1,0 +1,171 @@
+{% comment %}
+  Sistema de popups minimalista para todo el panel auth/registro/login.
+  Tres tipos: success | error | info.
+  Se auto-instancia con los messages del framework de Django.
+  Tambien expone window.Popup.success / .error / .info / .show (texto, opts).
+{% endcomment %}
+
+<style>
+  .ez-toast-host {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+    max-width: 360px;
+    width: calc(100vw - 36px);
+  }
+  .ez-toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    background: rgba(20, 20, 24, 0.96);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #fff;
+    border-radius: 12px;
+    padding: 0.75rem 0.9rem 0.75rem 0.8rem;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+    backdrop-filter: blur(20px);
+    transform: translateX(120%);
+    opacity: 0;
+    transition: transform 0.28s ease, opacity 0.2s ease;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 0.86rem;
+    line-height: 1.4;
+    position: relative;
+    overflow: hidden;
+  }
+  .ez-toast.show { transform: translateX(0); opacity: 1; }
+  .ez-toast::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--bar, #f97316);
+  }
+  .ez-toast__icon {
+    width: 24px; height: 24px;
+    flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: var(--bar, #f97316);
+    color: #fff;
+  }
+  .ez-toast__icon .material-icons { font-size: 0.95rem; }
+  .ez-toast__body { flex: 1; min-width: 0; padding-top: 1px; }
+  .ez-toast__title {
+    font-weight: 700; font-size: 0.82rem;
+    margin-bottom: 0.1rem;
+    color: var(--bar, #f97316);
+    letter-spacing: 0.02em;
+  }
+  .ez-toast__msg {
+    color: rgba(255,255,255,0.88);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .ez-toast__close {
+    background: transparent; border: none;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+  }
+  .ez-toast__close:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .ez-toast__close .material-icons { font-size: 0.95rem; }
+
+  /* Tipos */
+  .ez-toast--success { --bar: #22c55e; }
+  .ez-toast--error   { --bar: #ef4444; }
+  .ez-toast--info    { --bar: #3b82f6; }
+</style>
+
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+<div class="ez-toast-host" id="ezToastHost"></div>
+
+<script>
+(function(){
+  const host = document.getElementById('ezToastHost');
+
+  const ICONS = {
+    success: 'check',
+    error:   'priority_high',
+    info:    'info',
+  };
+  const TITLES = {
+    success: 'ÉXITO',
+    error:   'ERROR',
+    info:    'INFO',
+  };
+
+  function show(text, type, opts) {
+    if (!text) return;
+    type = (type || 'info').toLowerCase();
+    if (!ICONS[type]) type = 'info';
+    opts = opts || {};
+    const duration = opts.duration === undefined ? 4500 : opts.duration;
+    const title = opts.title === undefined ? TITLES[type] : opts.title;
+
+    const el = document.createElement('div');
+    el.className = 'ez-toast ez-toast--' + type;
+    el.innerHTML =
+      '<span class="ez-toast__icon"><span class="material-icons">' + ICONS[type] + '</span></span>' +
+      '<div class="ez-toast__body">' +
+        (title ? '<div class="ez-toast__title">' + title + '</div>' : '') +
+        '<div class="ez-toast__msg"></div>' +
+      '</div>' +
+      '<button type="button" class="ez-toast__close" aria-label="Cerrar">' +
+        '<span class="material-icons">close</span>' +
+      '</button>';
+    el.querySelector('.ez-toast__msg').textContent = String(text);
+
+    host.appendChild(el);
+    // Forzar reflow para activar la transición
+    void el.offsetWidth;
+    requestAnimationFrame(() => el.classList.add('show'));
+
+    function close() {
+      el.classList.remove('show');
+      setTimeout(() => el.remove(), 280);
+    }
+    el.querySelector('.ez-toast__close').addEventListener('click', close);
+    if (duration > 0) setTimeout(close, duration);
+
+    return { close };
+  }
+
+  window.Popup = {
+    show,
+    success: (m, o) => show(m, 'success', o),
+    error:   (m, o) => show(m, 'error',   o),
+    info:    (m, o) => show(m, 'info',    o),
+  };
+})();
+</script>
+
+{# Auto-renderiza los messages de Django como popups. #}
+{% if messages %}
+<script>
+(function(){
+  {% for m in messages %}
+    {%  if m.tags == 'success' or m.level_tag == 'success' %}
+      Popup.success('{{ m|escapejs }}');
+    {% elif m.tags == 'error' or m.tags == 'danger' or m.level_tag == 'error' %}
+      Popup.error('{{ m|escapejs }}');
+    {% elif m.tags == 'warning' or m.level_tag == 'warning' %}
+      Popup.error('{{ m|escapejs }}', {title: 'AVISO'});
+    {% else %}
+      Popup.info('{{ m|escapejs }}');
+    {% endif %}
+  {% endfor %}
+})();
+</script>
+{% endif %}

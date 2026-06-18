@@ -1,0 +1,123 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+
+{% block title %}Configuración — Ecualizer{% endblock %}
+{% block topbar_title %}Configuración{% endblock %}
+{% block breadcrumb %}Configuración{% endblock %}
+{% block nav_configuracion %}active{% endblock %}
+
+{% block content %}
+<style>
+  .cfg-card {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.25rem;
+    backdrop-filter: blur(20px);
+  }
+  .cfg-card h3 {
+    color:#fff; font-size:1.05rem; font-weight:700;
+    margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;
+  }
+  .cfg-card h3 .material-icons { color:#f97316; font-size:1.2rem; }
+  .cfg-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:0.65rem 0; border-bottom:1px solid rgba(255,255,255,0.05);
+  }
+  .cfg-row:last-child { border-bottom:none; }
+  .cfg-row__label { color:rgba(255,255,255,0.85); font-size:0.9rem; }
+  .cfg-row__value { color:rgba(255,255,255,0.55); font-size:0.88rem; }
+  .switch { position:relative; display:inline-block; width:48px; height:26px; }
+  .switch input { display:none; }
+  .switch__slider {
+    position:absolute; inset:0; background:rgba(255,255,255,0.15);
+    border-radius:26px; transition:0.25s; cursor:pointer;
+  }
+  .switch__slider::before {
+    content:''; position:absolute; height:20px; width:20px; left:3px; top:3px;
+    background:#fff; border-radius:50%; transition:0.25s;
+  }
+  .switch input:checked + .switch__slider { background:#f97316; }
+  .switch input:checked + .switch__slider::before { transform:translateX(22px); }
+  .btn-guardar {
+    background:#f97316; color:#fff; border:none; border-radius:50px;
+    padding:0.6rem 1.6rem; font-size:0.88rem; font-weight:700; cursor:pointer;
+    margin-top:1rem; display:inline-flex; align-items:center; gap:0.4rem;
+  }
+  .btn-guardar:hover { background:#ea580c; }
+  .cfg-link {
+    color:#f97316; text-decoration:none; font-size:0.88rem; font-weight:600;
+  }
+  .cfg-link:hover { text-decoration:underline; }
+</style>
+
+<!-- Cuenta -->
+<div class="cfg-card">
+  <h3><span class="material-icons">account_circle</span> Cuenta</h3>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Nombre</span>
+    <span class="cfg-row__value">{{ persona.primer_nombre }} {{ persona.primer_apellido }}</span>
+  </div>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Correo</span>
+    <span class="cfg-row__value">{{ persona.correo }}</span>
+  </div>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Alias</span>
+    <span class="cfg-row__value">{% if perfil %}{{ perfil.alias }}{% else %}—{% endif %}</span>
+  </div>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Editar mis datos</span>
+    <a href="{% url 'perfil_oyente' %}" class="cfg-link">Ir a Mi Perfil →</a>
+  </div>
+</div>
+
+<!-- Suscripción -->
+<div class="cfg-card">
+  <h3><span class="material-icons">card_membership</span> Suscripción</h3>
+  {% if plan %}
+  <div class="cfg-row">
+    <span class="cfg-row__label">Plan actual</span>
+    <span class="cfg-row__value"><strong style="color:#fff;">{{ plan.nombrePlan }}</strong> · ${{ plan.precio }}/mes</span>
+  </div>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Vigente hasta</span>
+    <span class="cfg-row__value">{{ plan.fechaFin }}</span>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="cfg-row">
+      <div>
+        <div class="cfg-row__label">Renovación automática</div>
+        <div style="color:rgba(255,255,255,0.4); font-size:0.74rem; margin-top:0.2rem; max-width:420px;">
+          Si está activa, tu suscripción se renueva automáticamente al finalizar el período de vigencia.
+        </div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" name="auto_renovacion" value="S" {% if plan.renovacion == 'S' %}checked{% endif %}>
+        <span class="switch__slider"></span>
+      </label>
+    </div>
+    <button type="submit" class="btn-guardar">
+      <span class="material-icons" style="font-size:1rem;">save</span> Guardar preferencias
+    </button>
+  </form>
+  {% else %}
+  <div class="cfg-row">
+    <span class="cfg-row__label">No tienes una suscripción activa.</span>
+    <a href="{% url 'pagos:historial' %}" class="cfg-link">Elegir un plan →</a>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Sesión -->
+<div class="cfg-card">
+  <h3><span class="material-icons">logout</span> Sesión</h3>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Cerrar sesión en este dispositivo</span>
+    <a href="{% url 'logout' %}" class="cfg-link">Cerrar sesión →</a>
+  </div>
+</div>
+
+{% endblock %}

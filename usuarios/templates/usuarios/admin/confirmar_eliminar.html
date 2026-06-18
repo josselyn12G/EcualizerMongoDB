@@ -1,0 +1,24 @@
+{% extends "usuarios/admin/base_admin.html" %}
+{% block title %}Confirmar eliminacion &mdash; Ecualizer Admin{% endblock %}
+{% block topbar_title %}Confirmar accion{% endblock %}
+
+{% block content %}
+<div style="display:flex; align-items:center; justify-content:center; min-height:60vh;">
+  <div class="confirm-card">
+    <div class="warn-icon">&#9888;&#65039;</div>
+    <h2>Desactivar {{ tipo }}</h2>
+    <p>
+      ¿Estas seguro de que deseas desactivar a
+      <strong>{{ objeto.primer_nombre }} {{ objeto.primer_apellido }}</strong>?
+      <br><br>
+      Esta accion cambia el estado a <em>inactivo</em>. El usuario no podra iniciar sesion.
+      Puedes reactivarlo editando su cuenta.
+    </p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn-confirmar">Si, desactivar</button>
+      <a href="javascript:history.back()" class="btn-cancel">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+<!-- Historial estilo Apple Music Playlist -->
+<div class="playlist-section">
+
+  <div class="playlist-section__header">
+    <span class="playlist-section__title">Historial de Reproducciones</span>
+    <a href="{% url 'catalogo:usuario_cancion_list' %}" class="playlist-section__see-all">
+      Ver todo <span class="material-icons">chevron_right</span>
+    </a>
+  </div>
+
+  <table class="playlist-table">
+    <thead>
+      <tr>
+        <th class="col-num">#</th>
+        <th>TÍTULO</th>
+        <th>ARTISTA</th>
+        <th class="col-time">TIEMPO</th>
+        <th class="col-album">ÁLBUM</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for track in historial %}
+      <tr class="playlist-row" {% if track.id %}onclick="EzPlayer && EzPlayer.play({{ track.id }})" style="cursor:pointer;"{% endif %}>
+        <td class="col-num">
+          <span class="material-icons track-play-icon">play_arrow</span>
+          <span class="track-num">{{ forloop.counter|stringformat:"02d" }}</span>
+        </td>
+        <td>
+          <div class="track-title-wrap">
+            <div class="track-cover"
+                 {% if track.cover %}style="background-image:url('{{ track.cover }}'); background-size:cover; background-position:center;"{% endif %}>
+              {% if not track.cover %}<span class="material-icons">music_note</span>{% endif %}
+            </div>
+            <span class="track-name">{{ track.nombre }}</span>
+          </div>
+        </td>
+        <td class="col-artist">{{ track.artista }}</td>
+        <td class="col-time">{{ track.duracion }}</td>
+        <td class="col-album">{{ track.album|default:"&mdash;" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="playlist-empty">
+          <span class="material-icons">music_off</span>
+          <p>Aún no hay historial de reproducciones.</p>
+          <a href="{% url 'catalogo:usuario_cancion_list' %}" class="btn-new">
+            <span class="material-icons">explore</span>
+            Explorar música
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</div>

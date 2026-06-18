@@ -1,0 +1,127 @@
+<!-- Sección: Mis Álbumes -->
+<section>
+  <div class="section-header">
+    <h3 class="section-title">
+      <span class="material-icons">album</span>
+      Mis Álbumes
+    </h3>
+    <a href="#" class="section-link">
+      Ver todos <span class="material-icons">chevron_right</span>
+    </a>
+  </div>
+
+  <div class="albums-grid">
+
+    {% if albumes %}
+      {% for album in albumes %}
+      <div class="album-card">
+        <div class="album-card__cover album-card__cover--v{% cycle '1' '2' '3' '4' '5' %}">
+          <span class="material-icons">album</span>
+          <button class="album-card__play" type="button" title="Reproducir">
+            <span class="material-icons">play_arrow</span>
+          </button>
+        </div>
+        <div class="album-card__body">
+          <div class="album-card__title">{{ album.nombre }}</div>
+          <div class="album-card__meta">
+            <span>{{ album.anio|default:"2024" }}</span>
+            <span class="dot"></span>
+            <span>{{ album.canciones|default:"0" }} canciones</span>
+          </div>
+          <div class="album-card__plays">
+            <span class="material-icons">play_circle</span>
+            {{ album.reproducciones|default:"0" }} plays
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <!-- Placeholders (mock data — se reemplazará al cargar) -->
+      <div class="album-card">
+        <div class="album-card__cover album-card__cover--v1">
+          <span class="material-icons">album</span>
+          <button class="album-card__play" type="button"><span class="material-icons">play_arrow</span></button>
+        </div>
+        <div class="album-card__body">
+          <div class="album-card__title">Midnight Echoes</div>
+          <div class="album-card__meta">
+            <span>2024</span><span class="dot"></span><span>12 canciones</span>
+          </div>
+          <div class="album-card__plays">
+            <span class="material-icons">play_circle</span>
+            48.2K plays
+          </div>
+        </div>
+      </div>
+
+      <div class="album-card">
+        <div class="album-card__cover album-card__cover--v2">
+          <span class="material-icons">music_note</span>
+          <button class="album-card__play" type="button"><span class="material-icons">play_arrow</span></button>
+        </div>
+        <div class="album-card__body">
+          <div class="album-card__title">Neon Dreams</div>
+          <div class="album-card__meta">
+            <span>2023</span><span class="dot"></span><span>9 canciones</span>
+          </div>
+          <div class="album-card__plays">
+            <span class="material-icons">play_circle</span>
+            32.7K plays
+          </div>
+        </div>
+      </div>
+
+      <div class="album-card">
+        <div class="album-card__cover album-card__cover--v3">
+          <span class="material-icons">graphic_eq</span>
+          <button class="album-card__play" type="button"><span class="material-icons">play_arrow</span></button>
+        </div>
+        <div class="album-card__body">
+          <div class="album-card__title">Ocean Waves</div>
+          <div class="album-card__meta">
+            <span>2023</span><span class="dot"></span><span>8 canciones</span>
+          </div>
+          <div class="album-card__plays">
+            <span class="material-icons">play_circle</span>
+            21.5K plays
+          </div>
+        </div>
+      </div>
+
+      <div class="album-card">
+        <div class="album-card__cover album-card__cover--v4">
+          <span class="material-icons">queue_music</span>
+          <button class="album-card__play" type="button"><span class="material-icons">play_arrow</span></button>
+        </div>
+        <div class="album-card__body">
+          <div class="album-card__title">Solstice</div>
+          <div class="album-card__meta">
+            <span>2022</span><span class="dot"></span><span>10 canciones</span>
+          </div>
+          <div class="album-card__plays">
+            <span class="material-icons">play_circle</span>
+            15.8K plays
+          </div>
+        </div>
+      </div>
+
+      <div class="album-card">
+        <div class="album-card__cover album-card__cover--v5">
+          <span class="material-icons">audiotrack</span>
+          <button class="album-card__play" type="button"><span class="material-icons">play_arrow</span></button>
+        </div>
+        <div class="album-card__body">
+          <div class="album-card__title">Aurora EP</div>
+          <div class="album-card__meta">
+            <span>2022</span><span class="dot"></span><span>5 canciones</span>
+          </div>
+          <div class="album-card__plays">
+            <span class="material-icons">play_circle</span>
+            9.3K plays
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</section>

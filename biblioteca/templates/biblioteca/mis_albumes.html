@@ -1,0 +1,91 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+{% load static %}
+
+{% block title %}Mis Álbumes — Ecualizer{% endblock %}
+{% block topbar_title %}Mis Álbumes{% endblock %}
+{% block breadcrumb %}Biblioteca / Álbumes guardados{% endblock %}
+{% block nav_mis_albumes %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .lib-hero {
+    border-radius: 18px;
+    padding: 1.5rem 1.75rem;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 60%, #7c2d12 100%);
+    color: #fff;
+    margin-bottom: 1.25rem;
+  }
+  .lib-hero__tag { font-size:0.74rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:rgba(255,255,255,0.85); margin-bottom:0.4rem; }
+  .lib-hero__title { font-size:2.2rem; font-weight:800; letter-spacing:-0.02em; line-height:1; }
+  .lib-hero__sub { font-size:0.85rem; color:rgba(255,255,255,0.85); margin-top:0.4rem; }
+
+  .albums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+  .album-tile {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.18s;
+    cursor: pointer;
+    position: relative;
+  }
+  .album-tile:hover {
+    transform: translateY(-3px);
+    border-color: rgba(249,115,22,0.30);
+    box-shadow: 0 12px 28px rgba(249,115,22,0.18);
+  }
+  .album-tile__cover {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background-size: cover; background-position: center;
+  }
+  .album-tile__body { padding: 0.7rem 0.85rem 0.85rem; }
+  .album-tile__title { font-weight:700; color:#fff; font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .album-tile__artist { font-size:0.74rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .album-tile__year { font-size:0.7rem; color:var(--text-light); margin-top:0.15rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="lib-hero">
+  <div class="lib-hero__tag">Biblioteca</div>
+  <div class="lib-hero__title">Mis Álbumes</div>
+  <div class="lib-hero__sub">{{ total }} álbum{{ total|pluralize:"es" }} guardado{{ total|pluralize }}</div>
+</div>
+
+{% if albumes %}
+<div class="albums-grid">
+  {% for a in albumes %}
+  <div class="album-tile" onclick="window.location='/catalogo/albumes/{{ a.idAlbum }}/'">
+    <button class="social-icon-btn is-on" data-state="on"
+            style="position:absolute; top:0.55rem; right:0.55rem; background:rgba(0,0,0,0.55); backdrop-filter:blur(8px); z-index:2;"
+            title="Quitar de guardados"
+            onclick="event.stopPropagation(); Social.toggle('save', {{ a.idAlbum }}, this, { onChange: (active) => { if(!active) this.closest('.album-tile').remove(); } });">
+      <span class="material-icons">bookmark</span>
+    </button>
+    <div class="album-tile__cover"
+         {% if a.coverUrl %}style="background-image:url('{{ a.coverUrl }}');"{% endif %}></div>
+    <div class="album-tile__body">
+      <div class="album-tile__title">{{ a.tituloAlbum }}</div>
+      <div class="album-tile__artist">{{ a.nombreArtistico }}</div>
+      <div class="album-tile__year">Guardado · {{ a.fechaGuardado|date:"d/m/Y" }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center; padding:3rem 1rem; color:var(--text-muted);">
+  <span class="material-icons" style="font-size:3rem; opacity:0.35; display:block; margin-bottom:0.6rem;">bookmark_border</span>
+  <p style="font-size:0.95rem;">No tienes álbumes guardados.</p>
+  <p style="font-size:0.82rem; margin-top:0.3rem;">Entra a un álbum y toca "Guardar" para verlo aquí.</p>
+</div>
+{% endif %}
+
+{% include "biblioteca/_social_js.html" %}
+
+{% endblock %}

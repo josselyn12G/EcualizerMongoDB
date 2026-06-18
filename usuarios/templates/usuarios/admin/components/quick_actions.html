@@ -1,0 +1,15 @@
+<!-- Componente: Acciones rápidas del dashboard admin -->
+<div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+  <a href="{% url 'admin_oyente_list' %}" class="btn-new">
+    <span class="material-icons">headphones</span>
+    Gestionar Oyentes
+  </a>
+  <a href="{% url 'admin_artista_list' %}" class="btn-new">
+    <span class="material-icons">mic</span>
+    Gestionar Artistas
+  </a>
+  <a href="{% url 'admin_admin_list' %}" class="btn-new">
+    <span class="material-icons">admin_panel_settings</span>
+    Gestionar Admins
+  </a>
+</div>

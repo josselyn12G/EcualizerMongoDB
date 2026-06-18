@@ -1,0 +1,118 @@
+{% extends "usuarios/admin/base_admin.html" %}
+{% block title %}Detalle persona &mdash; Admin{% endblock %}
+{% block topbar_title %}Detalle Persona{% endblock %}
+{% block nav_personas %}active{% endblock %}
+{% block breadcrumb %}Admin / Personas / #{{ persona.id_usuario }}{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+
+<div class="form-card" style="max-width: 820px;">
+
+  <div class="d-flex justify-content-between align-items-start mb-3">
+    <div>
+      <h3 class="mb-1">
+        {{ persona.primer_nombre }} {{ persona.primer_apellido }}
+      </h3>
+      <small class="text-muted">Persona #{{ persona.id_usuario }} · Cédula: {{ persona.cedula_usuario }}</small>
+    </div>
+    <span class="badge badge--{{ persona.estado }}">{{ persona.estado|capfirst }}</span>
+  </div>
+
+  <!-- Datos básicos -->
+  <h6 class="mt-3" style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; font-size:0.72rem;">Datos personales</h6>
+  <div class="detail-grid" style="padding:0; margin-top:0.5rem; margin-bottom:1.25rem;">
+    <div class="detail-field">
+      <div class="detail-label">Cédula</div>
+      <div class="detail-value">{{ persona.cedula_usuario }}</div>
+    </div>
+    <div class="detail-field">
+      <div class="detail-label">Correo</div>
+      <div class="detail-value">{{ persona.correo }}</div>
+    </div>
+    <div class="detail-field">
+      <div class="detail-label">Primer nombre</div>
+      <div class="detail-value">{{ persona.primer_nombre }}</div>
+    </div>
+    {% if persona.segundo_nombre %}
+    <div class="detail-field">
+      <div class="detail-label">Segundo nombre</div>
+      <div class="detail-value">{{ persona.segundo_nombre }}</div>
+    </div>
+    {% endif %}
+    <div class="detail-field">
+      <div class="detail-label">Primer apellido</div>
+      <div class="detail-value">{{ persona.primer_apellido }}</div>
+    </div>
+    {% if persona.segundo_apellido %}
+    <div class="detail-field">
+      <div class="detail-label">Segundo apellido</div>
+      <div class="detail-value">{{ persona.segundo_apellido }}</div>
+    </div>
+    {% endif %}
+    <div class="detail-field">
+      <div class="detail-label">Fecha de registro</div>
+      <div class="detail-value">{{ persona.fecha_registro|date:"d/m/Y" }}</div>
+    </div>
+  </div>
+
+  <!-- Roles asociados -->
+  <h6 style="color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; font-size:0.72rem;">Roles asignados</h6>
+
+  {% if oyente_p %}
+  <div class="panel-card" style="padding:1rem 1.25rem; margin-top:0.5rem;">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <strong>&#127911; Oyente</strong>
+        <div class="text-muted small">
+          Alias: {{ oyente_p.alias }} · País: {{ oyente_p.pais_usuario }} ·
+          Nacimiento: {{ oyente_p.fecha_nacimiento|date:"d/m/Y" }} ·
+          Género: {{ oyente_p.get_genero_display }}
+        </div>
+      </div>
+      <a href="{% url 'admin_oyente_edit' persona.pk %}" class="btn-action btn-action--editar">Editar oyente</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if artista_p %}
+  <div class="panel-card" style="padding:1rem 1.25rem; margin-top:0.5rem;">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <strong>&#127908; Artista</strong>
+        <div class="text-muted small">Nombre artístico: {{ artista_p.nombre_artistico }}</div>
+      </div>
+      <a href="{% url 'admin_artista_edit' persona.pk %}" class="btn-action btn-action--editar">Editar artista</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if admin_p %}
+  <div class="panel-card" style="padding:1rem 1.25rem; margin-top:0.5rem;">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <strong>&#128736; Administrador</strong>
+        <div class="text-muted small">
+          Rol: {{ admin_p.get_rol_admin_display }} · Departamento: {{ admin_p.departamento }}
+        </div>
+      </div>
+      <a href="{% url 'admin_admin_edit' persona.pk %}" class="btn-action btn-action--editar">Editar admin</a>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if not oyente_p and not artista_p and not admin_p %}
+  <p class="text-muted" style="font-style:italic; margin-top:0.5rem;">
+    Esta persona no tiene rol asignado en el sistema.
+  </p>
+  {% endif %}
+
+  <div class="form-actions">
+    <a href="{% url 'admin_persona_list' %}" class="btn-back">Volver al listado</a>
+  </div>
+</div>
+
+{% endblock %}

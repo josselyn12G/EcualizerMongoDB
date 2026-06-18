@@ -1,0 +1,176 @@
+<!-- Top Canciones + Timeline de actividad -->
+<div class="d-2col">
+
+  <!-- Top Canciones -->
+  <div class="panel-card">
+    <div class="panel-card__header">
+      <div class="panel-card__title">
+        <span class="material-icons">leaderboard</span>
+        Top Canciones
+      </div>
+      <a href="#" class="section-link">
+        Ver todas <span class="material-icons">chevron_right</span>
+      </a>
+    </div>
+
+    {% if canciones_recientes %}
+    <div class="rank-list">
+      {% for cancion in canciones_recientes %}
+      <div class="rank-item">
+        <div class="rank-item__num
+          {% if forloop.counter == 1 %}rank-item__num--gold
+          {% elif forloop.counter == 2 %}rank-item__num--silver
+          {% elif forloop.counter == 3 %}rank-item__num--bronze{% endif %}">
+          {{ forloop.counter }}
+        </div>
+        <div class="rank-item__cover">
+          <span class="material-icons">audiotrack</span>
+        </div>
+        <div class="rank-item__info">
+          <div class="rank-item__name">{{ cancion.nombre }}</div>
+          <div class="rank-item__album">{{ cancion.album }}</div>
+        </div>
+        <div class="rank-item__plays">
+          <strong>{{ cancion.reproducciones }}</strong>
+          plays
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="rank-list">
+      <div class="rank-item">
+        <div class="rank-item__num rank-item__num--gold">1</div>
+        <div class="rank-item__cover"><span class="material-icons">audiotrack</span></div>
+        <div class="rank-item__info">
+          <div class="rank-item__name">Midnight Echoes</div>
+          <div class="rank-item__album">Midnight Echoes · 2024</div>
+        </div>
+        <div class="rank-item__plays"><strong>48.2K</strong> plays</div>
+      </div>
+
+      <div class="rank-item">
+        <div class="rank-item__num rank-item__num--silver">2</div>
+        <div class="rank-item__cover"><span class="material-icons">audiotrack</span></div>
+        <div class="rank-item__info">
+          <div class="rank-item__name">Neon Lights</div>
+          <div class="rank-item__album">Neon Dreams · 2023</div>
+        </div>
+        <div class="rank-item__plays"><strong>32.7K</strong> plays</div>
+      </div>
+
+      <div class="rank-item">
+        <div class="rank-item__num rank-item__num--bronze">3</div>
+        <div class="rank-item__cover"><span class="material-icons">audiotrack</span></div>
+        <div class="rank-item__info">
+          <div class="rank-item__name">Tide</div>
+          <div class="rank-item__album">Ocean Waves · 2023</div>
+        </div>
+        <div class="rank-item__plays"><strong>21.5K</strong> plays</div>
+      </div>
+
+      <div class="rank-item">
+        <div class="rank-item__num">4</div>
+        <div class="rank-item__cover"><span class="material-icons">audiotrack</span></div>
+        <div class="rank-item__info">
+          <div class="rank-item__name">Solstice</div>
+          <div class="rank-item__album">Solstice · 2022</div>
+        </div>
+        <div class="rank-item__plays"><strong>15.8K</strong> plays</div>
+      </div>
+
+      <div class="rank-item">
+        <div class="rank-item__num">5</div>
+        <div class="rank-item__cover"><span class="material-icons">audiotrack</span></div>
+        <div class="rank-item__info">
+          <div class="rank-item__name">Aurora</div>
+          <div class="rank-item__album">Aurora EP · 2022</div>
+        </div>
+        <div class="rank-item__plays"><strong>9.3K</strong> plays</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Timeline de actividad -->
+  <div class="panel-card">
+    <div class="panel-card__header">
+      <div class="panel-card__title">
+        <span class="material-icons">timeline</span>
+        Actividad Reciente
+      </div>
+      <a href="#" class="section-link">
+        Ver todo <span class="material-icons">chevron_right</span>
+      </a>
+    </div>
+
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-item__icon timeline-item__icon--green">
+          <span class="material-icons">trending_up</span>
+        </div>
+        <div class="timeline-item__body">
+          <div class="timeline-item__title">Midnight Echoes alcanzó 48K plays</div>
+          <div class="timeline-item__sub">Tu álbum más escuchado este mes</div>
+        </div>
+        <div class="timeline-item__time">Hace 2h</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-item__icon timeline-item__icon--pink">
+          <span class="material-icons">favorite</span>
+        </div>
+        <div class="timeline-item__body">
+          <div class="timeline-item__title">+248 nuevos likes</div>
+          <div class="timeline-item__sub">En Neon Lights y otras 3 canciones</div>
+        </div>
+        <div class="timeline-item__time">Hace 5h</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-item__icon">
+          <span class="material-icons">group_add</span>
+        </div>
+        <div class="timeline-item__body">
+          <div class="timeline-item__title">+128 nuevos seguidores</div>
+          <div class="timeline-item__sub">Crecimiento de audiencia</div>
+        </div>
+        <div class="timeline-item__time">Ayer</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-item__icon timeline-item__icon--orange">
+          <span class="material-icons">payments</span>
+        </div>
+        <div class="timeline-item__body">
+          <div class="timeline-item__title">Pago de regalías recibido</div>
+          <div class="timeline-item__sub">$1,248 USD del mes anterior</div>
+        </div>
+        <div class="timeline-item__time">2 días</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-item__icon timeline-item__icon--blue">
+          <span class="material-icons">queue_music</span>
+        </div>
+        <div class="timeline-item__body">
+          <div class="timeline-item__title">Añadido a 42 playlists nuevas</div>
+          <div class="timeline-item__sub">Tide es la canción más añadida</div>
+        </div>
+        <div class="timeline-item__time">3 días</div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-item__icon">
+          <span class="material-icons">album</span>
+        </div>
+        <div class="timeline-item__body">
+          <div class="timeline-item__title">Nuevo lanzamiento publicado</div>
+          <div class="timeline-item__sub">Midnight Echoes — 12 canciones</div>
+        </div>
+        <div class="timeline-item__time">1 sem</div>
+      </div>
+    </div>
+  </div>
+
+</div>

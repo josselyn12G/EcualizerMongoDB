@@ -1,0 +1,95 @@
+{% extends "usuarios/admin/base_admin.html" %}
+{% block title %}Oyentes &mdash; Ecualizer Admin{% endblock %}
+{% block topbar_title %}Oyentes{% endblock %}
+{% block nav_oyentes %}active{% endblock %}
+{% block breadcrumb %}Admin / Oyentes{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-0">Oyentes</h3>
+      <small class="text-muted">Gestión de cuentas de oyentes registrados</small>
+    </div>
+  </div>
+
+  <!-- Filtros estandarizados -->
+  <form method="get" class="panel-card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+    <div class="row g-2">
+      <div class="col-md-7">
+        <label class="form-label">Buscar</label>
+        <input type="text" name="q" class="form-control filter-input"
+               value="{{ q }}" placeholder="Nombre, alias o correo...">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Estado</label>
+        <select name="estado" class="form-select filter-select">
+          <option value="">Todos</option>
+          <option value="activo"     {% if estado_sel == 'activo' %}selected{% endif %}>Activo</option>
+          <option value="inactivo"   {% if estado_sel == 'inactivo' %}selected{% endif %}>Inactivo</option>
+          <option value="suspendido" {% if estado_sel == 'suspendido' %}selected{% endif %}>Suspendido</option>
+        </select>
+      </div>
+      <div class="col-md-2 d-flex align-items-end gap-2">
+        <button type="submit" class="btn-filter w-100">Filtrar</button>
+        {% if q or estado_sel %}
+          <a href="{% url 'admin_oyente_list' %}" class="btn-cancel">Limpiar</a>
+        {% endif %}
+      </div>
+    </div>
+  </form>
+
+  <!-- Tabla principal -->
+  <div class="panel-card" style="overflow-x: auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre completo</th>
+          <th>Alias</th>
+          <th>Correo</th>
+          <th>País</th>
+          <th>Estado</th>
+          <th>Fecha registro</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in oyentes %}
+        <tr>
+          <td class="id-col">#{{ o.id_usuario.id_usuario }}</td>
+          <td class="name-col">
+            {{ o.id_usuario.primer_nombre }}
+            {% if o.id_usuario.segundo_nombre %} {{ o.id_usuario.segundo_nombre }}{% endif %}
+            {{ o.id_usuario.primer_apellido }}
+          </td>
+          <td>{{ o.alias }}</td>
+          <td>{{ o.id_usuario.correo }}</td>
+          <td>{{ o.pais_usuario }}</td>
+          <td><span class="badge badge--{{ o.id_usuario.estado }}">{{ o.id_usuario.estado|capfirst }}</span></td>
+          <td>{{ o.id_usuario.fecha_registro|date:"d/m/Y"|default:"&mdash;" }}</td>
+          <td class="text-end">
+            <div class="action-btns justify-content-end">
+              <a href="{% url 'admin_oyente_detail' o.pk %}" class="btn-action btn-action--ver">Ver</a>
+              <a href="{% url 'admin_oyente_edit' o.pk %}" class="btn-action btn-action--editar">Editar</a>
+              <a href="{% url 'admin_oyente_delete' o.pk %}" class="btn-action btn-action--eliminar">Desactivar</a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="empty-state">
+            <div class="empty-icon">&#127911;</div>
+            <p>No se encontraron oyentes.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% endblock %}

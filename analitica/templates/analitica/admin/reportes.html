@@ -1,0 +1,78 @@
+{% extends "analitica/admin/_base_analitica.html" %}
+
+{% block title %}Analítica · Reportes — Ecualizer{% endblock %}
+{% block topbar_title %}Analítica · Reportes{% endblock %}
+{% block breadcrumb %}Admin / Analítica / Reportes{% endblock %}
+{% block nav_analitica_open %}open{% endblock %}
+{% block nav_an_reportes %}active{% endblock %}
+
+{% block content %}
+
+<div class="an-grid an-grid--kpis" style="margin-bottom:1rem;">
+  <div class="kpi-card">
+    <div class="kpi-card__icon"><span class="material-icons">attach_money</span></div>
+    <div class="kpi-card__label">Ingresos {{ anio|default:"(total)" }}</div>
+    <div class="kpi-card__value">
+      ${% if ingresos %}{{ ingresos.0.TotalIngresos|default:0|floatformat:0 }}{% else %}0{% endif %}
+    </div>
+    <div class="kpi-card__sub">Primer mes mostrado</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(34,197,94,0.13);color:#22c55e;"><span class="material-icons">payments</span></div>
+    <div class="kpi-card__label">Regalías generadas</div>
+    <div class="kpi-card__value">${{ regalias.MontoTotalGenerado|default:0|floatformat:2 }}</div>
+    <div class="kpi-card__sub">{{ regalias.ReproduccionesTotales|default:0 }} reproducciones</div>
+  </div>
+</div>
+
+<!-- Filtro de año -->
+<form method="get" class="chart-card" style="padding:0.9rem 1.1rem; margin-bottom:1rem;">
+  <div style="display:flex; gap:0.6rem; align-items:end;">
+    <div style="flex:1;">
+      <label class="kpi-card__label" style="display:block; margin-bottom:0.35rem;">Año</label>
+      {{ form.anio }}
+    </div>
+    <button type="submit" class="btn-new"><span class="material-icons">filter_alt</span> Filtrar</button>
+  </div>
+</form>
+
+<div class="an-grid an-grid--equal-2">
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">attach_money</span> Ingresos mensuales</div>
+    </div>
+    <table class="an-table">
+      <thead><tr><th>Mes</th><th>Plan</th><th>Método</th><th class="num">Tx</th><th class="num">Total</th></tr></thead>
+      <tbody>
+        {% for i in ingresos %}
+        <tr><td>{{ i.MesPeriodo }}</td><td>{{ i.PlanSuscripcion }}</td><td>{{ i.MetodoPago }}</td>
+            <td class="num">{{ i.CantidadTransacciones }}</td>
+            <td class="num accent">${{ i.TotalIngresos|floatformat:2 }}</td></tr>
+        {% empty %}
+        <tr><td colspan="5" class="an-empty"><span class="material-icons">receipt_long</span>Sin ingresos en el periodo.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">payments</span> Regalías por artista</div>
+    </div>
+    <table class="an-table">
+      <thead><tr><th>Artista</th><th class="num">Pagos</th><th class="num">Reprods</th><th class="num">Monto</th></tr></thead>
+      <tbody>
+        {% for r in regalias_artista %}
+        <tr><td>{{ r.Artista }}</td>
+            <td class="num">{{ r.PagosRegistrados }}</td>
+            <td class="num">{{ r.ReproduccionesTotales }}</td>
+            <td class="num accent">${{ r.MontoTotalGenerado|floatformat:2 }}</td></tr>
+        {% empty %}
+        <tr><td colspan="4" class="an-empty"><span class="material-icons">payments</span>Sin regalías registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

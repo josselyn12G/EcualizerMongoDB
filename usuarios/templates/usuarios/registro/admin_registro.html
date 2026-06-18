@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro Administrativo — Ecualizer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg-dark: #050505;
+      --accent-orange: #ff4500;
+      --text-primary: #ffffff;
+      --text-secondary: #888888;
+      --input-bg: #0d0d0d;
+      --radius: 12px;
+    }
+
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh; 
+      display: flex; 
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    
+    .form-container { width: 100%; max-width: 500px; }
+
+    .logo-header { text-align: center; margin-bottom: 2.5rem; }
+    .logo-header img { width: 150px; opacity: 0.9; }
+
+    .admin-header { text-align: center; margin-bottom: 2rem; }
+    .admin-badge { 
+      width: 60px; height: 60px; background: #0d0d0d; 
+      border: 2px solid var(--accent-orange); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; 
+      margin: 0 auto 1.5rem; color: var(--accent-orange); font-size: 1.8rem;
+    }
+
+    .auth-title { font-size: 1.4rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .auth-subtitle { color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 2rem; }
+
+    .row { display: flex; gap: 1rem; }
+    .col { flex: 1; }
+
+    .form-group { margin-bottom: 1.2rem; }
+    .form-label { display: block; font-size: 0.7rem; font-weight: 600; color: #555; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    
+    input, select {
+      width: 100%; background: var(--input-bg);
+      border: 1px solid #1a1a1a; padding: 1rem; border-radius: var(--radius); 
+      color: #fff; font-size: 0.9rem; transition: 0.3s;
+    }
+    input:focus, select:focus { outline: none; border-color: #333; background: #111; }
+
+    .security-box { background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: var(--radius); padding: 1.5rem; margin: 1.5rem 0; }
+    .security-info { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.75rem; color: var(--text-secondary); }
+
+    .btn { width: 100%; padding: 1rem; border-radius: 50px; font-weight: 600; cursor: pointer; transition: 0.3s; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; }
+    .btn-primary { background: var(--accent-orange); color: #fff; border: none; }
+    .btn-primary:hover { background: #e63e00; }
+    .btn-secondary { background: transparent; color: var(--text-secondary); border: 1px solid #333; }
+    .btn-secondary:hover { color: #fff; border-color: #555; }
+    
+    .form-actions { display: flex; gap: 1rem; margin-top: 2rem; }
+    .form-step { display: none; }
+    .form-step.active { display: block; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .step-badge { display: inline-block; color: var(--accent-orange); font-size: 0.65rem; font-weight: 700; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+
+<div class="form-container">
+  <div class="logo-header">
+    <img src="{% static 'img/LogoNaranja.png' %}" alt="Ecualizer">
+  </div>
+
+  <form method="post" id="regForm">
+    {% csrf_token %}
+
+    <div class="form-step active" id="step-1">
+      <div class="step-badge">Paso 1 de 2</div>
+      <div class="admin-header">
+        <div class="admin-badge"><span class="material-icons">manage_accounts</span></div>
+        <h2 class="auth-title">Credenciales del Sistema</h2>
+        <p class="auth-subtitle">Datos de identificación del administrador</p>
+      </div>
+      
+      <div class="row">
+        <div class="col"><div class="form-group"><label class="form-label">Nombre</label>{{ persona_form.primer_nombre }}</div></div>
+        <div class="col"><div class="form-group"><label class="form-label">2do Nombre</label>{{ persona_form.segundo_nombre }}</div></div>
+      </div>
+      <div class="row">
+        <div class="col"><div class="form-group"><label class="form-label">Apellido</label>{{ persona_form.primer_apellido }}</div></div>
+        <div class="col"><div class="form-group"><label class="form-label">2do Apellido</label>{{ persona_form.segundo_apellido }}</div></div>
+      </div>
+      <div class="form-group"><label class="form-label">Cédula de Identidad</label>{{ persona_form.cedula_usuario }}</div>
+      <div class="form-group"><label class="form-label">Correo Institucional</label>{{ persona_form.correo }}</div>
+      <div class="form-group"><label class="form-label">Contraseña</label>{{ persona_form.contrasena }}</div>
+      
+      <button type="button" class="btn btn-primary" onclick="nextStep()">Siguiente</button>
+    </div>
+
+    <div class="form-step" id="step-2">
+      <div class="step-badge">Paso 2 de 2</div>
+      <div class="admin-header">
+        <div class="admin-badge"><span class="material-icons">verified_user</span></div>
+        <h2 class="auth-title">Autorización Administrativa</h2>
+        <p class="auth-subtitle">Asignación de privilegios y permisos</p>
+      </div>
+
+      <div class="row">
+        <div class="col"><div class="form-group"><label class="form-label">Rol del Sistema</label>{{ admin_form.rol_admin }}</div></div>
+        <div class="col"><div class="form-group"><label class="form-label">Departamento</label>{{ admin_form.departamento }}</div></div>
+      </div>
+      
+      <div class="security-box">
+        <label class="form-label">Código de Autorización</label>
+        {{ admin_form.codigo_autorizacion }}
+        <div class="security-info"><span class="material-icons" style="font-size: 1rem;">lock</span> Este código es confidencial y para uso exclusivo del administrador.</div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" onclick="prevStep()">Volver</button>
+        <button type="submit" class="btn btn-primary">Finalizar Registro</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+  function nextStep() {
+    document.getElementById('step-1').classList.remove('active');
+    document.getElementById('step-2').classList.add('active');
+  }
+  function prevStep() {
+    document.getElementById('step-2').classList.remove('active');
+    document.getElementById('step-1').classList.add('active');
+  }
+</script>
+
+{% include "usuarios/_popups.html" %}
+
+</body>
+</html>

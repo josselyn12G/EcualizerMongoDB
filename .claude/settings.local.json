@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Ecualizer\" -Depth 2 | Where-Object { $_.Name -notmatch \"^\\\\.git|venv|__pycache__|\\\\.pyc\" } | Sort-Object Name)",
+      "Bash(mkdir -p \"c:\\\\Ecualizer\\\\usuarios\\\\templates\\\\usuarios\")",
+      "Bash(mkdir -p \"c:\\\\Ecualizer\\\\usuarios\\\\static\\\\usuarios\")",
+      "Bash(Get-Content \"c:\\\\Ecualizer\\\\usuarios\\\\templates\\\\usuarios\\\\login.html\")",
+      "Bash(Select-Object -First 3)",
+      "Bash(python manage.py check --deploy)",
+      "Bash(dir /b *.bat *.cfg *.toml *.ini)",
+      "Bash(pip show *)",
+      "Bash(python -c \"import sys; print\\('\\\\n'.join\\(sys.path\\)\\)\")",
+      "Bash(ls -la \"c:\\\\Users\\\\Alice\\\\AppData\\\\Local\" 2>&1 | grep -i \"python\\\\|venv\\\\|env\" | head -10; ls \"c:\\\\Ecualizer\" | grep -i \"venv\\\\|env\\\\|Scripts\" 2>&1)",
+      "Read(//c/Users/Alice/AppData/Local/**)",
+      "Bash(find \"c:\\\\Users\\\\Alice\" -name \"django\" -type d 2>/dev/null | head -5; find \"c:\\\\Users\\\\Alice\" -name \"activate\" 2>/dev/null | head -5)",
+      "Read(//c/Users/Alice/**)",
+      "Bash(c:/Ecualizer/venv/Scripts/python.exe -c \"import django; print\\(django.__version__\\)\")",
+      "Bash(venv/Scripts/python.exe manage.py check)",
+      "Bash(venv/Scripts/python.exe -c ' *)",
+      "Bash(DJANGO_SETTINGS_MODULE=config.settings venv/Scripts/python.exe -c ' *)",
+      "Bash(venv/Scripts/python.exe manage.py check --deploy)"
+    ]
+  }
+}

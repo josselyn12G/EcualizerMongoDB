@@ -1,0 +1,57 @@
+{% extends "analitica/admin/_base_analitica.html" %}
+
+{% block title %}Analítica · Artistas — Ecualizer{% endblock %}
+{% block topbar_title %}Analítica · Artistas{% endblock %}
+{% block breadcrumb %}Admin / Analítica / Artistas{% endblock %}
+{% block nav_analitica_open %}open{% endblock %}
+{% block nav_an_artistas %}active{% endblock %}
+
+{% block content %}
+
+<div class="chart-card" style="margin-bottom:1rem;">
+  <div class="chart-card__head">
+    <div class="chart-card__title"><span class="material-icons">mic</span> Top artistas por reproducciones</div>
+  </div>
+  <div class="chart-card__body chart-card__body--lg">
+    <canvas id="chartArt"></canvas>
+  </div>
+</div>
+
+<div class="chart-card">
+  <div class="chart-card__head">
+    <div class="chart-card__title"><span class="material-icons">leaderboard</span> Detalle</div>
+  </div>
+  <table class="an-table">
+    <thead><tr><th>#</th><th>Artista</th><th class="num">Reproducciones</th><th class="num">Oyentes únicos</th><th class="num">Álbumes</th></tr></thead>
+    <tbody>
+      {% for a in top_artistas %}
+      <tr><td>{{ forloop.counter }}</td><td>{{ a.Artista }}</td>
+          <td class="num accent">{{ a.Reproducciones }}</td>
+          <td class="num">{{ a.OyentesUnicos }}</td>
+          <td class="num">{{ a.TotalAlbumes }}</td></tr>
+      {% empty %}
+      <tr><td colspan="5" class="an-empty"><span class="material-icons">mic_off</span>Sin datos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{{ top_artistas|json_script:"d_art" }}
+{% endblock %}
+
+{% block analitica_js %}
+<script>
+(function(){
+  const data = JSON.parse(document.getElementById('d_art').textContent);
+  new Chart(document.getElementById('chartArt'), {
+    type: 'bar',
+    data: { labels: data.map(d=>d.Artista),
+            datasets: [
+              { label:'Reproducciones', data:data.map(d=>d.Reproducciones), backgroundColor: window.AN_PALETTE[0], borderRadius:6 },
+              { label:'Oyentes únicos', data:data.map(d=>d.OyentesUnicos),  backgroundColor: window.AN_PALETTE[6], borderRadius:6 },
+            ] },
+    options: { indexAxis:'y', maintainAspectRatio:false },
+  });
+})();
+</script>
+{% endblock %}

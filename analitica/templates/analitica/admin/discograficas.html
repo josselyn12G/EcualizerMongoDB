@@ -1,0 +1,55 @@
+{% extends "analitica/admin/_base_analitica.html" %}
+
+{% block title %}Analítica · Discográficas — Ecualizer{% endblock %}
+{% block topbar_title %}Comercial · Discográficas{% endblock %}
+{% block breadcrumb %}Admin / Comercial / Discográficas{% endblock %}
+{% block nav_comercial_open %}open{% endblock %}
+{% block nav_discograficas %}active{% endblock %}
+
+{% block content %}
+
+<div class="an-grid an-grid--kpis" style="margin-bottom:1rem;">
+  <div class="kpi-card">
+    <div class="kpi-card__icon"><span class="material-icons">domain</span></div>
+    <div class="kpi-card__label">Discográficas</div>
+    <div class="kpi-card__value">{{ kpis.TotalDiscograficas|default:0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(34,197,94,0.13);color:#22c55e;"><span class="material-icons">handshake</span></div>
+    <div class="kpi-card__label">Artistas contratados</div>
+    <div class="kpi-card__value">{{ kpis.ArtistasContratados|default:0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(59,130,246,0.13);color:#3b82f6;"><span class="material-icons">verified</span></div>
+    <div class="kpi-card__label">Contratos activos</div>
+    <div class="kpi-card__value">{{ kpis.Activos|default:0 }}</div>
+  </div>
+</div>
+
+<div class="chart-card">
+  <div class="chart-card__head">
+    <div class="chart-card__title"><span class="material-icons">domain</span> Listado</div>
+    <a href="{% url 'industria:discografica_create' %}" class="btn-new">
+      <span class="material-icons">add</span> Nueva
+    </a>
+  </div>
+  <form method="get" style="display:flex; gap:0.5rem; margin-bottom:0.85rem;">
+    <input name="q" value="{{ q|default:'' }}" class="form-control filter-input" placeholder="Buscar por nombre…" style="flex:1;">
+    <button class="btn-filter">Buscar</button>
+  </form>
+  <table class="an-table">
+    <thead><tr><th>ID</th><th>Nombre</th><th>País</th><th>Correo</th><th>Tel</th><th class="num">Contratos</th><th class="num">Activos</th></tr></thead>
+    <tbody>
+      {% for d in discograficas %}
+      <tr><td>#{{ d.idDiscografica }}</td><td><strong style="color:var(--text);">{{ d.nombreDiscografica }}</strong></td>
+          <td>{{ d.paisOrigen|default:"—" }}</td><td>{{ d.correoContacto }}</td><td>{{ d.telefonoContacto }}</td>
+          <td class="num">{{ d.TotalContratos }}</td>
+          <td class="num accent">{{ d.ContratosActivos }}</td></tr>
+      {% empty %}
+      <tr><td colspan="7" class="an-empty"><span class="material-icons">domain_disabled</span>Sin discográficas registradas.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "industria/admin/_base_industria.html" %}
+
+{% block title %}Discográficas — Ecualizer Admin{% endblock %}
+{% block topbar_title %}Comercial · Discográficas{% endblock %}
+{% block breadcrumb %}Admin / Comercial / Discográficas{% endblock %}
+{% block nav_comercial_open %}open{% endblock %}
+{% block nav_discograficas %}active{% endblock %}
+
+{% block content %}
+
+<div class="chart-card">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">domain</span> Discográficas registradas
+    </div>
+    <a href="{% url 'industria:discografica_create' %}" class="btn-new">
+      <span class="material-icons">add</span> Nueva
+    </a>
+  </div>
+
+  <form method="get" style="display:flex; gap:0.5rem; margin-bottom:0.85rem;">
+    <input name="q" value="{{ q|default:'' }}" class="form-control filter-input"
+           placeholder="Buscar por nombre..." style="flex:1;">
+    <button class="btn-filter">Buscar</button>
+  </form>
+
+  <table class="an-table">
+    <thead>
+      <tr>
+        <th>ID</th><th>Nombre</th><th>País</th><th>Correo</th><th>Teléfono</th>
+        <th class="num">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in discograficas %}
+      <tr>
+        <td>#{{ d.id_discografica }}</td>
+        <td><strong>{{ d.nombre_discografica }}</strong></td>
+        <td>{{ d.pais_origen|default:"—" }}</td>
+        <td>{{ d.correo_contacto }}</td>
+        <td>{{ d.telefono_contacto }}</td>
+        <td class="num" style="white-space:nowrap;">
+          <a href="{% url 'industria:discografica_update' d.pk %}" class="btn-action btn-action--editar">Editar</a>
+          <form method="post" action="{% url 'industria:discografica_delete' d.pk %}" style="display:inline;"
+                onsubmit="return confirm('¿Eliminar esta discográfica?');">
+            {% csrf_token %}
+            <button type="submit" class="btn-action btn-action--eliminar">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="an-empty">
+        <span class="material-icons">domain_disabled</span>
+        Sin discográficas registradas.
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

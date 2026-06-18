@@ -1,0 +1,396 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Mi Panel — Ecualizer{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'usuarios/oyente_panel.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <style>
+    .bg-image { background-image: url("{% static 'img/FondoDashboard.png' %}"); }
+
+    /* ── Notificaciones estilo Facebook ───────────────────── */
+    .notif { position: relative; }
+    .notif__btn { position: relative; }
+    .notif__badge {
+      position: absolute; top: -4px; right: -4px;
+      min-width: 18px; height: 18px; padding: 0 5px;
+      background: #ef4444; color: #fff;
+      border-radius: 9px; font-size: 0.68rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.35);
+      font-family: 'Inter', sans-serif;
+    }
+    .notif__panel {
+      position: absolute; top: calc(100% + 10px); right: 0;
+      width: 360px; max-width: calc(100vw - 32px);
+      background: rgba(22, 22, 26, 0.98);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      box-shadow: 0 18px 48px rgba(0,0,0,0.5);
+      backdrop-filter: blur(22px);
+      overflow: hidden; z-index: 1000;
+      opacity: 0; transform: translateY(-8px) scale(0.98);
+      pointer-events: none; transition: opacity 0.18s ease, transform 0.18s ease;
+      font-family: 'Inter', sans-serif;
+    }
+    .notif.open .notif__panel { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+    .notif__head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-weight: 700; color: #fff; font-size: 0.95rem;
+    }
+    .notif__count { font-size: 0.72rem; font-weight: 600; color: #f97316; }
+    .notif__list { max-height: 380px; overflow-y: auto; }
+    .notif__item {
+      display: flex; gap: 0.7rem; align-items: flex-start;
+      padding: 0.8rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05);
+      transition: background 0.15s;
+    }
+    .notif__item:hover { background: rgba(255,255,255,0.04); }
+    .notif__ico {
+      flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(249,115,22,0.18); color: #f97316;
+    }
+    .notif__item--renovacion .notif__ico { background: rgba(59,130,246,0.18); color: #3b82f6; }
+    .notif__ico .material-icons { font-size: 1.15rem; }
+    .notif__body { min-width: 0; }
+    .notif__title { color: #fff; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.1rem; }
+    .notif__msg { color: rgba(255,255,255,0.72); font-size: 0.8rem; line-height: 1.4; }
+    .notif__date { color: rgba(255,255,255,0.4); font-size: 0.7rem; margin-top: 0.25rem; }
+    .notif__empty {
+      padding: 2rem 1rem; text-align: center; color: rgba(255,255,255,0.5);
+    }
+    .notif__empty .material-icons { font-size: 2rem; opacity: 0.6; }
+    .notif__empty p { font-size: 0.85rem; margin-top: 0.4rem; }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- Fondo borroso -->
+<div class="bg-image"></div>
+<div class="bg-overlay"></div>
+
+<div class="panel-layout">
+
+  <!-- ══ SIDEBAR — Estilo Apple Music ══════════════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <img src="{% static 'img/EcualizerLogo.png' %}" alt="Ecualizer" class="sidebar-logo__img">
+      <span class="sidebar-logo__text">Ecua<strong>lizer</strong></span>
+    </div>
+
+    <!-- Buscador -->
+    <div class="sb-search-wrap">
+      <div class="sb-search">
+        <span class="material-icons sb-search__icon">search</span>
+        <input class="sb-search__input" type="text" placeholder="Buscar...">
+      </div>
+    </div>
+
+    <!-- Nav plana -->
+    <nav class="sidebar-nav">
+      <div class="sb-bottom">
+      <a href="{% url 'dashboard_oyente' %}"
+         class="sb-item {% block nav_inicio %}{% endblock %}">
+        <span class="material-icons">home</span>
+        <span class="sb-item__label">Inicio</span>
+      </a>
+
+      <a href="{% url 'para_ti' %}" class="sb-item {% block nav_para_ti %}{% endblock %}">
+        <span class="material-icons">auto_awesome</span>
+        <span class="sb-item__label">Para Ti</span>
+      </a>
+
+      <a href="{% url 'explorar' %}" class="sb-item {% block nav_explorar %}{% endblock %}">
+        <span class="material-icons">explore</span>
+        <span class="sb-item__label">Explorar</span>
+      </a>
+
+      <a href="{% url 'tendencias' %}" class="sb-item {% block nav_tendencias %}{% endblock %}">
+        <span class="material-icons">trending_up</span>
+        <span class="sb-item__label">Tendencias</span>
+      </a>
+
+      <a href="{% url 'novedades' %}" class="sb-item {% block nav_novedades %}{% endblock %}">
+        <span class="material-icons">new_releases</span>
+        <span class="sb-item__label">Novedades</span>
+      </a>
+
+      <!-- Divisor Biblioteca -->
+      <div class="sb-divider"></div>
+
+      <a href="{% url 'catalogo:usuario_album_list' %}"
+         class="sb-item {% block nav_albumes %}{% endblock %}">
+        <span class="material-icons">album</span>
+        <span class="sb-item__label">Álbumes</span>
+      </a>
+
+      <a href="{% url 'catalogo:usuario_cancion_list' %}"
+         class="sb-item {% block nav_canciones %}{% endblock %}">
+        <span class="material-icons">music_note</span>
+        <span class="sb-item__label">Canciones</span>
+      </a>
+
+      <a href="{% url 'catalogo:usuario_artista_list' %}"
+         class="sb-item {% block nav_artistas %}{% endblock %}">
+        <span class="material-icons">mic</span>
+        <span class="sb-item__label">Artistas</span>
+      </a>
+
+      <a href="{% url 'biblioteca:mis_playlists' %}" class="sb-item {% block nav_playlists %}{% endblock %}">
+        <span class="material-icons">queue_music</span>
+        <span class="sb-item__label">Playlists</span>
+      </a>
+
+      <!-- ── Biblioteca · social ───────────────── -->
+      <div class="sb-divider"></div>
+
+      <a href="{% url 'biblioteca:mis_canciones_liked' %}"
+         class="sb-item {% block nav_mis_likes %}{% endblock %}">
+        <span class="material-icons">favorite</span>
+        <span class="sb-item__label">Canciones que me gustan</span>
+      </a>
+
+      <a href="{% url 'biblioteca:mis_artistas' %}"
+         class="sb-item {% block nav_mis_artistas %}{% endblock %}">
+        <span class="material-icons">favorite_border</span>
+        <span class="sb-item__label">Mis Artistas</span>
+      </a>
+
+      <a href="{% url 'biblioteca:mis_albumes' %}"
+         class="sb-item {% block nav_mis_albumes %}{% endblock %}">
+        <span class="material-icons">bookmark</span>
+        <span class="sb-item__label">Mis Álbumes</span>
+      </a>
+
+      <div class="sb-divider"></div>
+
+      <a href="{% url 'pagos:historial' %}" class="sb-item {% block nav_suscripcion %}{% endblock %}">
+        <span class="material-icons">card_membership</span>
+        <span class="sb-item__label">Suscripción</span>
+      </a>
+
+      <a href="{% url 'perfil_oyente' %}" class="sb-item {% block nav_perfil %}{% endblock %}">
+        <span class="material-icons">person</span>
+        <span class="sb-item__label">Perfil</span>
+      </a>
+
+      <a href="{% url 'configuracion_oyente' %}" class="sb-item {% block nav_configuracion %}{% endblock %}">
+        <span class="material-icons">settings</span>
+        <span class="sb-item__label">Configuración</span>
+      </a>
+       </div>
+    </nav>
+
+    <!-- Footer usuario -->
+    <div class="sidebar-footer">
+      {% if persona %}
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">{{ persona.primer_nombre|first|upper }}</div>
+        <div class="sidebar-user__info">
+          <div class="sidebar-user__name">
+            {% if perfil and perfil.alias %}{{ perfil.alias }}{% else %}{{ persona.primer_nombre }}{% endif %}
+          </div>
+          <div class="sidebar-user__role">&#127911; Oyente</div>
+        </div>
+      </div>
+      {% endif %}
+      <a href="{% url 'logout' %}" class="sidebar-logout">
+        <span class="material-icons">logout</span>
+        <span>Cerrar sesión</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ══ CONTENIDO PRINCIPAL ══════════════════════════ -->
+  <div class="main-wrapper">
+
+    <!-- Topbar glass -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="sidebar-toggle" id="sidebarToggle" type="button">
+          <span class="material-icons">menu</span>
+        </button>
+        <div>
+          <h1 class="topbar__title">{% block topbar_title %}Mi Panel{% endblock %}</h1>
+          <div class="topbar__breadcrumb">{% block breadcrumb %}Inicio{% endblock %}</div>
+        </div>
+      </div>
+      <div class="topbar__right">
+        <div class="notif" id="notifWrap">
+          <button class="topbar-icon-btn notif__btn" id="notifBtn" type="button" title="Notificaciones" aria-haspopup="true" aria-expanded="false">
+            <span class="material-icons">{% if notif_count %}notifications_active{% else %}notifications_none{% endif %}</span>
+            {% if notif_count %}<span class="notif__badge">{{ notif_count }}</span>{% endif %}
+          </button>
+
+          <div class="notif__panel" id="notifPanel" role="menu">
+            <div class="notif__head">
+              <span>Notificaciones</span>
+              {% if notif_count %}<span class="notif__count">{{ notif_count }} nueva{{ notif_count|pluralize }}</span>{% endif %}
+            </div>
+            <div class="notif__list">
+              {% for n in notificaciones %}
+              <div class="notif__item notif__item--{{ n.tipo }}">
+                <span class="notif__ico"><span class="material-icons">{{ n.icono }}</span></span>
+                <div class="notif__body">
+                  <div class="notif__title">{{ n.titulo }}</div>
+                  <div class="notif__msg">{{ n.mensaje }}</div>
+                  <div class="notif__date">{{ n.fecha_str }}</div>
+                </div>
+              </div>
+              {% empty %}
+              <div class="notif__empty">
+                <span class="material-icons">notifications_off</span>
+                <p>No tienes notificaciones por ahora.</p>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <button class="topbar-icon-btn" type="button" title="Buscar">
+          <span class="material-icons">search</span>
+        </button>
+        {% if persona %}
+        <div class="topbar-user">
+          <div class="topbar-avatar">{{ persona.primer_nombre|first|upper }}</div>
+          <span class="topbar-user__name">
+            {% if perfil and perfil.alias %}{{ perfil.alias }}{% else %}{{ persona.primer_nombre }}{% endif %}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- Flash messages -->
+    {% if messages %}
+    <div class="flash-bar">
+      {% for msg in messages %}
+      <div class="flash flash--{{ msg.tags|default:'info' }}">
+        <span class="material-icons flash__icon">
+          {% if msg.tags == 'success' %}check_circle{% elif msg.tags == 'error' or msg.tags == 'danger' %}error{% else %}info{% endif %}
+        </span>
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  const sidebar   = document.getElementById('sidebar');
+  const toggleBtn = document.getElementById('sidebarToggle');
+
+  toggleBtn.addEventListener('click', function () {
+    sidebar.classList.toggle('sidebar--collapsed');
+  });
+
+  // ── Buscador del sidebar: filtra los ítems al escribir ──
+  const searchInput = sidebar.querySelector('.sb-search__input');
+  if (searchInput) {
+    const items    = sidebar.querySelectorAll('.sidebar-nav .sb-item');
+    const dividers = sidebar.querySelectorAll('.sidebar-nav .sb-divider');
+
+    const applyFilter = function () {
+      const q = searchInput.value.toLowerCase().trim();
+      let anyMatch = false;
+
+      items.forEach(function (item) {
+        const lbl = item.querySelector('.sb-item__label');
+        const txt = lbl ? lbl.textContent.toLowerCase() : '';
+        const show = q === '' || txt.indexOf(q) !== -1;
+        item.style.display = show ? '' : 'none';
+        if (show) anyMatch = true;
+      });
+
+      // Ocultar divisores cuando se está buscando
+      dividers.forEach(function (d) {
+        d.style.display = q === '' ? '' : 'none';
+      });
+
+      // Mostrar / ocultar el mensaje "sin resultados"
+      let empty = sidebar.querySelector('.sb-empty');
+      if (q !== '' && !anyMatch) {
+        if (!empty) {
+          empty = document.createElement('div');
+          empty.className = 'sb-empty';
+          empty.textContent = 'Sin resultados';
+          sidebar.querySelector('.sidebar-nav').appendChild(empty);
+        }
+        empty.style.display = '';
+      } else if (empty) {
+        empty.style.display = 'none';
+      }
+    };
+
+    searchInput.addEventListener('input', applyFilter);
+    searchInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        searchInput.value = '';
+        applyFilter();
+        searchInput.blur();
+      }
+    });
+
+    // Si el sidebar se colapsa, limpiar el filtro
+    toggleBtn.addEventListener('click', function () {
+      if (sidebar.classList.contains('sidebar--collapsed') && searchInput.value) {
+        searchInput.value = '';
+        applyFilter();
+      }
+    });
+  }
+
+  // Auto-ocultar flash messages
+  setTimeout(function () {
+    document.querySelectorAll('.flash-bar').forEach(function (el) {
+      el.style.opacity = '0';
+      el.style.transition = 'opacity 0.4s';
+      setTimeout(function () { el.remove(); }, 400);
+    });
+  }, 4000);
+
+  // ── Panel de notificaciones (estilo Facebook) ──
+  const notifWrap = document.getElementById('notifWrap');
+  const notifBtn  = document.getElementById('notifBtn');
+  if (notifWrap && notifBtn) {
+    notifBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      const open = notifWrap.classList.toggle('open');
+      notifBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    // Cerrar al hacer clic fuera del panel
+    document.addEventListener('click', function (e) {
+      if (!notifWrap.contains(e.target)) {
+        notifWrap.classList.remove('open');
+        notifBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+    // Cerrar con la tecla Escape
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        notifWrap.classList.remove('open');
+        notifBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+})();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

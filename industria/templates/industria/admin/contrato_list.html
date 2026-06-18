@@ -1,0 +1,74 @@
+{% extends "industria/admin/_base_industria.html" %}
+
+{% block title %}Contratos — Ecualizer Admin{% endblock %}
+{% block topbar_title %}Comercial · Contratos{% endblock %}
+{% block breadcrumb %}Admin / Comercial / Contratos{% endblock %}
+{% block nav_comercial_open %}open{% endblock %}
+{% block nav_contratos %}active{% endblock %}
+
+{% block content %}
+
+<div class="chart-card">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">description</span> Contratos con discográficas
+    </div>
+    <a href="{% url 'industria:contrato_create' %}" class="btn-new">
+      <span class="material-icons">add</span> Nuevo contrato
+    </a>
+  </div>
+
+  <div class="an-tabs" style="margin-bottom:0.85rem;">
+    <a href="?"                  class="an-tab {% if not estado_sel %}active{% endif %}">Todos</a>
+    <a href="?estado=Activo"     class="an-tab {% if estado_sel == 'Activo' %}active{% endif %}">Activos</a>
+    <a href="?estado=Cancelado"  class="an-tab {% if estado_sel == 'Cancelado' %}active{% endif %}">Cancelados</a>
+    <a href="?estado=Finalizado" class="an-tab {% if estado_sel == 'Finalizado' %}active{% endif %}">Finalizados</a>
+  </div>
+
+  <table class="an-table">
+    <thead>
+      <tr>
+        <th>#</th><th>Artista</th><th>Discográfica</th>
+        <th>Inicio</th><th>Fin</th>
+        <th class="num">% Artista</th><th class="num">% Disco</th>
+        <th>Estado</th><th class="num">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in contratos %}
+      <tr>
+        <td>#{{ c.id_contrato }}</td>
+        <td>{{ c.artista.nombre_artistico }}</td>
+        <td>{{ c.discografica.nombre_discografica }}</td>
+        <td>{{ c.fecha_inicio|date:"d/m/Y" }}</td>
+        <td>{{ c.fecha_fin|date:"d/m/Y"|default:"—" }}</td>
+        <td class="num">{{ c.porcentaje_artista|floatformat:1 }}%</td>
+        <td class="num">{{ c.porcentaje_discografica|floatformat:1 }}%</td>
+        <td>
+          {% if c.estado_contrato == 'Activo' %}
+            <span style="color:#22c55e; font-weight:600;">● Activo</span>
+          {% elif c.estado_contrato == 'Cancelado' %}
+            <span style="color:#ef4444; font-weight:600;">● Cancelado</span>
+          {% else %}
+            <span style="color:#94a3b8; font-weight:600;">● Finalizado</span>
+          {% endif %}
+        </td>
+        <td class="num" style="white-space:nowrap;">
+          <a href="{% url 'industria:contrato_update' c.artista_id c.discografica_id c.id_contrato %}" class="btn-action btn-action--editar">Editar</a>
+          <form method="post" action="{% url 'industria:contrato_delete' c.artista_id c.discografica_id c.id_contrato %}" style="display:inline;"
+                onsubmit="return confirm('¿Eliminar este contrato?');">
+            {% csrf_token %}
+            <button type="submit" class="btn-action btn-action--eliminar">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="9" class="an-empty">
+        <span class="material-icons">description</span> Sin contratos.
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

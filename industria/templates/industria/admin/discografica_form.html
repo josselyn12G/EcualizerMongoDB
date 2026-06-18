@@ -1,0 +1,40 @@
+{% extends "industria/admin/_base_industria.html" %}
+
+{% block title %}{% if modo == 'create' %}Nueva Discográfica{% else %}Editar Discográfica{% endif %} — Ecualizer{% endblock %}
+{% block topbar_title %}Comercial · Discográficas{% endblock %}
+{% block breadcrumb %}Admin / Comercial / Discográficas{% endblock %}
+{% block nav_comercial_open %}open{% endblock %}
+{% block nav_discograficas %}active{% endblock %}
+
+{% block content %}
+
+<div class="chart-card" style="max-width:720px;">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">domain</span>
+      {% if modo == 'create' %}Nueva discográfica{% else %}Editar: {{ obj.nombre_discografica }}{% endif %}
+    </div>
+    <a href="{% url 'industria:discografica_list' %}" class="btn-cancel">Volver</a>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    {% for field in form %}
+      <div style="margin-bottom:1rem;">
+        <label class="kpi-card__label" style="display:block; margin-bottom:0.4rem;">{{ field.label }}</label>
+        {{ field }}
+        {% for e in field.errors %}<div style="color:#ef4444; font-size:0.78rem; margin-top:0.3rem;">{{ e }}</div>{% endfor %}
+        {% if field.help_text %}<small style="color:rgba(255,255,255,0.4); font-size:0.74rem;">{{ field.help_text }}</small>{% endif %}
+      </div>
+    {% endfor %}
+    <div style="display:flex; gap:0.5rem; margin-top:1.25rem;">
+      <button type="submit" class="btn-new">
+        <span class="material-icons">save</span>
+        {% if modo == 'create' %}Crear{% else %}Guardar cambios{% endif %}
+      </button>
+      <a href="{% url 'industria:discografica_list' %}" class="btn-cancel">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "analitica/admin/_base_analitica.html" %}
+
+{% block title %}Comercial · Planes — Ecualizer{% endblock %}
+{% block topbar_title %}Comercial · Planes{% endblock %}
+{% block breadcrumb %}Admin / Comercial / Planes{% endblock %}
+{% block nav_comercial_open %}open{% endblock %}
+{% block nav_planes %}active{% endblock %}
+
+{% block content %}
+
+<div class="an-grid an-grid--kpis" style="margin-bottom:1rem;">
+  <div class="kpi-card">
+    <div class="kpi-card__icon"><span class="material-icons">card_membership</span></div>
+    <div class="kpi-card__label">Suscripciones vigentes</div>
+    <div class="kpi-card__value">{{ kpis.Vigentes|default:0 }}</div>
+    <div class="kpi-card__sub">{{ kpis.UsuariosConPlanVigente|default:0 }} usuarios distintos</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(34,197,94,0.13);color:#22c55e;"><span class="material-icons">autorenew</span></div>
+    <div class="kpi-card__label">Renovación automática</div>
+    <div class="kpi-card__value">{{ kpis.ConRenovacionAutomatica|default:0 }}</div>
+    <div class="kpi-card__sub">De las vigentes</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(239,68,68,0.13);color:#ef4444;"><span class="material-icons">timer_off</span></div>
+    <div class="kpi-card__label">Vencidas</div>
+    <div class="kpi-card__value">{{ kpis.Vencidas|default:0 }}</div>
+    <div class="kpi-card__sub">Activas con fecha pasada</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(148,163,184,0.13);color:#94a3b8;"><span class="material-icons">history</span></div>
+    <div class="kpi-card__label">Total histórico</div>
+    <div class="kpi-card__value">{{ kpis.TotalHistorico|default:0 }}</div>
+  </div>
+</div>
+
+<div class="an-grid an-grid--two" style="margin-bottom:1rem;">
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title">
+        <span class="material-icons">card_membership</span> Catálogo de planes
+      </div>
+    </div>
+    <table class="an-table">
+      <thead>
+        <tr>
+          <th>ID</th><th>Plan</th><th>Duración</th>
+          <th class="num">Precio</th>
+          <th class="num">Vigentes</th>
+          <th class="num">Total hist.</th>
+          <th class="num">Ingresos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in planes %}
+        <tr>
+          <td>#{{ p.idTipoPlan }}</td>
+          <td><strong style="color:var(--text);">{{ p.nombrePlan }}</strong>
+            {% if p.descripcionPlan %}<div style="font-size:0.74rem; color:var(--text-muted);">{{ p.descripcionPlan|truncatechars:60 }}</div>{% endif %}
+          </td>
+          <td>{{ p.duracion }}</td>
+          <td class="num">${{ p.precio|floatformat:2 }}</td>
+          <td class="num accent">{{ p.SuscripcionesActivas }}</td>
+          <td class="num">{{ p.TotalSuscripciones }}</td>
+          <td class="num">${{ p.IngresosGenerados|floatformat:2 }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7" class="an-empty">
+          <span class="material-icons">card_membership</span>
+          No hay planes registrados.
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title">
+        <span class="material-icons">pie_chart</span> Distribución de suscriptores
+      </div>
+      <span class="chart-card__hint">vigentes por plan</span>
+    </div>
+    <div class="chart-card__body chart-card__body--lg">
+      <canvas id="chartPlanes"></canvas>
+    </div>
+  </div>
+</div>
+
+{{ distribucion_planes|json_script:"d_planes" }}
+{% endblock %}
+
+{% block analitica_js %}
+<script>
+(function(){
+  const data = JSON.parse(document.getElementById('d_planes').textContent);
+  const C = window.AN_PALETTE;
+  new Chart(document.getElementById('chartPlanes'), {
+    type: 'doughnut',
+    data: {
+      labels:   data.map(p => p.Plan),
+      datasets: [{ data: data.map(p => p.Suscriptores), backgroundColor: C, borderWidth: 0 }],
+    },
+    options: { maintainAspectRatio: false, cutout: '55%' },
+  });
+})();
+</script>
+{% endblock %}

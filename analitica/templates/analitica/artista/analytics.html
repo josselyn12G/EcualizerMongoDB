@@ -1,0 +1,332 @@
+{% extends "analitica/artista/_base_analitica_artista.html" %}
+{% load static %}
+
+{% block title %}Analytics — Ecualizer{% endblock %}
+{% block topbar_title %}Analytics{% endblock %}
+{% block breadcrumb %}Artista / Analytics{% endblock %}
+{% block nav_analytics %}active{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+  /* Mini-filtros embebidos en chart-card__head */
+  .mini-filter {
+    display: inline-flex; gap: 0.35rem; align-items: center;
+    flex-wrap: wrap;
+  }
+  .mini-filter select,
+  .mini-filter input {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    padding: 0.3rem 0.55rem;
+    color: #fff; font-size: 0.78rem;
+  }
+  .mini-filter input { width: 90px; }
+  .mini-filter input[type="date"] { width: 140px; }
+  .mini-filter .btn-mini {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff; font-weight: 600; border: none;
+    border-radius: 6px; padding: 0.35rem 0.7rem;
+    display: inline-flex; align-items: center; gap: 0.2rem;
+    cursor: pointer; font-size: 0.76rem;
+  }
+  .mini-filter .btn-mini .material-icons { font-size: 0.95rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# 1. OYENTES MENSUALES — filtro: mes + año #}
+<div class="chart-card" style="margin-bottom:1rem;">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">people</span>
+      Oyentes únicos · crecimiento mensual
+    </div>
+    <form method="get" class="mini-filter">
+      <input type="hidden" name="top_periodo" value="{{ filtros.top_periodo }}">
+      <input type="hidden" name="geo_periodo" value="{{ filtros.geo_periodo }}">
+      <input type="hidden" name="rep_periodo" value="{{ filtros.rep_periodo }}">
+      {% if filtros.rep_album %}<input type="hidden" name="rep_album" value="{{ filtros.rep_album }}">{% endif %}
+      <label style="font-size:0.7rem; color:rgba(255,255,255,0.5);">Mes</label>
+      <input type="number" name="oy_mes" min="1" max="12" value="{{ filtros.oy_mes }}">
+      <label style="font-size:0.7rem; color:rgba(255,255,255,0.5);">Año</label>
+      <input type="number" name="oy_anio" min="2000" max="2100" value="{{ filtros.oy_anio }}">
+      <button type="submit" class="btn-mini">
+        <span class="material-icons">search</span> Aplicar
+      </button>
+    </form>
+  </div>
+  <div class="chart-card__hint" style="margin-bottom:0.7rem;">
+    SP: <code style="color:#fb923c;">Analitica.sp_OyentesMensualesCrecimiento</code>
+    · período: {{ oyentes_kpi.label|default:"—" }}
+  </div>
+
+  <div class="an-grid an-grid--equal-3">
+    <div class="kpi-card">
+      <div class="kpi-card__icon"><span class="material-icons">person</span></div>
+      <div class="kpi-card__label">Oyentes únicos · mes</div>
+      <div class="kpi-card__value">{{ oyentes_kpi.mes|default:0 }}</div>
+      <div class="kpi-card__sub">{{ oyentes_kpi.label|default:"—" }}</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__icon"><span class="material-icons">history</span></div>
+      <div class="kpi-card__label">Mes anterior</div>
+      <div class="kpi-card__value">{{ oyentes_kpi.anterior|default:0 }}</div>
+      <div class="kpi-card__sub">Comparativo</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-card__icon" style="background:rgba(34,197,94,0.13); color:#22c55e;">
+        <span class="material-icons">trending_up</span>
+      </div>
+      <div class="kpi-card__label">Crecimiento</div>
+      <div class="kpi-card__value">
+        {% if oyentes_kpi.pct >= 0 %}+{% endif %}{{ oyentes_kpi.pct|default:0 }}%
+      </div>
+      <div class="kpi-card__sub">vs mes anterior</div>
+      {% if oyentes_kpi.pct is not None %}
+      <span class="kpi-card__trend {% if oyentes_kpi.pct >= 0 %}trend-up{% else %}trend-down{% endif %}">
+        <span class="material-icons">{% if oyentes_kpi.pct >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
+        {% if oyentes_kpi.pct >= 0 %}+{% endif %}{{ oyentes_kpi.pct }}%
+      </span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{# 2. TOP 10 — filtro: periodo (mes / año) #}
+<div class="chart-card" style="margin-bottom:1rem;">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">leaderboard</span>
+      Top 10 canciones · {{ filtros.top_periodo }}
+    </div>
+    <form method="get" class="mini-filter">
+      <input type="hidden" name="geo_periodo" value="{{ filtros.geo_periodo }}">
+      <input type="hidden" name="rep_periodo" value="{{ filtros.rep_periodo }}">
+      {% if filtros.rep_album %}<input type="hidden" name="rep_album" value="{{ filtros.rep_album }}">{% endif %}
+      <input type="hidden" name="oy_mes" value="{{ filtros.oy_mes }}">
+      <input type="hidden" name="oy_anio" value="{{ filtros.oy_anio }}">
+      <select name="top_periodo">
+        <option value="mes" {% if filtros.top_periodo == 'mes' %}selected{% endif %}>Último mes</option>
+        <option value="año" {% if filtros.top_periodo == 'año' %}selected{% endif %}>Último año</option>
+      </select>
+      <button type="submit" class="btn-mini">
+        <span class="material-icons">search</span> Buscar
+      </button>
+    </form>
+  </div>
+  <div class="chart-card__hint" style="margin-bottom:0.7rem;">
+    SP: <code style="color:#fb923c;">Analitica.sp_Top10CancionesArtista</code>
+    · período: {{ filtros.top_periodo }}
+  </div>
+  <div class="an-grid an-grid--equal-2">
+    <div class="chart-card__body chart-card__body--lg" style="min-height:320px;">
+      {% if top10 %}
+        <canvas id="chartTop10"></canvas>
+      {% else %}
+        <div class="an-empty"><span class="material-icons">music_off</span>Sin datos para el periodo.</div>
+      {% endif %}
+    </div>
+    <div style="overflow:auto; max-height:360px;">
+      <table class="an-table">
+        <thead><tr><th>#</th><th>Canción</th><th>Álbum</th><th class="num">Reprods</th></tr></thead>
+        <tbody>
+          {% for r in top10 %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ r.Cancion }}</td>
+            <td>{{ r.Album }}</td>
+            <td class="num accent">{{ r.TotalReproducciones }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="an-empty">Sin datos.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# 3. DISTRIBUCIÓN GEOGRÁFICA — filtro: periodo #}
+<div class="chart-card" style="margin-bottom:1rem;">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">public</span>
+      Distribución geográfica · {{ filtros.geo_periodo }}
+    </div>
+    <form method="get" class="mini-filter">
+      <input type="hidden" name="top_periodo" value="{{ filtros.top_periodo }}">
+      <input type="hidden" name="rep_periodo" value="{{ filtros.rep_periodo }}">
+      {% if filtros.rep_album %}<input type="hidden" name="rep_album" value="{{ filtros.rep_album }}">{% endif %}
+      <input type="hidden" name="oy_mes" value="{{ filtros.oy_mes }}">
+      <input type="hidden" name="oy_anio" value="{{ filtros.oy_anio }}">
+      <select name="geo_periodo">
+        <option value="semana" {% if filtros.geo_periodo == 'semana' %}selected{% endif %}>Última semana</option>
+        <option value="mes"    {% if filtros.geo_periodo == 'mes'    %}selected{% endif %}>Último mes</option>
+        <option value="año"    {% if filtros.geo_periodo == 'año'    %}selected{% endif %}>Último año</option>
+        <option value="todo"   {% if filtros.geo_periodo == 'todo'   %}selected{% endif %}>Histórico</option>
+      </select>
+      <button type="submit" class="btn-mini">
+        <span class="material-icons">search</span> Buscar
+      </button>
+    </form>
+  </div>
+  <div class="chart-card__hint" style="margin-bottom:0.7rem;">
+    SP: <code style="color:#fb923c;">Analitica.sp_DistribucionGeograficaArtista</code>
+    · período: {{ filtros.geo_periodo }}
+  </div>
+  <div class="an-grid an-grid--equal-2">
+    <div class="chart-card__body chart-card__body--lg" style="min-height:320px;">
+      {% if geografia %}
+        <canvas id="chartGeo"></canvas>
+      {% else %}
+        <div class="an-empty"><span class="material-icons">map</span>Sin datos para el periodo.</div>
+      {% endif %}
+    </div>
+    <div style="overflow:auto; max-height:360px;">
+      <table class="an-table">
+        <thead><tr><th>País</th><th class="num">Reprods</th><th class="num">%</th></tr></thead>
+        <tbody>
+          {% for r in geografia %}
+          <tr>
+            <td>{{ r.Pais|default:"—" }}</td>
+            <td class="num">{{ r.TotalReproducciones }}</td>
+            <td class="num accent">{{ r.Porcentaje }}%</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="3" class="an-empty">Sin datos.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# 4. REPRODUCCIONES POR CANCIÓN — filtros: periodo + álbum #}
+<div class="chart-card">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">queue_music</span>
+      Reproducciones por canción
+    </div>
+    <form method="get" class="mini-filter">
+      <input type="hidden" name="top_periodo" value="{{ filtros.top_periodo }}">
+      <input type="hidden" name="geo_periodo" value="{{ filtros.geo_periodo }}">
+      <input type="hidden" name="oy_mes" value="{{ filtros.oy_mes }}">
+      <input type="hidden" name="oy_anio" value="{{ filtros.oy_anio }}">
+      <select name="rep_periodo">
+        <option value="semana" {% if filtros.rep_periodo == 'semana' %}selected{% endif %}>Última semana</option>
+        <option value="mes"    {% if filtros.rep_periodo == 'mes'    %}selected{% endif %}>Último mes</option>
+        <option value="año"    {% if filtros.rep_periodo == 'año'    %}selected{% endif %}>Último año</option>
+        <option value="todo"   {% if filtros.rep_periodo == 'todo'   %}selected{% endif %}>Histórico</option>
+      </select>
+      <select name="rep_album">
+        <option value="">— Todos los álbumes —</option>
+        {% for a in albumes %}
+        <option value="{{ a.id_album }}"
+          {% if filtros.rep_album == a.id_album %}selected{% endif %}>
+          {{ a.titulo_album }}
+        </option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn-mini">
+        <span class="material-icons">search</span> Buscar
+      </button>
+    </form>
+  </div>
+  <div class="chart-card__hint" style="margin-bottom:0.7rem;">
+    SP: <code style="color:#fb923c;">Analitica.sp_ReporteReproduccionesPorCancion</code>
+    · período: {{ filtros.rep_periodo }}
+    {% if filtros.rep_album %}· álbum filtrado{% else %}· todos los álbumes{% endif %}
+  </div>
+  <table class="an-table">
+    <thead>
+      <tr>
+        <th>Canción</th>
+        <th>Álbum</th>
+        <th class="num">Reproducciones</th>
+        <th class="num">Oyentes únicos</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in repros_cancion %}
+      <tr>
+        <td>{{ r.Cancion }}</td>
+        <td>{{ r.Album }}</td>
+        <td class="num">{{ r.TotalReproducciones }}</td>
+        <td class="num accent">{{ r.OyentesUnicos }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="an-empty"><span class="material-icons">music_off</span>Sin datos para el filtro.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block analitica_js %}
+{{ top10|json_script:"data-top10" }}
+{{ geografia|json_script:"data-geo" }}
+<script>
+(function () {
+  function safeJSON(id) {
+    const el = document.getElementById(id);
+    if (!el) return [];
+    try { return JSON.parse(el.textContent); } catch (e) { return []; }
+  }
+
+  const top10 = safeJSON('data-top10');
+  const geo   = safeJSON('data-geo');
+
+  const canvasT = document.getElementById('chartTop10');
+  if (canvasT && top10.length) {
+    new Chart(canvasT, {
+      type: 'bar',
+      data: {
+        labels:   top10.map(d => d.Cancion || ''),
+        datasets: [{
+          label: 'Reproducciones',
+          data: top10.map(d => d.TotalReproducciones || 0),
+          backgroundColor: AN_PALETTE,
+          borderRadius: 6, borderSkipped: false,
+        }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 } },
+          y: { ticks: { autoSkip: false } },
+        },
+      },
+    });
+  }
+
+  const canvasG = document.getElementById('chartGeo');
+  if (canvasG && geo.length) {
+    new Chart(canvasG, {
+      type: 'doughnut',
+      data: {
+        labels:   geo.map(d => d.Pais || 'Desconocido'),
+        datasets: [{
+          data: geo.map(d => d.TotalReproducciones || 0),
+          backgroundColor: AN_PALETTE,
+          borderColor: 'rgba(0,0,0,0.2)', borderWidth: 2,
+        }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '60%',
+        plugins: { legend: { position: 'right' } },
+      },
+    });
+  }
+})();
+</script>
+{% endblock %}

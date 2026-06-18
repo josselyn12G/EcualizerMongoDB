@@ -1,0 +1,137 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+
+{% block title %}Mi Panel — Ecualizer{% endblock %}
+{% block topbar_title %}Mi Panel{% endblock %}
+{% block breadcrumb %}Inicio{% endblock %}
+{% block nav_inicio %}active{% endblock %}
+
+{% block content %}
+<div class="d-grid">
+
+  <!-- COLUMNA PRINCIPAL -->
+  <div class="d-main">
+
+    <div class="section-intro">
+      <div>
+        <div class="section-tag">¿Qué está sonando?</div>
+        <h2 class="section-title">Tendencias</h2>
+      </div>
+      <a href="{% url 'tendencias' %}" class="section-more">
+        Ver más <span class="material-icons">chevron_right</span>
+      </a>
+    </div>
+
+    {% include "usuarios/oyente/components/welcome_banner.html" %}
+
+    {% if plan_activo == 'Free' %}
+    <!-- BANNER ANUNCIO FREE - llamativo -->
+    <div style="margin: 1rem 0; border-radius: 14px; overflow: hidden; position: relative;">
+      <div style="background: linear-gradient(90deg, #1a1a1a 0%, #2a1a0a 100%); border: 1px solid rgba(249,115,22,0.4); padding: 1rem 1.25rem; display:flex; align-items:center; gap:1rem;">
+        <div style="width:48px; height:48px; background:rgba(249,115,22,0.2); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <span class="material-icons" style="color:#f97316; font-size:1.5rem;">campaign</span>
+        </div>
+        <div style="flex:1;">
+          <div style="color:#fff; font-weight:700; font-size:0.95rem;">Publicidad — Mejora tu experiencia con Ecualizer Premium</div>
+          <div style="color:rgba(255,255,255,0.5); font-size:0.78rem; margin-top:0.2rem;">Sin anuncios · Descargas · Alta calidad · Desde $4.99/mes</div>
+        </div>
+        <a href="{% url 'pagos:historial' %}" style="background:#f97316; color:#fff; border-radius:50px; padding:0.5rem 1.25rem; font-size:0.82rem; font-weight:700; text-decoration:none; white-space:nowrap; flex-shrink:0;">
+          Ver planes
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    {% include "usuarios/oyente/components/recent_activity.html" %}
+
+  </div>
+
+  <!-- COLUMNA DERECHA -->
+  <aside class="d-right">
+
+    <div class="rs-block">
+      <div class="rs-header">
+        <span class="rs-title">Accesos Rápidos</span>
+        <a href="{% url 'explorar' %}" class="rs-see-all">Ver todo</a>
+      </div>
+      <div class="played-list">
+        <a href="{% url 'para_ti' %}" class="played-item">
+          <div class="played-cover"><span class="material-icons">auto_awesome</span></div>
+          <div class="played-info">
+            <div class="played-name">Recomendaciones</div>
+            <div class="played-sub">Basadas en tus gustos</div>
+          </div>
+          <span class="material-icons played-arrow">chevron_right</span>
+        </a>
+        <a href="{% url 'tendencias' %}" class="played-item">
+          <div class="played-cover"><span class="material-icons">trending_up</span></div>
+          <div class="played-info">
+            <div class="played-name">Tendencias</div>
+            <div class="played-sub">Lo más escuchado hoy</div>
+          </div>
+          <span class="material-icons played-arrow">chevron_right</span>
+        </a>
+        <a href="{% url 'biblioteca:mis_albumes' %}" class="played-item">
+          <div class="played-cover"><span class="material-icons">library_music</span></div>
+          <div class="played-info">
+            <div class="played-name">Mi Biblioteca</div>
+            <div class="played-sub">Tus álbumes guardados</div>
+          </div>
+          <span class="material-icons played-arrow">chevron_right</span>
+        </a>
+        <a href="{% url 'biblioteca:mis_canciones_liked' %}" class="played-item">
+          <div class="played-cover"><span class="material-icons">favorite</span></div>
+          <div class="played-info">
+            <div class="played-name">Favoritas</div>
+            <div class="played-sub">{{ stats.canciones_favoritas|default:"0" }} canciones</div>
+          </div>
+          <span class="material-icons played-arrow">chevron_right</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Promo / Suscripción -->
+    <div class="promo-card">
+      <span class="material-icons promo-card__icon">
+        {% if plan_activo == 'Free' %}workspace_premium{% else %}headphones{% endif %}
+      </span>
+      <div class="promo-card__title">
+        {% if plan_activo == 'Free' %}
+          ¡Actualiza tu plan!
+        {% else %}
+          Plan {{ plan_activo }}
+        {% endif %}
+      </div>
+      <div class="promo-card__sub">
+        {% if plan_activo == 'Free' %}
+          Estás en el plan gratuito. Mejora para disfrutar sin anuncios.
+        {% else %}
+          Disfruta de música sin límites con tu plan activo.
+        {% endif %}
+      </div>
+      <a href="{% url 'pagos:historial' %}" class="promo-card__link">
+        {% if plan_activo == 'Free' %}Ver planes{% else %}Gestionar suscripción{% endif %}
+        <span class="material-icons">arrow_outward</span>
+      </a>
+    </div>
+
+  </aside>
+
+</div>
+
+<!-- Modal descarga (solo premium) -->
+<div id="modal-descarga" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:2.5rem; max-width:380px; width:90%; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+    <span class="material-icons" style="font-size:3.5rem; color:#22c55e; margin-bottom:1rem; display:block;">check_circle</span>
+    <h3 style="color:#fff; font-size:1.4rem; font-weight:800; margin-bottom:0.5rem;">Descargado correctamente</h3>
+    <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin-bottom:1.5rem;">Tu música está lista para escuchar sin conexión.</p>
+    <button onclick="document.getElementById('modal-descarga').style.display='none'"
+            style="background:#f97316; color:#fff; border:none; border-radius:50px; padding:0.7rem 2rem; font-size:0.9rem; font-weight:700; cursor:pointer;">
+      Aceptar
+    </button>
+  </div>
+</div>
+
+{# Player flotante (Deezer preview) — habilita reproducir desde el historial #}
+{% include "catalogo/usuario/_player.html" %}
+
+{% endblock %}

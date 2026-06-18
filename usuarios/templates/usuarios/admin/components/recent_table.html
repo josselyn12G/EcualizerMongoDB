@@ -1,0 +1,42 @@
+<!-- Componente: Tabla de últimos registros -->
+<div class="panel-card">
+  <div class="panel-card__header">
+    <div>
+      <div class="panel-card__title">Últimos Registros</div>
+      <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.15rem;">
+        Usuarios que se han unido recientemente
+      </div>
+    </div>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Correo</th>
+        <th>Fecha registro</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in recientes %}
+      <tr>
+        <td class="id-col">#{{ p.id_usuario }}</td>
+        <td class="name-col">{{ p.primer_nombre }} {{ p.primer_apellido }}</td>
+        <td>{{ p.correo }}</td>
+        <td>{{ p.fecha_registro|date:"d/m/Y"|default:"&mdash;" }}</td>
+        <td><span class="badge badge--{{ p.estado }}">{{ p.estado|capfirst }}</span></td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5">
+          <div class="empty-state">
+            <div class="empty-icon">&#128101;</div>
+            <p>No hay registros aún.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

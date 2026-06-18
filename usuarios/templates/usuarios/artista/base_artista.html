@@ -1,0 +1,243 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Panel Artista — Ecualizer{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'usuarios/artista_panel.css' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="panel-layout">
+
+  <!-- ══ SIDEBAR — Plano estilo Apple Music ════════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <img src="{% static 'img/EcualizerLogo.png' %}" alt="Ecualizer" class="sidebar-logo__img">
+    </div>
+
+    <!-- Buscador -->
+    <div class="sb-search-wrap">
+      <div class="sb-search">
+        <span class="material-icons sb-search__icon">search</span>
+        <input class="sb-search__input" type="text" placeholder="Buscar...">
+      </div>
+    </div>
+
+    <!-- Nav plana -->
+    <nav class="sidebar-nav">
+
+      <a href="{% url 'dashboard_artista' %}"
+         class="sb-item {% block nav_dashboard %}{% endblock %}">
+        <span class="material-icons">dashboard</span>
+        <span class="sb-item__label">Dashboard</span>
+      </a>
+
+      <a href="#" class="sb-item {% block nav_inicio %}{% endblock %}">
+        <span class="material-icons">home</span>
+        <span class="sb-item__label">Inicio</span>
+      </a>
+
+      <a href="{% url 'catalogo:artista_album_list' %}"
+         class="sb-item {% block nav_catalogo %}{% endblock %}">
+        <span class="material-icons">library_music</span>
+        <span class="sb-item__label">Mi Catálogo</span>
+      </a>
+
+      <a href="{% url 'catalogo:artista_cancion_list' %}"
+         class="sb-item {% block nav_canciones %}{% endblock %}">
+        <span class="material-icons">music_note</span>
+        <span class="sb-item__label">Mis Canciones</span>
+      </a>
+
+      <a href="{% url 'artista_analytics' %}"
+         class="sb-item {% block nav_analytics %}{% endblock %}">
+        <span class="material-icons">bar_chart</span>
+        <span class="sb-item__label">Analítica</span>
+      </a>
+
+      <div class="sb-divider"></div>
+
+      <a href="{% url 'artista_monetizacion' %}"
+         class="sb-item {% block nav_monetizacion %}{% endblock %}">
+        <span class="material-icons">payments</span>
+        <span class="sb-item__label">Monetización</span>
+      </a>
+
+      <a href="{% url 'artista_contratos' %}"
+         class="sb-item {% block nav_contratos %}{% endblock %}">
+        <span class="material-icons">description</span>
+        <span class="sb-item__label">Contratos</span>
+      </a>
+
+      <div class="sb-divider"></div>
+
+      <a href="{% url 'perfil_artista' %}" class="sb-item {% block nav_perfil %}{% endblock %}">
+        <span class="material-icons">person</span>
+        <span class="sb-item__label">Perfil</span>
+      </a>
+
+      <a href="{% url 'configuracion_artista' %}" class="sb-item {% block nav_configuracion %}{% endblock %}">
+        <span class="material-icons">settings</span>
+        <span class="sb-item__label">Configuración</span>
+      </a>
+
+    </nav>
+
+    <!-- Footer usuario -->
+    <div class="sidebar-footer">
+      {% if persona %}
+      <div class="sidebar-user">
+        <div class="sidebar-avatar">{{ persona.primer_nombre|first|upper }}</div>
+        <div class="sidebar-user__info">
+          <div class="sidebar-user__name">
+            {% if perfil and perfil.nombre_artistico %}{{ perfil.nombre_artistico }}{% else %}{{ persona.primer_nombre }}{% endif %}
+          </div>
+          <div class="sidebar-user__role">&#127908; Artista</div>
+        </div>
+      </div>
+      {% endif %}
+      <a href="{% url 'logout' %}" class="sidebar-logout">
+        <span class="material-icons">logout</span>
+        <span>Cerrar sesión</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ══ CONTENIDO PRINCIPAL ══════════════════════════ -->
+  <div class="main-wrapper">
+
+    <!-- Topbar glass -->
+    <header class="topbar">
+      <div class="topbar__left">
+        <button class="sidebar-toggle" id="sidebarToggle" type="button">
+          <span class="material-icons">menu</span>
+        </button>
+        <div>
+          <h1 class="topbar__title">{% block topbar_title %}Dashboard{% endblock %}</h1>
+          <div class="topbar__breadcrumb">{% block breadcrumb %}Artista / Dashboard{% endblock %}</div>
+        </div>
+      </div>
+      <div class="topbar__right">
+        <div class="topbar-search">
+          <span class="material-icons topbar-search__icon">search</span>
+          <input class="topbar-search__input" type="text" placeholder="Buscar canciones, álbumes...">
+        </div>
+        <button class="topbar-icon-btn" type="button" title="Notificaciones">
+          <span class="material-icons">notifications_none</span>
+          <span class="topbar-icon-btn__dot"></span>
+        </button>
+        {% if persona %}
+        <div class="topbar-user">
+          <div class="topbar-avatar">{{ persona.primer_nombre|first|upper }}</div>
+          <span class="topbar-user__name">
+            {% if perfil and perfil.nombre_artistico %}{{ perfil.nombre_artistico }}{% else %}{{ persona.primer_nombre }}{% endif %}
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- Flash messages -->
+    {% if messages %}
+    <div class="flash-bar">
+      {% for msg in messages %}
+      <div class="flash flash--{{ msg.tags|default:'info' }}">
+        <span class="material-icons flash__icon">
+          {% if msg.tags == 'success' %}check_circle{% elif msg.tags == 'error' or msg.tags == 'danger' %}error{% else %}info{% endif %}
+        </span>
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  const sidebar   = document.getElementById('sidebar');
+  const toggleBtn = document.getElementById('sidebarToggle');
+
+  toggleBtn.addEventListener('click', function () {
+    sidebar.classList.toggle('sidebar--collapsed');
+  });
+
+  // ── Buscador del sidebar: filtra los ítems ──
+  const searchInput = sidebar.querySelector('.sb-search__input');
+  if (searchInput) {
+    const items    = sidebar.querySelectorAll('.sidebar-nav .sb-item');
+    const dividers = sidebar.querySelectorAll('.sidebar-nav .sb-divider');
+
+    const applyFilter = function () {
+      const q = searchInput.value.toLowerCase().trim();
+      let anyMatch = false;
+
+      items.forEach(function (item) {
+        const lbl = item.querySelector('.sb-item__label');
+        const txt = lbl ? lbl.textContent.toLowerCase() : '';
+        const show = q === '' || txt.indexOf(q) !== -1;
+        item.style.display = show ? '' : 'none';
+        if (show) anyMatch = true;
+      });
+
+      dividers.forEach(function (d) {
+        d.style.display = q === '' ? '' : 'none';
+      });
+
+      let empty = sidebar.querySelector('.sb-empty');
+      if (q !== '' && !anyMatch) {
+        if (!empty) {
+          empty = document.createElement('div');
+          empty.className = 'sb-empty';
+          empty.textContent = 'Sin resultados';
+          sidebar.querySelector('.sidebar-nav').appendChild(empty);
+        }
+        empty.style.display = '';
+      } else if (empty) {
+        empty.style.display = 'none';
+      }
+    };
+
+    searchInput.addEventListener('input', applyFilter);
+    searchInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        searchInput.value = '';
+        applyFilter();
+        searchInput.blur();
+      }
+    });
+
+    toggleBtn.addEventListener('click', function () {
+      if (sidebar.classList.contains('sidebar--collapsed') && searchInput.value) {
+        searchInput.value = '';
+        applyFilter();
+      }
+    });
+  }
+
+  // Auto-ocultar flash
+  setTimeout(function () {
+    document.querySelectorAll('.flash-bar').forEach(function (el) {
+      el.style.opacity = '0';
+      el.style.transition = 'opacity 0.4s';
+      setTimeout(function () { el.remove(); }, 400);
+    });
+  }, 4000);
+})();
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

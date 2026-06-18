@@ -1,0 +1,136 @@
+{% extends "analitica/admin/_base_analitica.html" %}
+
+{% block title %}Analítica · Reproducciones — Ecualizer{% endblock %}
+{% block topbar_title %}Analítica · Reproducciones{% endblock %}
+{% block breadcrumb %}Admin / Analítica / Reproducciones{% endblock %}
+{% block nav_analitica_open %}open{% endblock %}
+{% block nav_an_reproducciones %}active{% endblock %}
+
+{% block content %}
+
+<div class="an-grid an-grid--kpis" style="margin-bottom:1rem;">
+  <div class="kpi-card">
+    <div class="kpi-card__icon"><span class="material-icons">play_circle</span></div>
+    <div class="kpi-card__label">Reproducciones · 30d</div>
+    <div class="kpi-card__value">{{ engagement.TotalReproducciones|default:0 }}</div>
+    <div class="kpi-card__sub">{{ engagement.CancionesUnicas|default:0 }} canciones únicas</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(34,197,94,0.13);color:#22c55e;"><span class="material-icons">timer</span></div>
+    <div class="kpi-card__label">Duración promedio</div>
+    <div class="kpi-card__value">{{ engagement.DuracionPromedioSeg|default:0|floatformat:0 }}s</div>
+    <div class="kpi-card__sub">Por reproducción</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(239,68,68,0.13);color:#ef4444;"><span class="material-icons">skip_next</span></div>
+    <div class="kpi-card__label">Skip rate</div>
+    <div class="kpi-card__value">{{ engagement.PorcentajeSkipRate|default:0 }}%</div>
+    <div class="kpi-card__sub">{{ engagement.TotalSaltadas|default:0 }} saltadas</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(59,130,246,0.13);color:#3b82f6;"><span class="material-icons">groups</span></div>
+    <div class="kpi-card__label">Oyentes únicos</div>
+    <div class="kpi-card__value">{{ engagement.OyentesUnicos|default:0 }}</div>
+  </div>
+</div>
+
+<!-- Filtro días -->
+<div class="an-tabs" style="margin-bottom:1rem;">
+  <a href="?dias=7"   class="an-tab {% if dias == 7   %}active{% endif %}">7 días</a>
+  <a href="?dias=14"  class="an-tab {% if dias == 14  %}active{% endif %}">14 días</a>
+  <a href="?dias=30"  class="an-tab {% if dias == 30  %}active{% endif %}">30 días</a>
+  <a href="?dias=60"  class="an-tab {% if dias == 60  %}active{% endif %}">60 días</a>
+  <a href="?dias=90"  class="an-tab {% if dias == 90  %}active{% endif %}">90 días</a>
+  <a href="?dias=180" class="an-tab {% if dias == 180 %}active{% endif %}">180 días</a>
+  <a href="?dias=365" class="an-tab {% if dias == 365 %}active{% endif %}">365 días</a>
+</div>
+
+<div class="an-grid an-grid--two" style="margin-bottom:1rem;">
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">show_chart</span> Reproducciones · últimos {{ dias }} días</div>
+    </div>
+    <div class="chart-card__body chart-card__body--lg">
+      <canvas id="chartDias"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">public</span> Top países</div>
+    </div>
+    <div class="chart-card__body chart-card__body--lg">
+      <canvas id="chartPaises"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="chart-card" style="margin-bottom:1rem;">
+  <div class="chart-card__head">
+    <div class="chart-card__title"><span class="material-icons">schedule</span> Reproducciones por hora del día</div>
+  </div>
+  <div class="chart-card__body chart-card__body--lg">
+    <canvas id="chartHora"></canvas>
+  </div>
+</div>
+
+<div class="chart-card">
+  <div class="chart-card__head">
+    <div class="chart-card__title"><span class="material-icons">table_view</span> Detalle por país</div>
+  </div>
+  <table class="an-table">
+    <thead><tr><th>País</th><th class="num">Reproducciones</th><th class="num">Oyentes únicos</th></tr></thead>
+    <tbody>
+      {% for p in top_paises %}
+      <tr><td>{{ p.Pais }}</td><td class="num accent">{{ p.Reproducciones }}</td><td class="num">{{ p.OyentesUnicos }}</td></tr>
+      {% empty %}
+      <tr><td colspan="3" class="an-empty"><span class="material-icons">map</span>Sin datos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{{ serie_dias|json_script:"d_dias" }}
+{{ serie_hora|json_script:"d_hora" }}
+{{ top_paises|json_script:"d_paises" }}
+{% endblock %}
+
+{% block analitica_js %}
+<script>
+(function(){
+  const $ = id => JSON.parse(document.getElementById(id).textContent);
+  const C = window.AN_PALETTE;
+
+  const dias = $('d_dias');
+  new Chart(document.getElementById('chartDias'), {
+    type: 'line',
+    data: { labels: dias.map(d=>d.Fecha),
+            datasets: [
+              { label:'Reproducciones', data:dias.map(d=>d.Reproducciones),
+                borderColor:C[0], backgroundColor:'rgba(249,115,22,0.18)',
+                fill:true, tension:0.35, borderWidth:2 },
+              { label:'Oyentes únicos', data:dias.map(d=>d.OyentesUnicos),
+                borderColor:C[6], backgroundColor:'rgba(34,197,94,0.10)',
+                fill:false, tension:0.35, borderWidth:2, borderDash:[4,4] },
+            ] },
+    options: { maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } },
+  });
+
+  const paises = $('d_paises');
+  new Chart(document.getElementById('chartPaises'), {
+    type: 'doughnut',
+    data: { labels: paises.map(p=>p.Pais),
+            datasets: [{ data: paises.map(p=>p.Reproducciones), backgroundColor: C, borderWidth:0 }] },
+    options: { maintainAspectRatio:false, cutout:'55%' },
+  });
+
+  const hora = $('d_hora');
+  new Chart(document.getElementById('chartHora'), {
+    type: 'bar',
+    data: { labels: hora.map(h=>h.Hora+'h'),
+            datasets: [{ label:'Reproducciones', data:hora.map(h=>h.Reproducciones),
+                         backgroundColor: C[0], borderRadius:6 }] },
+    options: { maintainAspectRatio:false, plugins:{ legend:{display:false} } },
+  });
+})();
+</script>
+{% endblock %}

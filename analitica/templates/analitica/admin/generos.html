@@ -1,0 +1,73 @@
+{% extends "analitica/admin/_base_analitica.html" %}
+
+{% block title %}Analítica · Géneros — Ecualizer{% endblock %}
+{% block topbar_title %}Analítica · Géneros{% endblock %}
+{% block breadcrumb %}Admin / Analítica / Géneros{% endblock %}
+{% block nav_analitica_open %}open{% endblock %}
+{% block nav_an_generos %}active{% endblock %}
+
+{% block content %}
+
+<div class="an-grid an-grid--equal-2">
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">graphic_eq</span> Reproducciones por género</div>
+    </div>
+    <div class="chart-card__body chart-card__body--lg">
+      <canvas id="chartGen"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">pie_chart</span> Distribución</div>
+    </div>
+    <div class="chart-card__body chart-card__body--lg">
+      <canvas id="chartGenPie"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="chart-card" style="margin-top:1rem;">
+  <div class="chart-card__head">
+    <div class="chart-card__title"><span class="material-icons">table_view</span> Detalle</div>
+  </div>
+  <table class="an-table">
+    <thead><tr><th>Género</th><th class="num">Canciones</th><th class="num">Reproducciones</th></tr></thead>
+    <tbody>
+      {% for g in top_generos %}
+      <tr><td>{{ g.Genero }}</td><td class="num">{{ g.Canciones }}</td>
+          <td class="num accent">{{ g.Reproducciones }}</td></tr>
+      {% empty %}
+      <tr><td colspan="3" class="an-empty"><span class="material-icons">music_off</span>Sin datos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{{ top_generos|json_script:"d_gen" }}
+{% endblock %}
+
+{% block analitica_js %}
+<script>
+(function(){
+  const data = JSON.parse(document.getElementById('d_gen').textContent);
+  const C = window.AN_PALETTE;
+
+  new Chart(document.getElementById('chartGen'), {
+    type: 'bar',
+    data: { labels: data.map(d=>d.Genero),
+            datasets: [{ label:'Reproducciones', data:data.map(d=>d.Reproducciones),
+                         backgroundColor: C, borderRadius:6 }] },
+    options: { indexAxis:'y', maintainAspectRatio:false, plugins:{legend:{display:false}} },
+  });
+
+  new Chart(document.getElementById('chartGenPie'), {
+    type: 'doughnut',
+    data: { labels: data.map(d=>d.Genero),
+            datasets: [{ data: data.map(d=>d.Reproducciones), backgroundColor: C, borderWidth:0 }] },
+    options: { maintainAspectRatio:false, cutout:'55%' },
+  });
+})();
+</script>
+{% endblock %}

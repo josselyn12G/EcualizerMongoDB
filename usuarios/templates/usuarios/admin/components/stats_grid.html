@@ -1,0 +1,27 @@
+<!-- Componente: Tarjetas de estadísticas del dashboard admin -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="material-icons stat-card__icon">headphones</span>
+    <div class="stat-card__label">Oyentes</div>
+    <div class="stat-card__value">{{ stats.oyentes }}</div>
+    <div class="stat-card__sub">Cuentas registradas</div>
+  </div>
+  <div class="stat-card">
+    <span class="material-icons stat-card__icon">mic</span>
+    <div class="stat-card__label">Artistas</div>
+    <div class="stat-card__value">{{ stats.artistas }}</div>
+    <div class="stat-card__sub">Perfiles artísticos</div>
+  </div>
+  <div class="stat-card">
+    <span class="material-icons stat-card__icon">admin_panel_settings</span>
+    <div class="stat-card__label">Administradores</div>
+    <div class="stat-card__value">{{ stats.admins }}</div>
+    <div class="stat-card__sub">Cuentas admin</div>
+  </div>
+  <div class="stat-card">
+    <span class="material-icons stat-card__icon">verified_user</span>
+    <div class="stat-card__label">Activos</div>
+    <div class="stat-card__value" style="color:var(--orange)">{{ stats.activos }}</div>
+    <div class="stat-card__sub">Cuentas activas</div>
+  </div>
+</div>

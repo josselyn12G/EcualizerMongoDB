@@ -1,0 +1,50 @@
+{% extends "usuarios/admin/base_admin.html" %}
+{% block title %}Detalle Artista &mdash; Ecualizer Admin{% endblock %}
+{% block topbar_title %}Detalle de artista{% endblock %}
+{% block nav_artistas_users %}active{% endblock %}
+{% block nav_usuarios_open %}open{% endblock %}
+{% block breadcrumb %}Admin / <a href="{% url 'admin_artista_list' %}">Artistas</a> / Detalle{% endblock %}
+
+{% block content %}
+{% with p=artista.id_usuario %}
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start;">
+
+  <div class="edit-section">
+    <h2>Datos personales</h2>
+    <div class="detail-grid">
+      <div><div class="detail-item__label">ID</div><div class="detail-item__value">{{ p.id_usuario }}</div></div>
+      <div><div class="detail-item__label">Cedula</div><div class="detail-item__value">{{ p.cedula_usuario }}</div></div>
+      <div>
+        <div class="detail-item__label">Nombre completo</div>
+        <div class="detail-item__value">{{ p.primer_nombre }} {% if p.segundo_nombre %}{{ p.segundo_nombre }} {% endif %}{{ p.primer_apellido }}</div>
+      </div>
+      <div><div class="detail-item__label">Correo</div><div class="detail-item__value">{{ p.correo }}</div></div>
+      <div><div class="detail-item__label">Estado</div><div class="detail-item__value"><span class="badge badge--{{ p.estado }}">{{ p.estado|capfirst }}</span></div></div>
+      <div><div class="detail-item__label">Fecha de registro</div><div class="detail-item__value">{{ p.fecha_registro|date:"d/m/Y"|default:"&mdash;" }}</div></div>
+    </div>
+  </div>
+
+  <div class="edit-section">
+    <h2>Perfil artistico</h2>
+    <div class="detail-grid">
+      <div><div class="detail-item__label">Nombre artistico</div><div class="detail-item__value">{{ artista.nombre_artistico }}</div></div>
+    </div>
+    {% if artista.biografia %}
+    <div style="margin-top:1rem;">
+      <div class="detail-item__label">Biografia</div>
+      <p style="color:var(--text-secondary); font-size:.88rem; line-height:1.6; margin-top:.35rem;">{{ artista.biografia }}</p>
+    </div>
+    {% else %}
+    <p style="color:var(--text-muted); font-size:.82rem; margin-top:.75rem;">Sin biografia registrada.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+<div class="form-actions" style="margin-top:1.5rem;">
+  <a href="{% url 'admin_artista_edit' artista.pk %}"   class="btn-save">Editar</a>
+  <a href="{% url 'admin_artista_delete' artista.pk %}" class="btn-confirmar">Desactivar</a>
+  <a href="{% url 'admin_artista_list' %}"              class="btn-cancel">Volver</a>
+</div>
+{% endwith %}
+{% endblock %}

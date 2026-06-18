@@ -1,0 +1,461 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}">
+
+<section class="hero" id="hero">
+
+  <div class="hero-bg">
+    <img 
+      src="{% static 'img/FondoEcualizer.png' %}" 
+      alt="Fondo principal de Ecualizer"
+      class="hero-bg-img"
+    />
+    <div class="hero-bg-overlay"></div>
+    <div class="hero-fade-to-black" id="scrollOverlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000000; opacity: 0; pointer-events: none; z-index: 3; will-change: opacity;"></div>
+  </div>
+
+  <nav class="nav" id="navbar">
+    <div class="nav-logo">
+      <span class="nav-logo-text">Ecualizer</span>
+    </div>
+
+    <div class="nav-links">
+      <a href="#hero" class="nav-link-item">Inicio</a>
+      <a href="#techSection" class="nav-link-item">Acerca de</a>
+      <a href="#artistsSection" class="nav-link-item">Explorar</a>
+    </div>
+
+    <div class="nav-actions">
+      
+      <a href="{% url 'login' %}" class="btn-nav-login">Iniciar sesión</a>
+      <a href="{% url 'seleccionar_tipo' %}" class="btn-nav-get-in-touch">
+        Registrarse
+        <span class="btn-icon">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </a>
+    </div>
+  </nav>
+
+  <div class="hero-main-container">
+    <div class="hero-left">
+      <p class="hero-eyebrow">Tu universo musical empieza aquí</p>
+      <h1 class="hero-title">Accede ya<br>a Ecualizer</h1>
+    </div>
+
+    <div class="hero-right">
+      <h2 class="hero-statement">Descubre, organiza<br>y vive la música.</h2>
+      <p class="hero-description">
+        Gestiona usuarios, artistas, canciones, álbumes,<br>playlists y reproducciones en una sola plataforma.
+      </p>
+    </div>
+  </div>
+
+  <div class="hero-footer-grid">
+    <div class="grid-item">
+      <span class="grid-number"># 01</span>
+      <p class="grid-text">Gestión de usuarios</p>
+    </div>
+    <div class="grid-item">
+      <span class="grid-number"># 02</span>
+      <p class="grid-text">Catálogo musical</p>
+    </div>
+    <div class="grid-item">
+      <span class="grid-number"># 03</span>
+      <p class="grid-text">Playlists inteligentes</p>
+    </div>
+    <div class="grid-item">
+      <span class="grid-number"># 04</span>
+      <p class="grid-text">Reportes y analítica</p>
+    </div>
+  </div>
+
+</section>
+
+<section class="tech-info-section" id="techSection" style="background: transparent; position: relative; z-index: 5; padding: 6rem 2rem; text-align: center; max-width: 900px; margin: 0 auto; scroll-margin-top: 80px;">
+  <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 4rem;">
+    <h2 style="font-size: 2.2rem; font-weight: 700; color: #ffffff; letter-spacing: -1px; margin-bottom: 1.5rem;">Arquitectura e Integración</h2>
+    <p style="font-size: 1.2rem; color: #aaaaaa; line-height: 1.8; max-width: 750px; margin: 0 auto; font-weight: 300;">
+      Este proyecto fue creado con las tecnologías de vanguardia para el desarrollo web robusto, utilizando 
+      <strong style="color: #ffffff; font-weight: 500;">Django</strong> como framework principal en 
+      <strong style="color: #ffffff; font-weight: 500;">Python</strong> para una lógica de negocio ágil y segura, respaldado por un sistema de gestión de base de datos relacional potente mediante 
+      <strong style="color: #ffffff; font-weight: 500;">SQL Server</strong>.
+    </p>
+  </div>
+</section>
+
+<section class="music-showcase-section" style="background: transparent; position: relative; z-index: 5;">
+  
+  <div class="showcase-header">
+    <div class="music-icon-wrapper">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 18v-6a9 9 0 0 1 18 0v6M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+      </svg>
+    </div>
+    <h2 class="showcase-title">Sonidos que destacan</h2>
+  </div>
+
+  <div class="cards-carousel-container">
+    <div class="music-card card-outer-left" onclick="showMusicAlert('Cyber Pulse', 'Nuevo lanzamiento disponible en Ecualizer. Explora sonidos electrónicos, beats intensos y una experiencia envolvente.')">
+      <div class="card-image-wrapper">
+        <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=600" alt="Álbum Cyber Pulse">
+        <div class="card-hover-overlay"><span>Reprodúcelo ahora</span></div>
+      </div>
+    </div>
+
+    <div class="music-card card-inner-left" onclick="showMusicAlert('Neon Dreams', 'Una selección exclusiva de canciones para descubrir nuevas emociones en cada reproducción.')">
+      <div class="card-image-wrapper">
+        <img src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=600" alt="Álbum Neon Dreams">
+        <div class="card-hover-overlay"><span>Descubre este sonido</span></div>
+      </div>
+    </div>
+
+    <div class="music-card card-center" onclick="showMusicAlert('Hyper Horizon', 'Tu próxima experiencia musical ya está lista. Escucha, guarda y crea tu propia playlist.')">
+      <div class="card-image-wrapper">
+        <img src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=600" alt="Álbum Hyper Horizon">
+        <div class="card-hover-overlay"><span>Agrega a tu playlist</span></div>
+      </div>
+    </div>
+
+    <div class="music-card card-inner-right" onclick="showMusicAlert('Retro Future', 'Uno de los sonidos destacados de la semana dentro del universo Ecualizer.')">
+      <div class="card-image-wrapper">
+        <img src="https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?q=80&w=600" alt="Álbum Retro Future">
+        <div class="card-hover-overlay"><span>Explora nuevas frecuencias</span></div>
+      </div>
+    </div>
+
+    <div class="music-card card-outer-right" onclick="showMusicAlert('Echoes of Echo', 'Explora artistas emergentes, sonidos alternativos y nuevas tendencias musicales.')">
+      <div class="card-image-wrapper">
+        <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600" alt="Álbum Echoes of Echo">
+        <div class="card-hover-overlay"><span>Escucha algo diferente</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="showcase-footer">
+    <a href="#" class="btn-enter-store">Entrar al reproductor</a>
+  </div>
+
+</section>
+
+<section class="artists-section" id="artistsSection" style="position: relative; width: 100%; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 4rem 0 6rem 0; background: #000000; z-index: 6; overflow: hidden; scroll-margin-top: 20px;">
+  
+  <div class="artists-header" style="text-align: center; max-width: 700px; margin-bottom: 3rem; padding: 0 2rem; position: relative; z-index: 12;">
+    <h2 class="artists-main-title" style="font-size: 3rem; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 0.5rem; background: linear-gradient(180deg, #ffffff 0%, #888888 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Artistas que marcan tendencia</h2>
+    <p class="artists-subtitle" style="font-size: 1rem; color: #666666; letter-spacing: 0.5px;">Explora perfiles musicales y descubre nuevos sonidos dentro de Ecualizer.</p>
+  </div>
+
+  <div class="artists-stage" id="artistsStage" style="position: relative; width: 100%; height: 380px; display: flex; align-items: center; overflow: hidden; perspective: 1500px; -webkit-perspective: 1500px; z-index: 10; background: transparent;">
+    
+    <div class="artists-track" id="artistsTrack" style="display: flex; gap: 2rem; position: absolute; left: 0; will-change: transform; transform-style: preserve-3d;">
+      
+      <div class="artist-card-minimal" data-desc="R&B contemporáneo, sintetizadores vintage y texturas cinematográficas oscuras de Toronto.">
+        <div class="artist-img-wrapper">
+          <img src="https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=600" alt="The Weeknd">
+          <div class="artist-meta"><h3>The Weeknd</h3></div>
+        </div>
+      </div>
+
+      <div class="artist-card-minimal" data-desc="Fusión vanguardista de raíces flamencas, electrónica industrial y ritmos urbanos globales.">
+        <div class="artist-img-wrapper">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=600" alt="Rosalía">
+          <div class="artist-meta"><h3>Rosalía</h3></div>
+        </div>
+      </div>
+
+      <div class="artist-card-minimal" data-desc="Trap psicodélico, auto-tune atmosférico y producciones masivas diseñadas para alta energía.">
+        <div class="artist-img-wrapper">
+          <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=600" alt="Travis Scott">
+          <div class="artist-meta"><h3>Travis Scott</h3></div>
+        </div>
+      </div>
+
+      <div class="artist-card-minimal" data-desc="Diseño de sonido pop alternativo, minimalista, íntimo y líricas profundamente introspectivas.">
+        <div class="artist-img-wrapper">
+          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=600" alt="Billie Eilish">
+          <div class="artist-meta"><h3>Billie Eilish</h3></div>
+        </div>
+      </div>
+
+      <div class="artist-card-minimal" data-desc="Líder del nu-disco pop británico impulsado por líneas de bajo analógicas e himnos globales.">
+        <div class="artist-img-wrapper">
+          <img src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=600" alt="Dua Lipa">
+          <div class="artist-meta"><h3>Dua Lipa</h3></div>
+        </div>
+      </div>
+
+      <div class="artist-card-minimal" data-desc="Narrativas poéticas de la Costa Oeste combinadas con jazz experimental e impacto sociocultural.">
+        <div class="artist-img-wrapper">
+          <img src="https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?q=80&w=600" alt="Kendrick Lamar">
+          <div class="artist-meta"><h3>Kendrick Lamar</h3></div>
+        </div>
+      </div>
+
+      <div class="artist-card-minimal" data-desc="Pionero de la nueva ola del reggaetón y trap latino, rompiendo moldes de géneros e indumentaria.">
+        <div class="artist-img-wrapper">
+          <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=600" alt="Bad Bunny">
+          <div class="artist-meta"><h3>Bad Bunny</h3></div>
+        </div>
+      </div>
+
+      <div class="artist-card-minimal" data-desc="Composición narrativa icónica y redefinición constante de eras dentro del pop y folk contemporáneo.">
+        <div class="artist-img-wrapper">
+          <img src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?q=80&w=600" alt="Taylor Swift">
+          <div class="artist-meta"><h3>Taylor Swift</h3></div>
+        </div>
+      </div>
+
+      <div class="artist-card-minimal" data-desc="Fusión fluidas de hip-hop melódico, guitarras grunge, letras melancólicas y éxitos mundiales.">
+        <div class="artist-img-wrapper">
+          <img src="https://images.unsplash.com/photo-1621784563330-caee0b138a00?q=80&w=600" alt="Post Malone">
+          <div class="artist-meta"><h3>Post Malone</h3></div>
+        </div>
+      </div>
+
+      <div class="artist-card-minimal" data-desc="Excelencia vocal incomparable, performances conceptuales de vanguardia e historia del R&B moderno.">
+        <div class="artist-img-wrapper">
+          <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=600" alt="Beyoncé">
+          <div class="artist-meta"><h3>Beyoncé</h3></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="artist-global-description" id="artistGlobalDesc" style="margin-top: 3rem; min-height: 45px; text-align: center; max-width: 600px; padding: 0 2rem; font-size: 1rem; color: #666666; font-weight: 400; line-height: 1.6; letter-spacing: 0.3px; transition: opacity 0.3s ease, transform 0.3s ease; transform: translateY(5px); opacity: 0; position: relative; z-index: 12;">
+    Selecciona un artista para conocer su estilo musical.
+  </div>
+
+</section>
+
+<div class="music-modal" id="musicModal">
+  <div class="modal-content">
+    <h3 id="modalAlbumTitle">Lanzamiento destacado</h3>
+    <p id="modalDescription">Explora esta propuesta musical en Ecualizer.</p>
+    <button class="btn-close-modal" onclick="closeMusicModal()">Cerrar</button>
+  </div>
+</div>
+
+<a href="{% url 'admin_login' %}" class="btn-admin-small">
+       Soy administrador
+</a>  
+
+<style>
+  html {
+      scroll-behavior: smooth; /* Logra transiciones suaves al hacer clic en el menú */
+  }
+
+  .artist-card-minimal {
+      position: relative;
+      width: 180px;
+      height: 270px;
+      flex-shrink: 0;
+      transform-style: preserve-3d;
+      transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      will-change: transform;
+      cursor: pointer;
+  }
+
+  .artist-img-wrapper {
+      width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      background-color: #050505;
+  }
+
+  .artist-img-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: grayscale(100%);
+      opacity: 0.35;
+      transition: filter 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .artist-meta {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.5rem 1rem;
+      background: linear-gradient(to top, #000000 0%, transparent 100%);
+      transform: translateZ(15px);
+  }
+
+/* Contenedor para asegurar la posición fija */
+.admin-button-wrapper {
+  position: fixed;
+  bottom: 20px; /* Distancia desde abajo */
+  right: 20px;  /* Distancia desde la derecha */
+  z-index: 999; /* Para que siempre esté por encima de otros elementos */
+}
+
+/* Botón Soy Administrador - Posicionado y redimensionado */
+.btn-admin-small {
+  display: block;
+  width: auto;
+  min-width: 150px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.6); /* Fondo oscuro semitransparente para que resalte */
+  color: #ff4500;
+  border: 1.5px solid #ff4500;
+  border-radius: 50px;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  backdrop-filter: blur(5px); /* Efecto de vidrio (opcional) */
+}
+
+.btn-admin-small:hover {
+  background: #ff4500;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 69, 0, 0.4);
+}
+
+  .artist-meta h3 {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.55);
+      letter-spacing: -0.3px;
+      transition: color 0.3s;
+  }
+
+  .artist-card-minimal:hover img {
+      filter: grayscale(0%);
+      opacity: 1;
+      transform: scale(1.03);
+  }
+  .artist-card-minimal:hover .artist-meta h3 {
+      color: #ffffff;
+  }
+</style>
+
+<script src="{% static 'js/home.js' %}"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+      const stage = document.getElementById('artistsStage');
+      const track = document.getElementById('artistsTrack');
+      const textDisplay = document.getElementById('artistGlobalDesc');
+      const scrollOverlay = document.getElementById('scrollOverlay');
+      
+      if (!stage || !track || !textDisplay) return;
+
+      // ==========================================
+      // CONTROLADOR DINÁMICO DE OSCURIDAD EN SCROLL
+      // ==========================================
+      window.addEventListener('scroll', () => {
+          const scrollTop = window.scrollY;
+          const maxScroll = 750; 
+          let calculatedOpacity = scrollTop / maxScroll;
+          
+          if (calculatedOpacity > 1) calculatedOpacity = 1;
+          if (calculatedOpacity < 0) calculatedOpacity = 0;
+          
+          if (scrollOverlay) {
+              scrollOverlay.style.opacity = calculatedOpacity;
+          }
+      });
+
+      // 1. CLONACIÓN EXACTA PARA BUCLE INFINITO
+      const originalCards = Array.from(track.children);
+      originalCards.forEach(card => {
+          const clone = card.cloneNode(true);
+          track.appendChild(clone);
+      });
+
+      const allCards = Array.from(track.children);
+      
+      let currentX = 0;
+      let targetSpeed = 0.8; 
+      let currentSpeed = 0.8;
+
+      // 2. MEDICIÓN DINÁMICA DE ANCHOS REALES
+      const firstCardRect = originalCards[0].getBoundingClientRect();
+      const styleGap = parseFloat(window.getComputedStyle(track).gap) || 32;
+      const singleCardTotalWidth = firstCardRect.width + styleGap;
+      const singleSetWidth = originalCards.length * singleCardTotalWidth;
+
+      stage.addEventListener('mousemove', (e) => {
+          const rect = stage.getBoundingClientRect();
+          const normX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+          targetSpeed = normX * -7.0; 
+      });
+
+      stage.addEventListener('mouseleave', () => {
+          targetSpeed = 0.8;
+      });
+
+      // 3. ASIGNACIÓN DEL PANEL DE DESCRIPCIÓN INFERIOR GLOBAL
+      allCards.forEach((card) => {
+          const title = card.querySelector('h3').innerText;
+          const desc = card.getAttribute('data-desc') || "Artista destacado dentro de Ecualizer.";
+
+          card.addEventListener('mouseenter', () => {
+              textDisplay.style.opacity = '0';
+              textDisplay.style.transform = 'translateY(8px)';
+              
+              setTimeout(() => {
+                  textDisplay.innerHTML = `<strong style="color: #ffffff; font-weight: 600;">${title}</strong> — <span style="color: #aaaaaa;">${desc}</span>`;
+                  textDisplay.style.opacity = '1';
+                  textDisplay.style.transform = 'translateY(0px)';
+              }, 120);
+          });
+
+          card.addEventListener('mouseleave', () => {
+              textDisplay.style.opacity = '0';
+              textDisplay.style.transform = 'translateY(4px)';
+          });
+      });
+
+      // 4. CICLO DE ANIMACIÓN DE CINTA SIN MATRIZ ESTÁTICA
+      function renderInfinityLoop() {
+          currentSpeed += (targetSpeed - currentSpeed) * 0.07;
+          currentX += currentSpeed;
+
+          if (currentX <= -singleSetWidth) {
+              currentX += singleSetWidth;
+          } else if (currentX > 0) {
+              currentX -= singleSetWidth;
+          }
+
+          track.style.transform = `translateX(${currentX}px)`;
+
+          // 5. EFECTO DE PERSPECTIVA 3D CONTINUO
+          const stageRect = stage.getBoundingClientRect();
+          const stageCenter = stageRect.left + stageRect.width / 2;
+
+          allCards.forEach((card) => {
+              const cardRect = card.getBoundingClientRect();
+              const cardCenter = cardRect.left + cardRect.width / 2;
+              const distFromCenter = (cardCenter - stageCenter) / (stageRect.width / 2);
+
+              if (!card.matches(':hover')) {
+                  const rotateY = distFromCenter * -14;  
+                  const rotateZ = distFromCenter * 1.5;   
+                  const translateY = Math.abs(distFromCenter) * 10; 
+                  const scale = 1 - Math.abs(distFromCenter) * 0.04;
+
+                  card.style.transform = `scale(${scale}) translateY(${translateY}px) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
+              } else {
+                  card.style.transform = `scale(1.08) translateY(-12px) rotateY(0deg) rotateZ(0deg)`;
+              }
+          });
+
+          requestAnimationFrame(renderInfinityLoop);
+      }
+
+      requestAnimationFrame(renderInfinityLoop);
+  });
+</script>
+{% endblock %}

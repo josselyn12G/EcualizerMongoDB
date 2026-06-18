@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Registro &mdash; Ecualizer{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'usuarios/usuarios.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-card auth-card--wide">
+
+    <div class="brand">
+      <a href="/" class="brand-logo" style="text-decoration:none;">
+        <div class="brand-icon">&#127925;</div>
+        <span class="brand-name">Ecua<span>lizer</span></span>
+      </a>
+    </div>
+
+    <div class="steps-indicator">
+      <div class="step-dot" id="dot-1">1</div>
+      <div class="step-line" id="line-1"></div>
+      <div class="step-dot" id="dot-2">2</div>
+    </div>
+
+    {% block errors %}{% endblock %}
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% block form_steps %}{% endblock %}
+    </form>
+
+    <div class="auth-footer">
+      {% block footer_link %}
+        ¿Ya tienes cuenta? <a href="{% url 'login' %}">Inicia sesión</a>
+      {% endblock %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Inicialización de pasos
+  var pasoInicial = {{ paso_inicial|default:1 }};
+
+  function goToStep(n) {
+    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+    var currentStep = document.getElementById('step-' + n);
+    if(currentStep) currentStep.classList.add('active');
+    
+    var d1 = document.getElementById('dot-1'), d2 = document.getElementById('dot-2');
+    var l1 = document.getElementById('line-1');
+    if (n === 1) {
+      d1.className = 'step-dot active'; d2.className = 'step-dot'; l1.className = 'step-line';
+    } else {
+      d1.className = 'step-dot done'; d2.className = 'step-dot active'; l1.className = 'step-line done';
+    }
+  }
+
+  function nextStep() { goToStep(2); }
+  function prevStep() { goToStep(1); }
+
+  function togglePass(inputId, btnId) {
+    var inp = document.getElementById(inputId), btn = document.getElementById(btnId);
+    if(inp.type==='password'){inp.type='text';btn.style.color='var(--accent)';}
+    else{inp.type='password';btn.style.color='';}
+  }
+
+  // Ejecutar al cargar
+  document.addEventListener("DOMContentLoaded", function() {
+    goToStep(pasoInicial);
+  });
+</script>
+{% include "usuarios/_popups.html" %}
+{% block extra_js %}{% endblock %}
+</body>
+</html>

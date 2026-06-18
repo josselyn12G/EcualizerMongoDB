@@ -1,0 +1,166 @@
+{% extends "usuarios/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Tipos de Álbum — Admin{% endblock %}
+{% block topbar_title %}Tipos de Álbum{% endblock %}
+{% block breadcrumb %}Admin / Catálogo / Tipos de Álbum{% endblock %}
+{% block nav_tipos_album %}active{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+
+{% if modo == 'list' %}
+
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="mb-0">Tipos de Álbum</h3>
+      <small class="text-muted">Clasificación de álbumes (LP, EP, Single…)</small>
+    </div>
+    <a href="{% url 'catalogo:admin_tipo_album_create' %}" class="btn-new">
+      <span class="material-icons">add</span> Nuevo tipo
+    </a>
+  </div>
+
+  <!-- Buscador -->
+  <form method="get" class="panel-card" style="padding:1.25rem; margin-bottom:1.25rem;">
+    <div class="row g-2">
+      <div class="col-md-10">
+        <input type="text" name="q" class="filter-input form-control"
+               value="{{ busqueda }}" placeholder="Buscar por nombre…">
+      </div>
+      <div class="col-md-2 d-flex">
+        <button class="btn-filter w-100">Filtrar</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Tabla -->
+  <div class="panel-card" style="overflow-x:auto;">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Tipo</th>
+          <th>Descripción</th>
+          <th>Álbumes</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tipos %}
+        <tr>
+          <td class="id-col">#{{ t.idTipoAlbum }}</td>
+          <td class="name-col">
+            <span class="material-icons" style="font-size:0.95rem; vertical-align:middle; color:var(--orange);">category</span>
+            {{ t.nombreTipo }}
+          </td>
+          <td style="color: var(--text-muted); max-width: 340px;">
+            {{ t.descripcionTipo|default:"—"|truncatechars:80 }}
+          </td>
+          <td>
+            <span class="badge badge--activo">{{ t.totalAlbumes }} álbumes</span>
+          </td>
+          <td class="text-end">
+            <div class="action-btns justify-content-end">
+              <a href="{% url 'catalogo:admin_tipo_album_detail' t.idTipoAlbum %}"
+                 class="btn-action btn-action--ver">
+                <span class="material-icons" style="font-size:0.85rem; vertical-align:middle;">visibility</span> Ver
+              </a>
+              <a href="{% url 'catalogo:admin_tipo_album_update' t.idTipoAlbum %}"
+                 class="btn-action btn-action--editar">Editar</a>
+              <form method="post" action="{% url 'catalogo:admin_tipo_album_delete' t.idTipoAlbum %}"
+                    class="d-inline" onsubmit="return confirm('¿Eliminar el tipo &quot;{{ t.nombreTipo }}&quot;?');">
+                {% csrf_token %}
+                <button type="submit" class="btn-action btn-action--eliminar">Eliminar</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="empty-state">
+          <div class="empty-icon">&#128194;</div>
+          <p>No hay tipos de álbum registrados.</p>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+{% elif modo == 'create' or modo == 'update' %}
+
+  <div class="form-card">
+    <h3 class="mb-3">
+      {% if modo == 'create' %}Nuevo tipo de álbum{% else %}Editar tipo #{{ tipo.pk }}{% endif %}
+    </h3>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+      <div class="form-group">
+        <label class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+      </div>
+      {% endfor %}
+      <div class="form-actions">
+        <button type="submit" class="btn-save">
+          {% if modo == 'create' %}Crear{% else %}Guardar{% endif %}
+        </button>
+        <a href="{% url 'catalogo:admin_tipo_album_list' %}" class="btn-back">Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+{% elif modo == 'detail' %}
+
+  <div class="form-card" style="max-width: 720px;">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h3 class="mb-1">{{ tipo.nombre_tipo }}</h3>
+        <small class="text-muted">Tipo de álbum · ID #{{ tipo.pk }}</small>
+      </div>
+      <a href="{% url 'catalogo:admin_tipo_album_update' tipo.pk %}" class="btn-action btn-action--editar">
+        <span class="material-icons" style="font-size:0.9rem; vertical-align:middle;">edit</span> Editar
+      </a>
+    </div>
+
+    {% if tipo.descripcion_tipo %}
+    <div class="detail-field" style="margin-bottom:1.25rem;">
+      <div class="detail-label">Descripción</div>
+      <div class="detail-value" style="white-space:pre-wrap;">{{ tipo.descripcion_tipo }}</div>
+    </div>
+    {% endif %}
+
+    <h6 class="mt-4" style="color: var(--text-muted); text-transform: uppercase; font-size:0.75rem; letter-spacing:0.05em;">
+      Álbumes asociados ({{ albumes|length }})
+    </h6>
+    {% if albumes %}
+    <table class="data-table" style="margin-top: 0.5rem;">
+      <thead>
+        <tr><th>ID</th><th>Álbum</th><th>Artista</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        {% for a in albumes %}
+        <tr>
+          <td class="id-col">#{{ a.pk }}</td>
+          <td class="name-col">{{ a.titulo_album }}</td>
+          <td>{{ a.artista.nombre_artistico }}</td>
+          <td><span class="badge badge--{{ a.estado_album }}">{{ a.estado_album|capfirst }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted" style="font-style:italic;">Ningún álbum usa este tipo.</p>
+    {% endif %}
+
+    <div class="form-actions">
+      <a href="{% url 'catalogo:admin_tipo_album_list' %}" class="btn-back">Volver</a>
+    </div>
+  </div>
+
+{% endif %}
+
+{% endblock %}

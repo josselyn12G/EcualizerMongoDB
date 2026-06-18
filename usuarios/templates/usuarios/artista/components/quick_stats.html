@@ -1,0 +1,60 @@
+<!-- Estadísticas de Reproducción (glass cards) -->
+<section>
+  <div class="section-header">
+    <h3 class="section-title">
+      <span class="material-icons">insights</span>
+      Estadísticas de Reproducción
+    </h3>
+    <a href="#" class="section-link">
+      Analytics <span class="material-icons">chevron_right</span>
+    </a>
+  </div>
+
+  <div class="stats-grid">
+
+    <div class="stat-card">
+      <div class="stat-card__icon"><span class="material-icons">people</span></div>
+      <div class="stat-card__label">Oyentes Mensuales</div>
+      <div class="stat-card__value">{{ stats.oyentes_mensuales|default:"12.4K" }}</div>
+      <div class="stat-card__sub">Último mes</div>
+      <span class="stat-card__trend trend-up">
+        <span class="material-icons">trending_up</span>
+        +{{ stats.oyentes_trend|default:"18" }}%
+      </span>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card__icon"><span class="material-icons">play_circle</span></div>
+      <div class="stat-card__label">Reproducciones</div>
+      <div class="stat-card__value">{{ stats.reproducciones|default:"284K" }}</div>
+      <div class="stat-card__sub">Total acumuladas</div>
+      <span class="stat-card__trend trend-up">
+        <span class="material-icons">trending_up</span>
+        +{{ stats.repro_trend|default:"24" }}%
+      </span>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card__icon"><span class="material-icons">favorite</span></div>
+      <div class="stat-card__label">Likes / Favoritos</div>
+      <div class="stat-card__value">{{ stats.likes|default:"8.9K" }}</div>
+      <div class="stat-card__sub">Canciones guardadas</div>
+      <span class="stat-card__trend trend-up">
+        <span class="material-icons">trending_up</span>
+        +{{ stats.likes_trend|default:"12" }}%
+      </span>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-card__icon"><span class="material-icons">payments</span></div>
+      <div class="stat-card__label">Regalías del Mes</div>
+      <div class="stat-card__value">${{ stats.regalias_mes|default:"1,248" }}</div>
+      <div class="stat-card__sub">USD generados</div>
+      <span class="stat-card__trend {% if stats.regalias_trend >= 0 %}trend-up{% else %}trend-down{% endif %}">
+        <span class="material-icons">{% if stats.regalias_trend >= 0 %}trending_up{% else %}trending_down{% endif %}</span>
+        {% if stats.regalias_trend >= 0 %}+{% endif %}{{ stats.regalias_trend|default:"8" }}%
+      </span>
+    </div>
+
+  </div>
+</section>

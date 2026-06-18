@@ -1,0 +1,71 @@
+{% extends "usuarios/admin/base_admin.html" %}
+{% block title %}Detalle Oyente &mdash; Ecualizer Admin{% endblock %}
+{% block topbar_title %}Detalle de oyente{% endblock %}
+{% block nav_oyentes %}active{% endblock %}
+{% block breadcrumb %}Admin / <a href="{% url 'admin_oyente_list' %}">Oyentes</a> / Detalle{% endblock %}
+
+{% block content %}
+{% with p=oyente.id_usuario %}
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; align-items:start;">
+
+  <div class="edit-section">
+    <h2>Datos personales</h2>
+    <div class="detail-grid">
+      <div>
+        <div class="detail-item__label">ID</div>
+        <div class="detail-item__value">{{ p.id_usuario }}</div>
+      </div>
+      <div>
+        <div class="detail-item__label">Cedula</div>
+        <div class="detail-item__value">{{ p.cedula_usuario }}</div>
+      </div>
+      <div>
+        <div class="detail-item__label">Nombre completo</div>
+        <div class="detail-item__value">{{ p.primer_nombre }} {% if p.segundo_nombre %}{{ p.segundo_nombre }} {% endif %}{{ p.primer_apellido }}{% if p.segundo_apellido %} {{ p.segundo_apellido }}{% endif %}</div>
+      </div>
+      <div>
+        <div class="detail-item__label">Correo</div>
+        <div class="detail-item__value">{{ p.correo }}</div>
+      </div>
+      <div>
+        <div class="detail-item__label">Estado</div>
+        <div class="detail-item__value"><span class="badge badge--{{ p.estado }}">{{ p.estado|capfirst }}</span></div>
+      </div>
+      <div>
+        <div class="detail-item__label">Fecha de registro</div>
+        <div class="detail-item__value">{{ p.fecha_registro|date:"d/m/Y"|default:"&mdash;" }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="edit-section">
+    <h2>Perfil de oyente</h2>
+    <div class="detail-grid">
+      <div>
+        <div class="detail-item__label">Alias</div>
+        <div class="detail-item__value">{{ oyente.alias }}</div>
+      </div>
+      <div>
+        <div class="detail-item__label">Pais</div>
+        <div class="detail-item__value">{{ oyente.pais_usuario }}</div>
+      </div>
+      <div>
+        <div class="detail-item__label">Fecha de nacimiento</div>
+        <div class="detail-item__value">{{ oyente.fecha_nacimiento|date:"d/m/Y" }}</div>
+      </div>
+      <div>
+        <div class="detail-item__label">Genero</div>
+        <div class="detail-item__value">{{ oyente.get_genero_display }}</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="form-actions" style="margin-top:1.5rem;">
+  <a href="{% url 'admin_oyente_edit' oyente.pk %}"   class="btn-save">Editar</a>
+  <a href="{% url 'admin_oyente_delete' oyente.pk %}" class="btn-confirmar">Desactivar</a>
+  <a href="{% url 'admin_oyente_list' %}"             class="btn-cancel">Volver</a>
+</div>
+{% endwith %}
+{% endblock %}

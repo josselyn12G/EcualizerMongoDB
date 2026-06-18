@@ -1,0 +1,38 @@
+<!-- Hero Card — Gradient morado estilo Unity -->
+<div class="hero-card">
+  <div class="hero-card__content">
+    <span class="hero-card__tag">
+      <span class="material-icons">auto_awesome</span>
+      Mi Estudio
+    </span>
+    <h2 class="hero-card__title">
+      ¡Hola, {% if perfil and perfil.nombre_artistico %}{{ perfil.nombre_artistico }}{% else %}{{ persona.primer_nombre }}{% endif %}!
+    </h2>
+    <p class="hero-card__sub">
+      Gestiona tu música, analiza tu rendimiento y conecta con tu audiencia.
+      {% if perfil and perfil.genero_musical %}Géneros: {{ perfil.genero_musical }}.{% endif %}
+    </p>
+    <div class="hero-card__actions">
+      <button class="btn-hero">
+        <span class="material-icons">add</span>
+        Nuevo Lanzamiento
+      </button>
+      <button class="btn-hero-ghost">
+        <span class="material-icons">insights</span>
+        Ver Analytics
+      </button>
+    </div>
+  </div>
+
+  <!-- Stats overlay esquina derecha -->
+  <div class="hero-card__stats">
+    <div class="hero-stat">
+      <div class="hero-stat__value">{{ stats.oyentes_mensuales|default:"12.4K" }}</div>
+      <div class="hero-stat__label">Oyentes Mensuales</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat__value">{{ stats.reproducciones|default:"284K" }}</div>
+      <div class="hero-stat__label">Reproducciones</div>
+    </div>
+  </div>
+</div>

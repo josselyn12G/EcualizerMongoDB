@@ -1,0 +1,409 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+{% load static %}
+
+{% block title %}Álbumes — Ecualizer{% endblock %}
+{% block topbar_title %}Álbumes{% endblock %}
+{% block breadcrumb %}Catálogo / Álbumes{% endblock %}
+{% block nav_albumes %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ══════════════════════════════════════════════════════
+     PANEL OYENTE · Álbumes — estilo Spotify (negro + naranja)
+  ══════════════════════════════════════════════════════ */
+  .search-pill {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 50px;
+    padding: 0.4rem 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+  .search-pill input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: #fff; font-size: 0.85rem;
+  }
+  .search-pill input::placeholder { color: var(--text-muted); }
+  .search-pill .material-icons { color: var(--text-muted); font-size: 1rem; }
+
+  /* ── Grilla de álbumes (lista) ──────────────────── */
+  .albums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+  .album-tile {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.18s, border-color 0.18s;
+    cursor: pointer;
+  }
+  .album-tile:hover {
+    transform: translateY(-3px);
+    border-color: rgba(249,115,22,0.30);
+    box-shadow: 0 10px 28px rgba(249,115,22,0.18);
+  }
+  .album-tile__cover {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background-size: cover; background-position: center;
+  }
+  .album-tile__body { padding: 0.7rem 0.85rem 0.85rem; }
+  .album-tile__title {
+    font-weight: 700; color: #fff; font-size: 0.88rem;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .album-tile__artist {
+    font-size: 0.74rem; color: var(--text-muted);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .album-tile__year { font-size: 0.7rem; color: var(--text-light); margin-top:0.15rem; }
+
+  /* ══════════════════════════════════════════════════════
+     DETAIL · vista inline tipo Spotify
+  ══════════════════════════════════════════════════════ */
+  .album-hero {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1rem;
+    color: #fff;
+    background:
+      linear-gradient(110deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.25) 60%, transparent 100%),
+      linear-gradient(135deg, #f97316 0%, #ea580c 50%, #7c2d12 100%);
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 1.5rem;
+    align-items: center;
+  }
+  .album-hero__bg {
+    position: absolute; inset: 0;
+    background-size: cover; background-position: center;
+    filter: blur(40px) saturate(1.2) brightness(0.6);
+    opacity: 0.55;
+    z-index: 0;
+    transform: scale(1.1);
+  }
+  .album-hero__cover,
+  .album-hero__info { position: relative; z-index: 1; }
+  .album-hero__cover {
+    width: 220px; height: 220px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background-size: cover; background-position: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+    position: relative;
+  }
+  .album-hero__cover .cover-tag {
+    position: absolute; bottom: 10px; left: 10px;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(8px);
+    color: #fff; font-size: 0.72rem; font-weight: 600;
+    padding: 0.25rem 0.6rem; border-radius: 6px;
+  }
+  .album-hero__tag {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.74rem; font-weight: 600;
+    color: #fff;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.20);
+    padding: 0.2rem 0.7rem;
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+    margin-bottom: 0.65rem;
+  }
+  .album-hero__tag .material-icons { font-size: 0.85rem; }
+  .album-hero__title {
+    font-size: 3.25rem; font-weight: 800; letter-spacing: -0.03em;
+    line-height: 1; margin-bottom: 0.55rem;
+    text-shadow: 0 4px 18px rgba(0,0,0,0.45);
+  }
+  .album-hero__artist {
+    font-size: 1rem; font-weight: 600;
+    color: #fdba74;
+    margin-bottom: 0.4rem;
+  }
+  .album-hero__meta {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.84rem; color: rgba(255,255,255,0.88);
+    margin-bottom: 0.4rem;
+  }
+  .album-hero__meta .material-icons { font-size: 1rem; color: #f97316; }
+  .album-hero__desc {
+    font-size: 0.85rem; color: rgba(255,255,255,0.78);
+    margin-top: 0.6rem; max-width: 70%;
+  }
+
+  /* ── Toolbar (play / shuffle / add / download) ───── */
+  .album-toolbar {
+    display: flex; align-items: center; gap: 0.65rem;
+    padding: 0.85rem 0.25rem;
+    margin-bottom: 0.5rem;
+  }
+  .play-fab {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: none;
+    background: #f97316;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 28px rgba(249,115,22,0.45);
+    transition: transform 0.18s;
+    cursor: pointer;
+  }
+  .play-fab:hover { transform: scale(1.05); }
+  .play-fab .material-icons { font-size: 1.7rem; }
+  .icon-btn {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.06);
+    color: var(--text-2);
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.15s; cursor: pointer;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+  .icon-btn .material-icons { font-size: 1.1rem; }
+  .toolbar-right { margin-left: auto; display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--text-muted); }
+
+  /* ── Tabla de canciones del álbum ────────────────── */
+  .tracks-table {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+  }
+  .tracks-head, .track-row {
+    display: grid;
+    grid-template-columns: 36px 56px 1fr 200px 30px 70px;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.6rem 1.1rem;
+  }
+  .tracks-head {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .track-row {
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .track-row:last-child { border-bottom: none; }
+  .track-row:hover { background: rgba(255,255,255,0.04); }
+  .track-row__num {
+    color: var(--text-muted); font-size: 0.85rem; font-weight: 600;
+    text-align: center;
+  }
+  .track-row__cover {
+    width: 40px; height: 40px;
+    border-radius: 6px;
+    background-size: cover; background-position: center;
+    background-color: #1a1a1a;
+  }
+  .track-row__title {
+    color:#fff; font-weight:600; font-size:0.9rem;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .track-row__sub {
+    color: var(--text-muted); font-size:0.72rem;
+    display: flex; align-items: center; gap: 0.35rem;
+    margin-top: 0.1rem;
+  }
+  .track-row__sub .material-icons { font-size:0.8rem; }
+  .track-row__album {
+    color: var(--text-muted); font-size: 0.82rem;
+    text-decoration: underline;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .track-row__check {
+    color: var(--orange);
+    width: 22px; height: 22px;
+    background: rgba(249,115,22,0.15);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .track-row__check .material-icons { font-size: 0.95rem; }
+  .track-row__time {
+    color: var(--text-muted); font-size: 0.85rem; text-align: right;
+  }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.82rem; color: var(--text-muted);
+    margin-bottom: 0.5rem;
+  }
+  .back-link:hover { color: var(--orange); }
+  .back-link .material-icons { font-size: 1rem; }
+
+  @media (max-width: 760px) {
+    .album-hero { grid-template-columns: 1fr; text-align: center; }
+    .album-hero__cover { margin: 0 auto; }
+    .album-hero__title { font-size: 2rem; }
+    .tracks-head, .track-row { grid-template-columns: 28px 44px 1fr 60px; }
+    .tracks-head > :nth-child(4),
+    .tracks-head > :nth-child(5),
+    .track-row > :nth-child(4),
+    .track-row > :nth-child(5) { display:none; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if modo == 'list' or modo == 'search' %}
+
+  <!-- Buscador -->
+  <form method="get" action="{% url 'catalogo:usuario_album_search' %}" class="search-pill">
+    <span class="material-icons">search</span>
+    <input type="text" name="q" value="{{ busqueda }}" placeholder="Buscar álbumes...">
+  </form>
+
+  <div style="display:flex; justify-content:space-between; align-items:end; margin-bottom:0.5rem;">
+    <div>
+      <div style="font-size:0.74rem; color:#fb923c; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Catálogo</div>
+      <h2 style="font-size:1.4rem; font-weight:800; color:#fff; letter-spacing:-0.02em;">Álbumes</h2>
+    </div>
+  </div>
+
+  <div class="albums-grid">
+    {% for a in albumes %}
+    <div class="album-tile" style="position:relative;" onclick="window.location='{% url 'catalogo:usuario_album_detail' a.idAlbum %}'">
+      <button class="social-icon-btn {% if a.idAlbum in saved_ids %}is-on{% else %}is-off{% endif %}"
+              data-state="{% if a.idAlbum in saved_ids %}on{% else %}off{% endif %}"
+              style="position:absolute; top:0.55rem; right:0.55rem; background:rgba(0,0,0,0.55); backdrop-filter:blur(8px); z-index:2;"
+              title="Guardar"
+              onclick="event.stopPropagation(); Social.toggle('save', {{ a.idAlbum }}, this);">
+        <span class="material-icons">{% if a.idAlbum in saved_ids %}bookmark{% else %}bookmark_border{% endif %}</span>
+      </button>
+      <div class="album-tile__cover"
+           {% if a.coverUrl %}style="background-image:url('{{ a.coverUrl }}');"{% endif %}></div>
+      <div class="album-tile__body">
+        <div class="album-tile__title">{{ a.tituloAlbum }}</div>
+        <div class="album-tile__artist">{{ a.nombreArtistico|default:"—" }}</div>
+        <div class="album-tile__year">{{ a.fechaLanzamientoAlbum|date:"Y" }}</div>
+      </div>
+    </div>
+    {% empty %}
+    <div style="grid-column:1/-1; text-align:center; color: var(--text-muted); padding:2rem;">
+      <span class="material-icons" style="font-size:2rem; opacity:0.4; display:block; margin-bottom:0.5rem;">album</span>
+      <p>No se encontraron álbumes.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+{% elif modo == 'detail' %}
+
+  <!-- Volver -->
+  <a href="{% url 'catalogo:usuario_album_list' %}" class="btn-back">
+    <span class="material-icons">arrow_back</span> Álbumes
+  </a>
+
+  <!-- HERO del álbum (estilo Spotify) -->
+  <div class="album-hero">
+    {% if cover_url %}
+    <div class="album-hero__bg" style="background-image:url('{{ cover_url }}');"></div>
+    {% endif %}
+    <div class="album-hero__cover"
+         {% if cover_url %}style="background-image:url('{{ cover_url }}');"{% endif %}>
+      <div class="cover-tag">{{ album.titulo_album }}</div>
+    </div>
+    <div class="album-hero__info">
+      <div class="album-hero__tag">
+        <span class="material-icons">verified</span> {{ album.tipo_album }}
+      </div>
+      <h1 class="album-hero__title">{{ album.titulo_album }}</h1>
+      <div class="album-hero__artist">{{ album.artista.nombre_artistico }}</div>
+      <div class="album-hero__meta">
+        <span class="material-icons">graphic_eq</span>
+        Ecualizer · {{ total_canciones }} canción{{ total_canciones|pluralize:"es" }}, ~{{ duracion_total_min }} min ·
+        {{ album.fecha_lanzamiento_album|date:"Y" }}
+      </div>
+      {% if album.descripcion_album %}
+      <div class="album-hero__desc">{{ album.descripcion_album }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Toolbar (play / shuffle / add / download) -->
+  <div class="album-toolbar">
+    <button class="play-fab" title="Reproducir álbum"
+            onclick="{% if canciones %}reproducir({{ canciones.0.pk }}, this){% endif %}">
+      <span class="material-icons">play_arrow</span>
+    </button>
+    <div class="album-hero__cover" style="width:40px; height:40px; border-radius:6px; box-shadow:none;
+                {% if cover_url %}background-image:url('{{ cover_url }}');{% endif %}"></div>
+    <button class="social-btn {% if album_guardado %}is-on{% else %}is-off{% endif %}"
+            data-state="{% if album_guardado %}on{% else %}off{% endif %}"
+            onclick="Social.toggle('save', {{ album.pk }}, this);">
+      <span class="material-icons">{% if album_guardado %}bookmark{% else %}bookmark_border{% endif %}</span>
+      <span class="social-btn__label">{% if album_guardado %}Quitar de guardados{% else %}Guardar{% endif %}</span>
+    </button>
+    <button class="icon-btn" title="Aleatorio"><span class="material-icons">shuffle</span></button>
+    <button class="icon-btn" title="Descargar"><span class="material-icons">download</span></button>
+    <button class="icon-btn" title="Más"><span class="material-icons">more_horiz</span></button>
+    <div class="toolbar-right">
+      Lista <span class="material-icons" style="font-size:1rem;">list</span>
+    </div>
+  </div>
+
+  <!-- Tabla de canciones del álbum -->
+  <div class="tracks-table">
+    <div class="tracks-head">
+      <div style="text-align:center;">#</div>
+      <div></div>
+      <div>Título</div>
+      <div>Álbum</div>
+      <div></div>
+      <div style="text-align:right;"><span class="material-icons" style="font-size:0.95rem;">schedule</span></div>
+    </div>
+
+    {% for c in canciones %}
+    <div class="track-row" onclick="window.EzPlayer && EzPlayer.play({{ c.pk }})">
+      <div class="track-row__num">{{ c.numero_pista }}</div>
+      <div class="track-row__cover"
+           {% if c.coverUrl %}style="background-image:url('{{ c.coverUrl }}');"{% endif %}></div>
+      <div style="min-width:0;">
+        <div class="track-row__title">{{ c.nombre_cancion }}</div>
+        <div class="track-row__sub">
+          <span class="material-icons">play_circle</span>
+          {{ album.artista.nombre_artistico }}
+        </div>
+      </div>
+      <div class="track-row__album">{{ album.titulo_album }}</div>
+      <button class="social-icon-btn {% if c.pk in liked_ids %}is-on{% else %}is-off{% endif %}"
+              data-state="{% if c.pk in liked_ids %}on{% else %}off{% endif %}"
+              title="Me gusta"
+              onclick="event.stopPropagation(); Social.toggle('like', {{ c.pk }}, this);">
+        <span class="material-icons">{% if c.pk in liked_ids %}favorite{% else %}favorite_border{% endif %}</span>
+      </button>
+      <div class="track-row__time">{{ c.duracion_formateada }}</div>
+    </div>
+    {% empty %}
+    <div style="padding:2rem; text-align:center; color:var(--text-muted);">
+      Este álbum no tiene canciones activas.
+    </div>
+    {% endfor %}
+  </div>
+
+{% endif %}
+
+{% include "catalogo/usuario/_player.html" %}
+{% include "biblioteca/_social_js.html" %}
+
+<form style="display:none;">{% csrf_token %}</form>
+
+<script>
+function reproducir(id, btn) {
+  if (window.EzPlayer) EzPlayer.play(id);
+}
+</script>
+
+{% endblock %}

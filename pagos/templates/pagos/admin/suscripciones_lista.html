@@ -1,0 +1,79 @@
+{% extends "usuarios/admin/base_admin.html" %}
+{% block title %}Suscripciones — Ecualizer Admin{% endblock %}
+{% block topbar_title %}Suscripciones{% endblock %}
+{% block nav_comercial_open %}open{% endblock %}
+{% block nav_suscripciones %}active{% endblock %}
+{% block breadcrumb %}Admin / Comercial / Suscripciones{% endblock %}
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">Suscripciones</h3>
+    <small class="text-muted">{{ total }} suscripción{{ total|pluralize:"es" }} encontrada{{ total|pluralize:"s" }}</small>
+  </div>
+</div>
+
+<form method="get" class="panel-card" style="padding: 1.25rem; margin-bottom: 1.25rem;">
+  <div class="row g-2">
+    <div class="col-md-7">
+      <label class="form-label">Buscar</label>
+      <input type="text" name="q" class="form-control filter-input"
+             value="{{ q }}" placeholder="Nombre o correo del usuario...">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Estado</label>
+      <select name="estado" class="form-select filter-select">
+        <option value="">Todos</option>
+        <option value="activa"    {% if estado_sel == 'activa' %}selected{% endif %}>Activa</option>
+        <option value="inactiva"  {% if estado_sel == 'inactiva' %}selected{% endif %}>Inactiva</option>
+        <option value="cancelada" {% if estado_sel == 'cancelada' %}selected{% endif %}>Cancelada</option>
+      </select>
+    </div>
+    <div class="col-md-2 d-flex align-items-end gap-2">
+      <button type="submit" class="btn-filter w-100">Filtrar</button>
+      {% if q or estado_sel %}
+        <a href="{% url 'admin_suscripciones_list' %}" class="btn-cancel">Limpiar</a>
+      {% endif %}
+    </div>
+  </div>
+</form>
+
+<div class="panel-card" style="overflow-x: auto;">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Usuario</th>
+        <th>Correo</th>
+        <th>Plan</th>
+        <th>Inicio</th>
+        <th>Fin</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in suscripciones %}
+      <tr>
+        <td class="id-col">#{{ s.idSuscripcion }}</td>
+        <td class="name-col">{{ s.nombreUsuario }}</td>
+        <td>{{ s.correo }}</td>
+        <td><strong>{{ s.nombrePlan }}</strong></td>
+        <td>{{ s.fechaInicio }}</td>
+        <td>{{ s.fechaFin }}</td>
+        <td><span class="badge badge--{{ s.estadoSuscripcion }}">{{ s.estadoSuscripcion|capfirst }}</span></td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="empty-state">
+          <div class="empty-icon">&#128179;</div>
+          <p>No se encontraron suscripciones.</p>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

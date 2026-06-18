@@ -1,0 +1,217 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+
+{% block title %}Mis Suscripciones — Ecualizer{% endblock %}
+{% block topbar_title %}Suscripción{% endblock %}
+{% block breadcrumb %}Perfil / Suscripción{% endblock %}
+{% block nav_suscripcion %}active{% endblock %}
+
+{% block content %}
+<style>
+  .plan-activo-card {
+    border-radius: 18px;
+    padding: 1.5rem 1.75rem;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 60%, #7c2d12 100%);
+    color: #fff;
+    margin-bottom: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .plan-activo-card__title { font-size: 2rem; font-weight: 800; }
+  .plan-activo-card__sub   { font-size: 0.85rem; color: rgba(255,255,255,0.85); margin-top: 0.3rem; }
+  .plan-activo-card__price { font-size: 2.5rem; font-weight: 800; text-align: right; }
+  .plan-activo-card__price span { font-size: 0.8rem; font-weight: 400; display: block; opacity: 0.85; }
+  .planes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .plan-card {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 1.25rem;
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .plan-card--activo { border-color: #f97316; background: rgba(249,115,22,0.1); }
+  .plan-card__nombre { font-size: 1rem; font-weight: 800; color: #fff; }
+  .plan-card__precio { font-size: 1.5rem; font-weight: 800; color: #f97316; }
+  .plan-card__precio span { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-weight: 400; }
+  .plan-card__desc { font-size: 0.78rem; color: rgba(255,255,255,0.5); flex: 1; }
+  .btn-cambiar {
+    background: #f97316; color: #fff; border: none;
+    border-radius: 50px; padding: 0.5rem 1rem;
+    font-size: 0.82rem; font-weight: 600; cursor: pointer;
+    width: 100%; margin-top: 0.5rem;
+  }
+  .btn-cambiar:hover { background: #ea580c; }
+  .btn-activo {
+    background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5);
+    border: none; border-radius: 50px; padding: 0.5rem 1rem;
+    font-size: 0.82rem; font-weight: 600; width: 100%; margin-top: 0.5rem;
+    cursor: default;
+  }
+  .section-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 0.75rem; margin-top: 0.5rem; }
+  .subs-table {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+  }
+  .subs-table table { width: 100%; border-collapse: collapse; }
+  .subs-table thead th {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.5);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    text-align: left;
+  }
+  .subs-table tbody td {
+    padding: 0.85rem 1.25rem;
+    font-size: 0.86rem;
+    color: rgba(255,255,255,0.85);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .subs-table tbody tr:last-child td { border-bottom: none; }
+  .subs-table tbody tr:hover { background: rgba(255,255,255,0.04); }
+  .badge-activa    { background: rgba(34,197,94,0.15); color: #22c55e; padding: 0.2rem 0.65rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+  .badge-inactiva  { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); padding: 0.2rem 0.65rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+  .badge-cancelada { background: rgba(239,68,68,0.15); color: #ef4444; padding: 0.2rem 0.65rem; border-radius: 20px; font-size: 0.72rem; font-weight: 600; }
+</style>
+
+{% if plan_activo %}
+<div class="plan-activo-card">
+  <div>
+    <div class="plan-activo-card__title">Plan {{ plan_activo.nombrePlan }}</div>
+    <div class="plan-activo-card__sub">Activo hasta {{ plan_activo.fechaFin }}</div>
+  </div>
+  <div class="plan-activo-card__price">${{ plan_activo.precio }}<span>por mes</span></div>
+</div>
+{% else %}
+<div class="plan-activo-card">
+  <div>
+    <div class="plan-activo-card__title">Sin plan activo</div>
+    <div class="plan-activo-card__sub">Selecciona un plan para continuar disfrutando Ecualizer</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="section-title">Planes disponibles</div>
+<div class="planes-grid">
+  {% for plan in planes %}
+  <div class="plan-card {% if plan_activo and plan_activo.idTipoPlan == plan.idTipoPlan %}plan-card--activo{% endif %}">
+    <div class="plan-card__nombre">{{ plan.nombrePlan }}</div>
+    <div class="plan-card__precio">${{ plan.precio }}<span>/mes</span></div>
+    <div class="plan-card__desc">{{ plan.descripcionPlan }}</div>
+    {% if plan_activo and plan_activo.idTipoPlan == plan.idTipoPlan %}
+    <button class="btn-activo" disabled>Plan actual</button>
+    {% else %}
+    <button type="button" class="btn-cambiar" onclick="abrirModal({{ plan.idTipoPlan }})">
+      Seleccionar
+    </button>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<!-- UN SOLO MODAL reutilizable -->
+<div id="modal-plan" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:2.5rem; max-width:420px; width:90%; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+    <span class="material-icons" style="font-size:3.5rem; color:#f97316; margin-bottom:1rem; display:block;">card_membership</span>
+    <h3 style="color:#fff; font-size:1.4rem; font-weight:800; margin-bottom:0.75rem;">Cambiar de plan</h3>
+    <p style="color:rgba(255,255,255,0.6); font-size:0.95rem; margin-bottom:0.5rem;">¿Quieres cambiar al plan</p>
+    <p id="modal-plan-nombre" style="color:#fff; font-size:1.2rem; font-weight:800; margin-bottom:0.25rem;"></p>
+    <p id="modal-plan-precio" style="color:#f97316; font-size:1.5rem; font-weight:800; margin-bottom:1rem;"></p>
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="plan_id" id="modal-plan-id" value="">
+
+      <!-- Renovación automática (se guarda en la base de datos) -->
+      <label id="modal-auto-wrap" style="display:flex; align-items:center; gap:0.6rem; justify-content:center; margin-bottom:1.5rem; color:rgba(255,255,255,0.8); font-size:0.88rem; cursor:pointer;">
+        <input type="checkbox" name="auto_renovacion" id="modal-auto" value="S" checked
+               style="width:18px; height:18px; accent-color:#f97316; cursor:pointer;">
+        Renovar automáticamente al finalizar el período
+      </label>
+
+      <div style="display:flex; gap:0.75rem; justify-content:center;">
+        <button type="button" onclick="cerrarModal()"
+                style="background:rgba(255,255,255,0.08); color:#fff; border:none; border-radius:50px; padding:0.7rem 1.75rem; font-size:0.9rem; cursor:pointer; font-weight:600;">
+          Cancelar
+        </button>
+        <button type="submit"
+                style="background:#f97316; color:#fff; border:none; border-radius:50px; padding:0.7rem 1.75rem; font-size:0.9rem; font-weight:700; cursor:pointer;">
+          Confirmar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="section-title">Historial de suscripciones</div>
+{% if historial %}
+<div class="subs-table">
+  <table>
+    <thead>
+      <tr>
+        <th>Plan</th><th>Inicio</th><th>Fin</th><th>Estado</th>
+        <th>Auto-renovación</th><th>Monto</th><th>Pago</th><th>Fecha pago</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in historial %}
+      <tr>
+        <td><strong>{{ s.PlanContratado }}</strong></td>
+        <td>{{ s.Inicio }}</td>
+        <td>{{ s.Fin }}</td>
+        <td><span class="badge-{{ s.EstadoSuscripcion }}">{{ s.EstadoSuscripcion|capfirst }}</span></td>
+        <td>
+          {% if s.RenovacionAutomatica == 'S' %}
+            <span style="color:#22c55e; font-weight:600;">● Sí</span>
+          {% else %}
+            <span style="color:rgba(255,255,255,0.4); font-weight:600;">● No</span>
+          {% endif %}
+        </td>
+        <td>{% if s.Monto != None %}${{ s.Monto }}{% else %}<span style="color:rgba(255,255,255,0.4);">Gratis</span>{% endif %}</td>
+        <td>{{ s.EstadoPago|default:"—" }}</td>
+        <td>{{ s.FechaPago|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div style="text-align:center; padding:3rem 1rem; color:rgba(255,255,255,0.4);">
+  <span class="material-icons" style="font-size:3rem; display:block; margin-bottom:0.6rem;">card_membership</span>
+  <p>No tienes suscripciones registradas.</p>
+</div>
+{% endif %}
+
+<!-- Datos de planes para JS -->
+<script>
+const planesData = {
+  {% for plan in planes %}
+  {{ plan.idTipoPlan }}: { nombre: "{{ plan.nombrePlan }}", precio: "${{ plan.precio }}/mes" }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+};
+
+function abrirModal(planId) {
+  const plan = planesData[planId];
+  document.getElementById('modal-plan-nombre').textContent = plan.nombre;
+  document.getElementById('modal-plan-precio').textContent = plan.precio;
+  document.getElementById('modal-plan-id').value = planId;
+  document.getElementById('modal-plan').style.display = 'flex';
+}
+
+function cerrarModal() {
+  document.getElementById('modal-plan').style.display = 'none';
+}
+</script>
+
+{% endblock %}

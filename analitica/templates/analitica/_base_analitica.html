@@ -1,0 +1,165 @@
+{% extends "usuarios/admin/base_admin.html" %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+  /* ══════════════════════════════════════════════════════
+     ANALITICA · paleta naranja-glass · cards modernas
+  ══════════════════════════════════════════════════════ */
+  .an-grid {
+    display: grid;
+    gap: 1rem;
+  }
+  .an-grid--kpis    { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .an-grid--two     { grid-template-columns: 2fr 1fr; }
+  .an-grid--equal-2 { grid-template-columns: 1fr 1fr; }
+  .an-grid--equal-3 { grid-template-columns: repeat(3, 1fr); }
+  @media (max-width: 1100px) {
+    .an-grid--two, .an-grid--equal-2, .an-grid--equal-3 { grid-template-columns: 1fr; }
+  }
+
+  /* ── KPI card ──────────────────────────────── */
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.18s ease;
+  }
+  .kpi-card:hover {
+    border-color: var(--orange);
+    box-shadow: 0 4px 12px rgba(249,115,22,0.15);
+    transform: translateY(-2px);
+  }
+  .kpi-card__icon {
+    position: absolute; top: 0.85rem; right: 0.95rem;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--orange-bg);
+    color: var(--orange);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .kpi-card__icon .material-icons { font-size: 1.1rem; }
+  .kpi-card__label {
+    font-size: 0.7rem; font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .kpi-card__value {
+    font-size: 1.85rem; font-weight: 800;
+    color: var(--text);
+    line-height: 1.1; margin: 0.4rem 0 0.15rem;
+    letter-spacing: -0.02em;
+  }
+  .kpi-card__sub {
+    font-size: 0.75rem; color: var(--text-light);
+  }
+
+  /* ── Chart card ─────────────────────────────── */
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.1rem 1.25rem 1.25rem;
+    transition: all 0.18s ease;
+  }
+  .chart-card:hover {
+    border-color: var(--orange);
+    box-shadow: 0 4px 12px rgba(249,115,22,0.15);
+  }
+  .chart-card__head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.85rem;
+  }
+  .chart-card__title {
+    font-size: 0.95rem; font-weight: 700; color: var(--text);
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .chart-card__title .material-icons { font-size: 1.05rem; color: var(--orange); }
+  .chart-card__hint { font-size: 0.72rem; color: var(--text-light); }
+  .chart-card__body {
+    position: relative; height: 280px;
+  }
+  .chart-card__body--lg { height: 360px; }
+  .chart-card__body--sm { height: 220px; }
+
+  /* ── Tabla analítica ────────────────────────── */
+  .an-table {
+    width: 100%; border-collapse: collapse;
+  }
+  .an-table thead th {
+    text-align: left;
+    font-size: 0.7rem; font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid var(--border);
+    background: transparent;
+  }
+  .an-table tbody td {
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    font-size: 0.85rem;
+  }
+  .an-table tbody tr:last-child td { border-bottom: none; }
+  .an-table tbody tr:hover { background: var(--orange-bg); }
+  .an-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .an-table .accent { color: #fb923c; font-weight: 700; }
+
+  .an-empty {
+    text-align: center; padding: 2rem 1rem;
+    color: var(--text-light);
+    font-size: 0.86rem;
+  }
+  .an-empty .material-icons { font-size: 2.2rem; opacity: 0.4; display: block; margin: 0 auto 0.4rem; }
+
+  /* ── Tabs filtro ────────────────────────────── */
+  .an-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .an-tab {
+    padding: 0.4rem 0.95rem; border-radius: 50px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-light);
+    font-size: 0.78rem; font-weight: 600;
+    text-decoration: none;
+    transition: all 0.15s;
+  }
+  .an-tab:hover, .an-tab.active {
+    background: rgba(249,115,22,0.16);
+    border-color: rgba(249,115,22,0.35);
+    color: #fb923c;
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  // Defaults globales para Chart.js coherente con tema dark
+  if (window.Chart) {
+    Chart.defaults.color = 'rgba(17,24,39,0.65)';
+    Chart.defaults.borderColor = 'rgba(229,231,235,0.5)';
+    Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+    Chart.defaults.plugins.legend.position = 'bottom';
+    Chart.defaults.plugins.legend.labels.boxWidth = 10;
+    Chart.defaults.plugins.legend.labels.boxHeight = 10;
+    Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(255,255,255,0.95)';
+    Chart.defaults.plugins.tooltip.titleColor = 'rgba(17,24,39,0.9)';
+    Chart.defaults.plugins.tooltip.bodyColor = 'rgba(17,24,39,0.9)';
+    Chart.defaults.plugins.tooltip.borderColor = 'rgba(229,231,235,0.5)';
+    Chart.defaults.plugins.tooltip.borderWidth = 1;
+    Chart.defaults.plugins.tooltip.cornerRadius = 8;
+    Chart.defaults.plugins.tooltip.padding = 10;
+  }
+  // Paleta naranja para series múltiples
+  window.AN_PALETTE = [
+    '#f97316', '#fb923c', '#fdba74', '#ea580c', '#c2410c',
+    '#7c2d12', '#22c55e', '#3b82f6', '#a855f7', '#ec4899',
+  ];
+</script>
+{% block analitica_js %}{% endblock %}
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+{% load static %}
+
+{% block title %}Mis Playlists — Ecualizer{% endblock %}
+{% block topbar_title %}Mis Playlists{% endblock %}
+{% block breadcrumb %}Biblioteca / Playlists{% endblock %}
+{% block nav_playlists %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .pl-hero {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    padding: 1.75rem 1.75rem 1.5rem;
+    min-height: 180px;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #7c2d12 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+  .pl-hero__tag   { font-size:0.74rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:rgba(255,255,255,0.85); margin-bottom:0.5rem; }
+  .pl-hero__title { font-size:2.8rem; font-weight:800; letter-spacing:-0.03em; line-height:1; }
+  .pl-hero__sub   { font-size:0.85rem; color:rgba(255,255,255,0.85); margin-top:0.5rem; }
+
+  .pl-actions { display:flex; gap:0.75rem; margin-bottom:1.25rem; }
+  .pl-btn-new {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    background:#f97316; color:#fff; border:none; border-radius:50px;
+    padding:0.55rem 1.25rem; font-size:0.88rem; font-weight:600;
+    cursor:pointer; text-decoration:none;
+  }
+  .pl-btn-new:hover { background:#ea580c; }
+
+  .pl-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+  .pl-card {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .pl-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.06); }
+  .pl-card__cover {
+    width:100%; aspect-ratio:1;
+    background: linear-gradient(135deg, #f97316, #7c2d12);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .pl-card__cover .material-icons { font-size:3rem; color:rgba(255,255,255,0.4); }
+  .pl-card__body { padding:0.75rem; }
+  .pl-card__name { font-size:0.9rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pl-card__meta { font-size:0.75rem; color:rgba(255,255,255,0.5); margin-top:0.2rem; }
+  .pl-badge {
+    display:inline-block; font-size:0.65rem; font-weight:600;
+    padding:0.15rem 0.5rem; border-radius:20px; margin-top:0.4rem;
+  }
+  .pl-badge--publica  { background:rgba(34,197,94,0.15); color:#22c55e; }
+  .pl-badge--privada  { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.5); }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="pl-hero">
+  <div class="pl-hero__tag">Biblioteca · Playlists</div>
+  <div class="pl-hero__title">Mis Playlists</div>
+  <div class="pl-hero__sub">{{ total }} playlist{{ total|pluralize:"s" }}</div>
+</div>
+
+<div class="pl-actions">
+  <a href="{% url 'biblioteca:crear_playlist' %}" class="pl-btn-new">
+    <span class="material-icons" style="font-size:1rem;">add</span>
+    Nueva playlist
+  </a>
+</div>
+
+{% if playlists %}
+<div class="pl-grid">
+  {% for pl in playlists %}
+  <a href="{% url 'biblioteca:detalle_playlist' pl.idPlaylist %}" class="pl-card" style="text-decoration:none;">
+    <div class="pl-card__cover">
+      <span class="material-icons">queue_music</span>
+    </div>
+    <div class="pl-card__body">
+      <div class="pl-card__name">{{ pl.nombrePlaylist }}</div>
+      <div class="pl-card__meta">{{ pl.tipoPlaylist }}</div>
+      <span class="pl-badge pl-badge--{{ pl.tipoVisibilidad|lower }}">
+        {{ pl.tipoVisibilidad }}
+      </span>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center; padding:3rem 1rem; color:rgba(255,255,255,0.4);">
+  <span class="material-icons" style="font-size:3rem; opacity:0.35; display:block; margin-bottom:0.6rem;">queue_music</span>
+  <p style="font-size:0.95rem;">No tienes playlists todavía.</p>
+  <p style="font-size:0.82rem; margin-top:0.3rem;">Crea tu primera playlist con el botón de arriba.</p>
+</div>
+{% endif %}
+
+{% endblock %}

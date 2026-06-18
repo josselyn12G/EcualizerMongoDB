@@ -1,0 +1,16 @@
+{% extends "usuarios/admin/base_admin.html" %}
+{% load static %}
+
+{% block nav_dashboard %}active{% endblock %}
+{% block topbar_title %}Dashboard General{% endblock %}
+{% block breadcrumb %}Admin / Dashboard{% endblock %}
+
+{% block content %}
+
+  {% include "usuarios/admin/components/stats_grid.html" %}
+
+  {% include "usuarios/admin/components/recent_table.html" %}
+
+  {% include "usuarios/admin/components/quick_actions.html" %}
+
+{% endblock %}

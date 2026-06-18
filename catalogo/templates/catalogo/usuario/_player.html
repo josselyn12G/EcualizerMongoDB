@@ -1,0 +1,361 @@
+{# Player flotante + botón "volver" naranja — reusables en todo el panel oyente #}
+<style>
+  /* ── Botón "volver" naranja ───────────────────────── */
+  .btn-back {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: #fff;
+    font-weight: 700; font-size: 0.82rem;
+    padding: 0.5rem 1.1rem;
+    border-radius: 50px;
+    border: none;
+    box-shadow: 0 6px 18px rgba(249,115,22,0.35);
+    transition: all 0.18s ease;
+    margin-bottom: 1rem;
+    cursor: pointer;
+  }
+  .btn-back:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(249,115,22,0.50);
+    color: #fff;
+  }
+  .btn-back .material-icons { font-size: 1rem; }
+
+  /* ══════════════════════════════════════════════════════
+     PLAYER FLOTANTE (Deezer preview 30 s)
+     Estilo Spotify · barra ancha redondeada
+  ══════════════════════════════════════════════════════ */
+  .ez-player {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%) translateY(160%);
+    z-index: 1000;
+    width: calc(100vw - 80px);
+    max-width: 1400px;
+    display: grid;
+    grid-template-columns: 320px 1fr 320px;
+    gap: 1rem;
+    align-items: center;
+    background: rgba(12, 12, 16, 0.96);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 18px;
+    padding: 0.7rem 1.25rem;
+    box-shadow: 0 22px 60px rgba(0,0,0,0.65);
+    backdrop-filter: blur(28px) saturate(150%);
+    transition: transform 0.28s ease;
+  }
+  .ez-player.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Bloque izquierdo: portada + título + artista ── */
+  .ez-player__left { display: flex; align-items: center; gap: 0.85rem; min-width: 0; }
+  .ez-player__cover {
+    width: 56px; height: 56px;
+    border-radius: 8px;            /* cuadrado redondeado, igual que pop-row__cover */
+    background-size: cover; background-position: center;
+    background-color: #1a1a1a;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+  .ez-player__info { min-width: 0; flex: 1; }
+  .ez-player__title {
+    color: #fff; font-size: 0.92rem; font-weight: 700;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .ez-player__artist {
+    color: var(--text-muted); font-size: 0.78rem;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    margin-top: 0.1rem;
+  }
+  .ez-player__check {
+    width: 22px; height: 22px;
+    background: #22c55e; color: #fff;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-left: 0.5rem;
+    flex-shrink: 0;
+  }
+  .ez-player__check .material-icons { font-size: 0.85rem; }
+
+  /* ── Bloque central: controles + progress bar ── */
+  .ez-player__center { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; }
+  .ez-player__controls { display: flex; align-items: center; gap: 0.5rem; }
+  .ez-icon-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ez-icon-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .ez-icon-btn .material-icons { font-size: 1.25rem; }
+  .ez-icon-btn--accent { color: var(--orange); }
+  .ez-icon-btn--accent:hover { color: #fb923c; background: rgba(249,115,22,0.12); }
+
+  .ez-player__play {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: #fff;
+    color: #0a0a0a;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(255,255,255,0.20);
+    transition: transform 0.15s;
+  }
+  .ez-player__play:hover { transform: scale(1.06); }
+  .ez-player__play .material-icons { font-size: 1.5rem; }
+
+  .ez-player__progress {
+    display: flex; align-items: center; gap: 0.55rem;
+    width: 100%;
+    font-size: 0.7rem; color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .ez-player__bar {
+    flex: 1; height: 4px;
+    background: rgba(255,255,255,0.10);
+    border-radius: 2px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+  }
+  .ez-player__bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #fb923c, #f97316);
+    width: 0%;
+    border-radius: 2px;
+    transition: width 0.1s linear;
+  }
+
+  /* ── Bloque derecho: volumen + close ── */
+  .ez-player__right {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 0.45rem;
+  }
+  .ez-player__volume {
+    width: 90px; height: 4px;
+    background: rgba(255,255,255,0.10);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .ez-player__volume-fill {
+    height: 100%;
+    background: #fff;
+    width: 70%;
+    border-radius: 2px;
+  }
+
+  /* Responsive: en pantallas pequeñas se compacta */
+  @media (max-width: 900px) {
+    .ez-player { grid-template-columns: 1fr auto 1fr; gap: 0.6rem; padding: 0.5rem 0.85rem; }
+    .ez-player__right .ez-player__volume,
+    .ez-player__controls .ez-icon-btn:not(.ez-icon-btn--play-prev):not(.ez-icon-btn--play-next) { display: none; }
+  }
+  @media (max-width: 640px) {
+    .ez-player { width: calc(100vw - 24px); grid-template-columns: auto 1fr auto; }
+    .ez-player__progress, .ez-player__check { display: none; }
+  }
+</style>
+
+<div class="ez-player" id="ezPlayer">
+  <!-- Izquierda: cover + info -->
+  <div class="ez-player__left">
+    <div class="ez-player__cover" id="ezPlayerCover"></div>
+    <div class="ez-player__info">
+      <div class="ez-player__title"  id="ezPlayerTitle">—</div>
+      <div class="ez-player__artist" id="ezPlayerArtist">—</div>
+    </div>
+    <div class="ez-player__check" title="En tu biblioteca">
+      <span class="material-icons">check</span>
+    </div>
+  </div>
+
+  <!-- Centro: controles + progreso -->
+  <div class="ez-player__center">
+    <div class="ez-player__controls">
+      <button class="ez-icon-btn"  type="button" title="Aleatorio">
+        <span class="material-icons">shuffle</span>
+      </button>
+      <button class="ez-icon-btn ez-icon-btn--play-prev" type="button" title="Anterior">
+        <span class="material-icons">skip_previous</span>
+      </button>
+      <button class="ez-player__play" id="ezPlayerToggle" type="button" title="Play/Pause">
+        <span class="material-icons" id="ezPlayerIcon">play_arrow</span>
+      </button>
+      <button class="ez-icon-btn ez-icon-btn--play-next" type="button" title="Siguiente">
+        <span class="material-icons">skip_next</span>
+      </button>
+      <button class="ez-icon-btn" type="button" title="Repetir">
+        <span class="material-icons">repeat</span>
+      </button>
+    </div>
+    <div class="ez-player__progress">
+      <span id="ezPlayerCurrent">0:00</span>
+      <div class="ez-player__bar" id="ezPlayerBar">
+        <div class="ez-player__bar-fill" id="ezPlayerBarFill"></div>
+      </div>
+      <span id="ezPlayerDuration">0:30</span>
+    </div>
+  </div>
+
+  <!-- Derecha: volumen + cerrar -->
+  <div class="ez-player__right">
+    <button class="ez-icon-btn" type="button" title="Letra">
+      <span class="material-icons">mic_external_on</span>
+    </button>
+    <button class="ez-icon-btn" type="button" title="Cola">
+      <span class="material-icons">queue_music</span>
+    </button>
+    <span class="material-icons" style="color: var(--text-muted); font-size: 1.15rem;">volume_up</span>
+    <div class="ez-player__volume" id="ezPlayerVolume">
+      <div class="ez-player__volume-fill" id="ezPlayerVolumeFill"></div>
+    </div>
+    <button class="ez-icon-btn" id="ezPlayerClose" type="button" title="Cerrar">
+      <span class="material-icons">close</span>
+    </button>
+  </div>
+</div>
+
+<audio id="ezAudio" preload="none"></audio>
+
+<script>
+(function(){
+  const player   = document.getElementById('ezPlayer');
+  const audio    = document.getElementById('ezAudio');
+  const cover    = document.getElementById('ezPlayerCover');
+  const title    = document.getElementById('ezPlayerTitle');
+  const artist   = document.getElementById('ezPlayerArtist');
+  const icon     = document.getElementById('ezPlayerIcon');
+  const btn      = document.getElementById('ezPlayerToggle');
+  const close    = document.getElementById('ezPlayerClose');
+  const current  = document.getElementById('ezPlayerCurrent');
+  const duration = document.getElementById('ezPlayerDuration');
+  const bar      = document.getElementById('ezPlayerBar');
+  const barFill  = document.getElementById('ezPlayerBarFill');
+  const volume   = document.getElementById('ezPlayerVolume');
+  const volFill  = document.getElementById('ezPlayerVolumeFill');
+  const btnPrev  = document.querySelector('.ez-icon-btn--play-prev');
+  const btnNext  = document.querySelector('.ez-icon-btn--play-next');
+  let currentId  = null;
+  let queue      = [];   // cola de idCancion para reproducción automática
+  let queueIndex = -1;
+
+  function fmt(s) {
+    if (!isFinite(s) || s < 0) return '0:00';
+    const m = Math.floor(s / 60);
+    const r = Math.floor(s % 60).toString().padStart(2, '0');
+    return m + ':' + r;
+  }
+  function show() { player.classList.add('show'); }
+  function hide() { player.classList.remove('show'); audio.pause(); }
+  function setPlaying(p) { icon.textContent = p ? 'pause' : 'play_arrow'; }
+
+  btn.addEventListener('click', () => {
+    if (audio.paused) { audio.play().catch(()=>{}); } else { audio.pause(); }
+  });
+  close.addEventListener('click', hide);
+  audio.addEventListener('play',  () => setPlaying(true));
+  audio.addEventListener('pause', () => setPlaying(false));
+  // Al terminar una canción → avanzar automáticamente en la cola
+  audio.addEventListener('ended', () => {
+    setPlaying(false);
+    playNext();
+  });
+  audio.addEventListener('loadedmetadata', () => {
+    duration.textContent = fmt(audio.duration);
+  });
+  audio.addEventListener('timeupdate', () => {
+    current.textContent = fmt(audio.currentTime);
+    if (audio.duration) {
+      barFill.style.width = (audio.currentTime / audio.duration * 100) + '%';
+    }
+  });
+
+  // Seek en la barra de progreso
+  bar.addEventListener('click', (e) => {
+    if (!audio.duration) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = Math.max(0, Math.min(1, ratio)) * audio.duration;
+  });
+
+  // Control de volumen
+  audio.volume = 0.7;
+  volume.addEventListener('click', (e) => {
+    const rect = volume.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.volume = ratio;
+    volFill.style.width = (ratio * 100) + '%';
+  });
+
+  // Carga y reproduce una canción por su id (vía preview de Deezer)
+  function load(cancionId) {
+    if (!cancionId) return;
+    if (currentId === cancionId && audio.src) {
+      audio.play().catch(() => {});
+      show();
+      return;
+    }
+    fetch('/catalogo/canciones/' + cancionId + '/preview/')
+      .then(r => r.json())
+      .then(data => {
+        title.textContent  = data.title  || '';
+        artist.textContent = data.artist || '';
+        if (data.cover) cover.style.backgroundImage = "url('" + data.cover + "')";
+        show();
+        if (!data.ok || !data.preview) {
+          // Sin preview → intentar saltar a la siguiente de la cola
+          artist.textContent = (data.artist || '') + ' · sin preview, pasando a la siguiente…';
+          setTimeout(playNext, 1200);
+          return;
+        }
+        currentId = cancionId;
+        audio.src = data.preview;
+        audio.play().catch(() => {});
+      })
+      .catch(() => {});
+  }
+
+  function playNext() {
+    if (queue.length && queueIndex < queue.length - 1) {
+      queueIndex++;
+      load(queue[queueIndex]);
+    }
+  }
+  function playPrev() {
+    if (queue.length && queueIndex > 0) {
+      queueIndex--;
+      load(queue[queueIndex]);
+    }
+  }
+
+  if (btnNext) btnNext.addEventListener('click', playNext);
+  if (btnPrev) btnPrev.addEventListener('click', playPrev);
+
+  // API global
+  window.EzPlayer = {
+    // Reproduce una sola canción (resetea la cola a esa canción).
+    play(cancionId) {
+      if (!cancionId) return;
+      queue = [parseInt(cancionId, 10)];
+      queueIndex = 0;
+      load(cancionId);
+    },
+    // Reproduce una lista de canciones en orden, con autoplay.
+    // ids: array de idCancion; start: índice inicial (por defecto 0).
+    playQueue(ids, start) {
+      if (!ids || !ids.length) return;
+      queue = ids.map(x => parseInt(x, 10));
+      queueIndex = Math.max(0, Math.min(start || 0, queue.length - 1));
+      load(queue[queueIndex]);
+    },
+    stop() { hide(); },
+  };
+})();
+</script>

@@ -1,0 +1,116 @@
+{% extends "analitica/admin/_base_analitica.html" %}
+
+{% block title %}Analítica · Usuarios — Ecualizer{% endblock %}
+{% block topbar_title %}Analítica · Usuarios{% endblock %}
+{% block breadcrumb %}Admin / Analítica / Usuarios{% endblock %}
+{% block nav_analitica_open %}open{% endblock %}
+{% block nav_an_usuarios %}active{% endblock %}
+
+{% block content %}
+
+<div class="an-grid an-grid--kpis" style="margin-bottom:1rem;">
+  <div class="kpi-card">
+    <div class="kpi-card__icon"><span class="material-icons">headphones</span></div>
+    <div class="kpi-card__label">Oyentes</div>
+    <div class="kpi-card__value">{{ kpis.TotalOyentes|default:0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon"><span class="material-icons">mic</span></div>
+    <div class="kpi-card__label">Artistas</div>
+    <div class="kpi-card__value">{{ kpis.TotalArtistas|default:0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon"><span class="material-icons">card_membership</span></div>
+    <div class="kpi-card__label">Suscripciones activas</div>
+    <div class="kpi-card__value">{{ kpis.SuscripcionesActivas|default:0 }}</div>
+  </div>
+</div>
+
+<div class="an-grid an-grid--equal-2" style="margin-bottom:1rem;">
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">trending_up</span> Crecimiento de usuarios · 12 meses</div>
+    </div>
+    <div class="chart-card__body chart-card__body--lg">
+      <canvas id="chartCrec"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">card_membership</span> Plan: Free vs Premium</div>
+    </div>
+    <div class="chart-card__body chart-card__body--lg">
+      <canvas id="chartTipo"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="an-grid an-grid--equal-2">
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">public</span> Distribución por país</div>
+    </div>
+    <div class="chart-card__body">
+      <canvas id="chartPais"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">subscriptions</span> Planes activos</div>
+    </div>
+    <div class="chart-card__body">
+      <canvas id="chartPlanes"></canvas>
+    </div>
+  </div>
+</div>
+
+{{ crecimiento|json_script:"d_crec" }}
+{{ distribucion_planes|json_script:"d_tipo" }}
+{{ distribucion_pais|json_script:"d_pais" }}
+{{ planes|json_script:"d_planes" }}
+{% endblock %}
+
+{% block analitica_js %}
+<script>
+(function(){
+  const $ = id => JSON.parse(document.getElementById(id).textContent);
+  const C = window.AN_PALETTE;
+
+  const crec = $('d_crec');
+  new Chart(document.getElementById('chartCrec'), {
+    type: 'line',
+    data: { labels: crec.map(c=>c.Mes),
+            datasets: [{ label:'Nuevos usuarios', data:crec.map(c=>c.NuevosUsuarios),
+                         borderColor:C[0], backgroundColor:'rgba(249,115,22,0.18)',
+                         fill:true, tension:0.4, borderWidth:2 }] },
+    options: { maintainAspectRatio:false, plugins:{ legend:{display:false} } },
+  });
+
+  const tipo = $('d_tipo');
+  new Chart(document.getElementById('chartTipo'), {
+    type: 'doughnut',
+    data: { labels: tipo.map(t=>t.TipoCuentaActual),
+            datasets: [{ data: tipo.map(t=>t.CantidadUsuarios), backgroundColor: C, borderWidth:0 }] },
+    options: { maintainAspectRatio:false, cutout:'55%' },
+  });
+
+  const pais = $('d_pais');
+  new Chart(document.getElementById('chartPais'), {
+    type: 'bar',
+    data: { labels: pais.map(p=>p.Pais),
+            datasets: [{ label:'Oyentes', data:pais.map(p=>p.Oyentes),
+                         backgroundColor: C[0], borderRadius:6 }] },
+    options: { indexAxis:'y', maintainAspectRatio:false, plugins:{ legend:{display:false} } },
+  });
+
+  const pl = $('d_planes');
+  new Chart(document.getElementById('chartPlanes'), {
+    type: 'pie',
+    data: { labels: pl.map(p=>p.Plan),
+            datasets: [{ data: pl.map(p=>p.Suscriptores), backgroundColor: C, borderWidth:0 }] },
+    options: { maintainAspectRatio:false },
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+
+{% block title %}Novedades — Ecualizer{% endblock %}
+{% block topbar_title %}Novedades{% endblock %}
+{% block breadcrumb %}Novedades{% endblock %}
+{% block nav_novedades %}active{% endblock %}
+
+{% block content %}
+<style>
+  .sp-hero {
+    border-radius: 18px;
+    padding: 1.75rem 1.75rem 1.5rem;
+    min-height: 180px;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 50%, #7c2d12 100%);
+    color: #fff;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .sp-hero__tag   { font-size:0.74rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:rgba(255,255,255,0.85); margin-bottom:0.5rem; }
+  .sp-hero__title { font-size:2.8rem; font-weight:800; letter-spacing:-0.03em; line-height:1; }
+  .sp-hero__sub   { font-size:0.85rem; color:rgba(255,255,255,0.85); margin-top:0.5rem; }
+
+  .albums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+  .album-card {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+  .album-card:hover { transform: translateY(-3px); background: rgba(255,255,255,0.06); }
+  .album-card__cover { width:100%; aspect-ratio:1; object-fit:cover; background:#1a1a1a; }
+  .album-card__cover-placeholder { width:100%; aspect-ratio:1; background:#1a1a1a; display:flex; align-items:center; justify-content:center; }
+  .album-card__body { padding:0.75rem; }
+  .album-card__name { font-size:0.88rem; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .album-card__artist { font-size:0.75rem; color:rgba(255,255,255,0.5); margin-top:0.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .album-card__date { font-size:0.7rem; color:rgba(255,255,255,0.3); margin-top:0.3rem; }
+  .album-badge {
+    display:inline-block; font-size:0.65rem; font-weight:600;
+    padding:0.15rem 0.5rem; border-radius:20px; margin-top:0.4rem;
+        background:rgba(249,115,22,0.15); color:#f97316;
+  }
+</style>
+
+<div class="sp-hero">
+  <div class="sp-hero__tag">Ecualizer · Lanzamientos</div>
+  <div class="sp-hero__title">Novedades</div>
+  <div class="sp-hero__sub">Los álbumes más recientes disponibles en Ecuador</div>
+</div>
+
+{% if albumes %}
+<div class="albums-grid">
+  {% for album in albumes %}
+  <div class="album-card">
+    {% if album.images %}
+    <img class="album-card__cover" src="{{ album.images.0.url }}" alt="{{ album.name }}">
+    {% else %}
+    <div class="album-card__cover-placeholder">
+      <span class="material-icons" style="font-size:3rem; color:rgba(255,255,255,0.2);">album</span>
+    </div>
+    {% endif %}
+    <div class="album-card__body">
+      <div class="album-card__name">{{ album.name }}</div>
+      <div class="album-card__artist">{% for a in album.artists %}{{ a.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+      <div class="album-card__date">{{ album.release_date }}</div>
+      <span class="album-badge">{{ album.album_type|capfirst }}</span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center; padding:3rem 1rem; color:rgba(255,255,255,0.4);">
+  <span class="material-icons" style="font-size:3rem; display:block; margin-bottom:0.6rem;">new_releases</span>
+  <p>No se pudieron cargar las novedades.</p>
+</div>
+{% endif %}
+{% endblock %}

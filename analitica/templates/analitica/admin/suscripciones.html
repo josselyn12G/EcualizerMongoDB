@@ -1,0 +1,173 @@
+{% extends "analitica/admin/_base_analitica.html" %}
+
+{% block title %}Comercial · Suscripciones — Ecualizer{% endblock %}
+{% block topbar_title %}Comercial · Suscripciones{% endblock %}
+{% block breadcrumb %}Admin / Comercial / Suscripciones{% endblock %}
+{% block nav_comercial_open %}open{% endblock %}
+{% block nav_suscripciones %}active{% endblock %}
+
+{% block content %}
+
+<!-- ── KPIs ── -->
+<div class="an-grid an-grid--kpis" style="margin-bottom:1rem;">
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(34,197,94,0.13);color:#22c55e;"><span class="material-icons">verified</span></div>
+    <div class="kpi-card__label">Vigentes</div>
+    <div class="kpi-card__value">{{ kpis.Vigentes|default:0 }}</div>
+    <div class="kpi-card__sub">{{ kpis.UsuariosConPlanVigente|default:0 }} usuarios</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(239,68,68,0.13);color:#ef4444;"><span class="material-icons">timer_off</span></div>
+    <div class="kpi-card__label">Vencidas</div>
+    <div class="kpi-card__value">{{ kpis.Vencidas|default:0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(168,85,247,0.13);color:#a855f7;"><span class="material-icons">cancel</span></div>
+    <div class="kpi-card__label">Canceladas</div>
+    <div class="kpi-card__value">{{ kpis.Canceladas|default:0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(148,163,184,0.13);color:#94a3b8;"><span class="material-icons">pause_circle</span></div>
+    <div class="kpi-card__label">Inactivas</div>
+    <div class="kpi-card__value">{{ kpis.Inactivas|default:0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon"><span class="material-icons">autorenew</span></div>
+    <div class="kpi-card__label">Renovación auto</div>
+    <div class="kpi-card__value">{{ kpis.ConRenovacionAutomatica|default:0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(59,130,246,0.13);color:#3b82f6;"><span class="material-icons">history</span></div>
+    <div class="kpi-card__label">Total histórico</div>
+    <div class="kpi-card__value">{{ kpis.TotalHistorico|default:0 }}</div>
+  </div>
+</div>
+
+<!-- ── Serie mensual ── -->
+<div class="chart-card" style="margin-bottom:1rem;">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">trending_up</span> Suscripciones por mes · 12 meses
+    </div>
+    <span class="chart-card__hint">nuevas vs canceladas</span>
+  </div>
+  <div class="chart-card__body chart-card__body--lg">
+    <canvas id="chartSus"></canvas>
+  </div>
+</div>
+
+<!-- ── Filtros ── -->
+<form method="get" class="chart-card" style="padding:0.85rem 1rem; margin-bottom:1rem;">
+  <div style="display:grid; grid-template-columns: 1fr 1fr auto; gap:0.6rem; align-items:end;">
+    <div>
+      <label class="kpi-card__label" style="display:block; margin-bottom:0.35rem;">Estado</label>
+      <select name="estado" class="form-select filter-select">
+        <option value="">Todos</option>
+        <option value="activa"    {% if estado == 'activa' %}selected{% endif %}>Activa</option>
+        <option value="cancelada" {% if estado == 'cancelada' %}selected{% endif %}>Cancelada</option>
+        <option value="inactiva"  {% if estado == 'inactiva' %}selected{% endif %}>Inactiva</option>
+      </select>
+    </div>
+    <div>
+      <label class="kpi-card__label" style="display:block; margin-bottom:0.35rem;">Plan</label>
+      <select name="plan" class="form-select filter-select">
+        <option value="">Todos</option>
+        {% for p in planes %}
+          <option value="{{ p.idTipoPlan }}" {% if tipo_plan_id == p.idTipoPlan %}selected{% endif %}>
+            {{ p.nombrePlan }} · ${{ p.precio|floatformat:0 }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <button type="submit" class="btn-new"><span class="material-icons">filter_alt</span> Filtrar</button>
+    </div>
+  </div>
+</form>
+
+<!-- ── Listado ── -->
+<div class="chart-card">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">subscriptions</span>
+      Listado · {{ suscripciones|length }} resultado{{ suscripciones|length|pluralize }}
+    </div>
+  </div>
+  <table class="an-table">
+    <thead>
+      <tr>
+        <th>#</th><th>Usuario</th><th>Correo</th>
+        <th>Plan</th>
+        <th>Inicio</th><th>Fin</th>
+        <th>Estado</th>
+        <th>Auto</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in suscripciones %}
+      <tr>
+        <td>#{{ s.idSuscripcion }}</td>
+        <td><strong style="color:var(--text);">{{ s.Usuario }}</strong>
+          <div style="font-size:0.74rem; color:var(--text-muted);">@{{ s.Alias }}</div>
+        </td>
+        <td>{{ s.Correo }}</td>
+        <td>
+          {{ s.Plan }}
+          <div style="font-size:0.74rem; color:var(--text-muted);">
+            ${{ s.Precio|floatformat:2 }} · {{ s.Duracion }}
+          </div>
+        </td>
+        <td>{{ s.fechaInicio|date:"d/m/Y" }}</td>
+        <td>{{ s.fechaFin|date:"d/m/Y" }}</td>
+        <td>
+          {% if s.EstadoEfectivo == 'Vigente' %}
+            <span style="color:#22c55e; font-weight:600;">● Vigente</span>
+          {% elif s.EstadoEfectivo == 'Vencida' %}
+            <span style="color:#fb923c; font-weight:600;">● Vencida</span>
+          {% elif s.EstadoEfectivo == 'cancelada' %}
+            <span style="color:#ef4444; font-weight:600;">● Cancelada</span>
+          {% else %}
+            <span style="color:#94a3b8; font-weight:600;">● {{ s.EstadoEfectivo|capfirst }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if s.renovacionAutomatica == 'S' %}
+            <span class="material-icons" style="color:#22c55e; font-size:1.1rem;" title="Renovación automática">autorenew</span>
+          {% else %}
+            <span class="material-icons" style="color:var(--text-light); font-size:1.1rem;" title="Manual">block</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="an-empty">
+        <span class="material-icons">subscriptions</span>
+        Sin suscripciones con los filtros aplicados.
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{{ series_mensual|json_script:"d_sus" }}
+{% endblock %}
+
+{% block analitica_js %}
+<script>
+(function(){
+  const data = JSON.parse(document.getElementById('d_sus').textContent);
+  new Chart(document.getElementById('chartSus'), {
+    type: 'bar',
+    data: {
+      labels: data.map(d=>d.Mes),
+      datasets: [
+        { label:'Nuevas',     data:data.map(d=>d.NuevasSuscripciones),
+          backgroundColor: window.AN_PALETTE[0], borderRadius:6 },
+        { label:'Canceladas', data:data.map(d=>d.Canceladas),
+          backgroundColor: '#ef4444', borderRadius:6 },
+      ],
+    },
+    options: { maintainAspectRatio:false, scales:{ y:{beginAtZero:true} } },
+  });
+})();
+</script>
+{% endblock %}

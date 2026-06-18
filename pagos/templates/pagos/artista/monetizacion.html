@@ -1,0 +1,143 @@
+{% extends "usuarios/artista/base_artista.html" %}
+{% block title %}Monetización — Ecualizer{% endblock %}
+{% block topbar_title %}Monetización{% endblock %}
+{% block breadcrumb %}Artista / Monetización{% endblock %}
+{% block nav_monetizacion %}active{% endblock %}
+
+{% block content %}
+<style>
+  .mon-hero {
+    border-radius: 18px;
+    padding: 1.5rem 1.75rem;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 60%, #7c2d12 100%);
+    color: #fff;
+    margin-bottom: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .mon-hero__title { font-size: 2rem; font-weight: 800; }
+  .mon-hero__sub   { font-size: 0.85rem; color: rgba(255,255,255,0.85); margin-top: 0.3rem; }
+  .mon-hero__total { font-size: 2rem; font-weight: 800; text-align: right; }
+  .mon-hero__total span { font-size: 0.8rem; font-weight: 400; display: block; opacity: 0.85; }
+
+  .mon-filter {
+    background: rgba(0,0,0,0.30);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .mon-filter label { font-size: 0.78rem; color: rgba(255,255,255,0.6); display: block; margin-bottom: 4px; }
+  .mon-filter input {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem;
+    color: #fff;
+    font-size: 0.85rem;
+  }
+  .mon-filter button {
+    background: #f97316;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .mon-table {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+  }
+  .mon-table table { width: 100%; border-collapse: collapse; }
+  .mon-table thead th {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.5);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    text-align: left;
+  }
+  .mon-table tbody td {
+    padding: 0.85rem 1.25rem;
+    font-size: 0.86rem;
+    color: rgba(255,255,255,0.85);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .mon-table tbody tr:last-child td { border-bottom: none; }
+  .mon-table tbody tr:hover { background: rgba(255,255,255,0.04); }
+</style>
+
+<div class="mon-hero">
+  <div>
+    <div class="mon-hero__title">Monetización</div>
+    <div class="mon-hero__sub">{{ total }} registro{{ total|pluralize:"s" }} encontrado{{ total|pluralize:"s" }}</div>
+  </div>
+  <div class="mon-hero__total">
+    ${{ total_monto|floatformat:2 }}
+    <span>Total generado</span>
+  </div>
+</div>
+
+<form method="get" class="mon-filter">
+  <div>
+    <label>Fecha inicio</label>
+    <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}">
+  </div>
+  <div>
+    <label>Fecha fin</label>
+    <input type="date" name="fecha_fin" value="{{ fecha_fin }}">
+  </div>
+  <button type="submit">Filtrar</button>
+  {% if fecha_inicio or fecha_fin %}
+    <a href="{% url 'artista_monetizacion' %}" style="color:rgba(255,255,255,0.5);font-size:0.85rem;align-self:center;">Limpiar</a>
+  {% endif %}
+</form>
+{% if error %}
+<p style="color:red; padding: 1rem;">ERROR: {{ error }}</p>
+{% endif %}
+
+{% if regalias %}
+<div class="mon-table">
+  <table>
+    <thead>
+      <tr>
+        <th>Canción</th>
+        <th>País</th>
+        <th>Período</th>
+        <th>Reproducciones</th>
+        <th>Monto total</th>
+        <th>Monto artista</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in regalias %}
+      <tr>
+        <td><strong>{{ r.Cancion }}</strong></td>
+        <td>{{ r.Pais }}</td>
+        <td>{{ r.mesPeriodo }}/{{ r.anioPeriodo }}</td>
+        <td>{{ r.TotalReproducciones }}</td>
+        <td>${{ r.MontoBruto|floatformat:2 }}</td>
+        <td><strong>${{ r.MontoNetoArtista|floatformat:2 }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div style="text-align:center; padding:3rem 1rem; color:rgba(255,255,255,0.4);">
+  <span class="material-icons" style="font-size:3rem; display:block; margin-bottom:0.6rem;">payments</span>
+  <p>No hay registros de regalías para el período seleccionado.</p>
+</div>
+{% endif %}
+{% endblock %}

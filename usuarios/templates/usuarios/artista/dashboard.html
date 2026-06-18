@@ -1,0 +1,23 @@
+{% extends "usuarios/artista/base_artista.html" %}
+{% load static %}
+
+{% block title %}Dashboard — Ecualizer{% endblock %}
+{% block topbar_title %}Mi Dashboard{% endblock %}
+{% block breadcrumb %}Artista / Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+
+  {# 1. Hero card con gradient morado #}
+  {% include "usuarios/artista/components/welcome_banner.html" %}
+
+  {# 2. Sección de Álbumes — primera fila #}
+  {% include "usuarios/artista/components/albums_row.html" %}
+
+  {# 3. Estadísticas de reproducción — KPIs en glass #}
+  {% include "usuarios/artista/components/quick_stats.html" %}
+
+  {# 4. Top canciones + Timeline de actividad #}
+  {% include "usuarios/artista/components/recent_activity.html" %}
+
+{% endblock %}

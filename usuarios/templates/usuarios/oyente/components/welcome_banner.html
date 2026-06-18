@@ -1,0 +1,38 @@
+<!-- Hero principal estilo Apple Music -->
+<div class="featured-hero">
+
+  <!-- Meta row: tipo + stat -->
+  <div class="featured-hero__meta">
+    <span class="featured-hero__type">Bienvenido de vuelta</span>
+    <div class="featured-hero__stat">
+      <strong>
+        <span class="up material-icons" style="font-size:0.75rem;">trending_up</span>
+        {{ stats.canciones_favoritas|default:"0" }}
+      </strong>
+      canciones favoritas
+    </div>
+  </div>
+
+  <!-- Título grande -->
+  <div class="featured-hero__body">
+    <h2 class="featured-hero__title">
+      ¡Hola,<br>{% if perfil and perfil.alias %}{{ perfil.alias }}{% else %}{{ persona.primer_nombre }}{% endif %}!
+    </h2>
+    <p class="featured-hero__sub">
+      {% if persona.fecha_registro %}Miembro desde {{ persona.fecha_registro|date:"F Y" }}{% else %}Tu música, tu mundo.{% endif %}
+    </p>
+  </div>
+
+  <!-- Botones -->
+  <div class="featured-hero__actions">
+    <a href="#" class="btn-hero-play">
+      <span class="material-icons">play_arrow</span>
+      Reproducir
+    </a>
+    <a href="#" class="btn-hero-ghost">
+      <span class="material-icons">explore</span>
+      Explorar
+    </a>
+  </div>
+
+</div>

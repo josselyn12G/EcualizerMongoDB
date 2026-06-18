@@ -1,0 +1,297 @@
+{% extends "usuarios/artista/base_artista.html" %}
+{% load static %}
+
+{% block title %}Mis Álbumes — Ecualizer{% endblock %}
+{% block topbar_title %}Mis Álbumes{% endblock %}
+{% block breadcrumb %}Artista / Catálogo / Álbumes{% endblock %}
+{% block nav_catalogo %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Form glass (alineado al estilo del dashboard naranja) ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: 0.75rem;
+    align-items: end;
+  }
+  @media (max-width: 720px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .field-label {
+    display: block;
+    font-size: 0.72rem; font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 0.35rem;
+  }
+  .field-input,
+  .field-select,
+  .field-textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 0.55rem 0.85rem;
+    font-size: 0.86rem; font-family: inherit;
+    transition: var(--tr); outline: none;
+  }
+  .field-input::placeholder { color: rgba(255,255,255,0.4); }
+  .field-input:focus,
+  .field-select:focus,
+  .field-textarea:focus {
+    background: rgba(255,255,255,0.10);
+    border-color: rgba(249,115,22,0.45);
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+  }
+  .field-textarea { min-height: 90px; resize: vertical; }
+
+  /* El desplegable nativo de <select> usa fondo blanco del sistema:
+     forzamos texto oscuro en las opciones para que sean legibles. */
+  .field-select option,
+  .field-select optgroup {
+    color: #1f2937;
+    background-color: #ffffff;
+  }
+
+  /* ── Album mini-cover sobre la grilla del artista ── */
+  .my-albums-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 1rem;
+  }
+  .my-album-card .album-actions {
+    display: flex; gap: 0.4rem;
+    margin-top: 0.55rem;
+  }
+  .my-album-card .album-actions form { display: inline-flex; }
+  .my-album-card .badge {
+    margin-top: 0.45rem;
+    align-self: flex-start;
+  }
+
+  .btn-pill-icon {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    font-size: 0.75rem; font-weight: 600;
+    border: 1px solid var(--glass-border);
+    background: rgba(255,255,255,0.05);
+    color: var(--text-2);
+    transition: var(--tr);
+    cursor: pointer;
+  }
+  .btn-pill-icon:hover {
+    background: var(--glass-bg-h); color: var(--text);
+  }
+  .btn-pill-icon .material-icons { font-size: 0.9rem; }
+  /* Botones de acción solo-icono: compactos y cuadrados */
+  .album-actions .btn-pill-icon { padding: 0.45rem; line-height: 0; }
+  .album-actions .btn-pill-icon .material-icons { font-size: 1.05rem; }
+  .btn-pill-icon--danger {
+    background: var(--red-bg);
+    color: var(--red);
+    border-color: rgba(239,68,68,0.30);
+  }
+  .btn-pill-icon--danger:hover {
+    background: rgba(239,68,68,0.18); color: var(--red);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if modo == 'list' %}
+
+  <!-- Header de sección -->
+  <div class="section-header">
+    <div>
+      <h3 class="section-title" style="font-size:1.35rem;">
+        <span class="material-icons">library_music</span>
+        Mis Álbumes
+      </h3>
+      <small style="color: var(--text-muted);">Gestiona tu discografía — {{ albumes|length }} álbum{{ albumes|length|pluralize:"es" }}</small>
+    </div>
+    <a href="{% url 'catalogo:artista_album_create' %}" class="btn-new">
+      <span class="material-icons">add</span>
+      Nuevo Álbum
+    </a>
+  </div>
+
+  <!-- Filtros (glass) -->
+  <form method="get" class="panel-card" style="padding:1rem 1.25rem;">
+    <div class="form-grid">
+      <div>
+        <label class="field-label">Buscar por título</label>
+        <input type="text" name="q" class="field-input"
+               value="{{ busqueda }}" placeholder="Ej. Midnight Echoes">
+      </div>
+      <div>
+        <label class="field-label">Estado</label>
+        <select name="estado" class="field-select">
+          <option value="">Todos</option>
+          {% for val, lbl in estados %}
+            <option value="{{ val }}" {% if val == estado_actual %}selected{% endif %}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="btn-new" style="height:38px;">
+          <span class="material-icons">filter_alt</span>
+          Filtrar
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Grilla de álbumes (estilo dashboard) -->
+  {% if albumes %}
+  <div class="my-albums-grid">
+    {% for a in albumes %}
+    <div class="album-card my-album-card">
+      <div class="album-card__cover album-card__cover--v{% cycle '1' '2' '3' '4' '5' %}">
+        <span class="material-icons">album</span>
+      </div>
+      <div class="album-card__body">
+        <div class="album-card__title">{{ a.tituloAlbum }}</div>
+        <div class="album-card__meta">
+          <span>{{ a.fechaLanzamientoAlbum|date:"Y" }}</span>
+          <span class="dot"></span>
+          <span>{{ a.nombreTipo|default:"—" }}</span>
+        </div>
+        <span class="badge badge--{{ a.estadoAlbum }}">{{ a.estadoAlbum|capfirst }}</span>
+
+        <div class="album-actions">
+          <a href="{% url 'catalogo:artista_album_detail' a.idAlbum %}" class="btn-pill-icon" title="Ver detalle">
+            <span class="material-icons">visibility</span>
+          </a>
+          <a href="{% url 'catalogo:artista_album_update' a.idAlbum %}" class="btn-pill-icon" title="Editar">
+            <span class="material-icons">edit</span>
+          </a>
+          <form method="post" action="{% url 'catalogo:artista_album_deactivate' a.idAlbum %}"
+                onsubmit="return confirm('¿Desactivar este álbum? Podrás reactivarlo más tarde.');">
+            {% csrf_token %}
+            <button type="submit" class="btn-pill-icon" title="Desactivar (reversible)">
+              <span class="material-icons">block</span>
+            </button>
+          </form>
+          <form method="post" action="{% url 'catalogo:artista_album_delete' a.idAlbum %}"
+                onsubmit="return confirm('¿ELIMINAR permanentemente el álbum &quot;{{ a.tituloAlbum|escapejs }}&quot;?\n\nEsta acción NO se puede deshacer y borrará también sus canciones.');">
+            {% csrf_token %}
+            <button type="submit" class="btn-pill-icon btn-pill-icon--danger" title="Eliminar permanentemente">
+              <span class="material-icons">delete_forever</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="panel-card">
+    <div class="empty-state">
+      <span class="material-icons">library_music</span>
+      <p>Aún no tienes álbumes registrados.<br>Crea tu primer álbum para comenzar tu discografía.</p>
+      <a href="{% url 'catalogo:artista_album_create' %}" class="btn-new">
+        <span class="material-icons">add</span> Crear álbum
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+{% elif modo == 'create' or modo == 'update' %}
+
+  <!-- Form glass -->
+  <div class="panel-card" style="padding:1.5rem 1.75rem; max-width:720px;">
+    <h3 style="font-weight:800; letter-spacing:-0.02em; margin-bottom:0.25rem;">
+      {% if modo == 'create' %}Nuevo Álbum{% else %}Editar Álbum{% endif %}
+    </h3>
+    <small style="color: var(--text-muted); display:block; margin-bottom:1.25rem;">
+      {% if modo == 'create' %}Llena los datos para crear tu nuevo álbum.{% else %}Actualiza la información del álbum.{% endif %}
+    </small>
+
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div style="margin-bottom:1rem;">
+          <label class="field-label">{{ field.label }}</label>
+          {{ field }}
+          {% if field.help_text %}<div style="color:var(--text-light); font-size:0.72rem; margin-top:0.25rem;">{{ field.help_text }}</div>{% endif %}
+          {% for error in field.errors %}<div style="color:var(--red); font-size:0.78rem; margin-top:0.25rem;">{{ error }}</div>{% endfor %}
+        </div>
+      {% endfor %}
+      <div style="display:flex; gap:0.6rem; margin-top:1.5rem;">
+        <button type="submit" class="btn-new">
+          <span class="material-icons">save</span>
+          {% if modo == 'create' %}Crear{% else %}Guardar{% endif %}
+        </button>
+        <a href="{% url 'catalogo:artista_album_list' %}" class="btn-ghost">Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Aplica estilo glass a los inputs auto-renderizados por Django
+    document.querySelectorAll('form input, form select, form textarea').forEach(function(el){
+      if (el.type === 'submit' || el.type === 'button' || el.type === 'hidden') return;
+      el.classList.add(el.tagName === 'SELECT' ? 'field-select' : (el.tagName === 'TEXTAREA' ? 'field-textarea' : 'field-input'));
+    });
+  </script>
+
+{% elif modo == 'detail' %}
+
+  <div class="panel-card" style="padding:1.5rem 1.75rem; max-width:820px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:1.25rem;">
+      <div>
+        <h3 style="font-weight:800; letter-spacing:-0.02em; margin-bottom:0.25rem;">{{ album.titulo_album }}</h3>
+        <small style="color:var(--text-muted);">
+          Álbum #{{ album.pk }} · {{ album.tipo_album.nombre_tipo }} ·
+          {{ album.fecha_lanzamiento_album|date:"d/m/Y" }}
+        </small>
+      </div>
+      <span class="badge badge--{{ album.estado_album }}">{{ album.estado_album|capfirst }}</span>
+    </div>
+
+    {% if album.descripcion_album %}
+    <p style="color:var(--text-2); font-size:0.9rem; margin-bottom:1.25rem; white-space:pre-wrap;">{{ album.descripcion_album }}</p>
+    {% endif %}
+
+    <h4 style="color:var(--text-muted); text-transform:uppercase; font-size:0.72rem; letter-spacing:0.06em; margin-bottom:0.6rem;">
+      Canciones del álbum ({{ canciones|length }})
+    </h4>
+
+    {% if canciones %}
+    <div class="table-wrap" style="overflow-x:auto;">
+      <table class="songs-table" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr><th>#</th><th>Canción</th><th>Duración</th><th>Calidad</th><th>Reprods.</th><th>Estado</th></tr>
+        </thead>
+        <tbody>
+          {% for c in canciones %}
+          <tr>
+            <td>{{ c.numero_pista }}</td>
+            <td><strong style="color:var(--text);">{{ c.nombre_cancion }}</strong></td>
+            <td>{{ c.duracion }}s</td>
+            <td>{{ c.calidad_kbps }} kbps</td>
+            <td>{{ c.total_reproducciones }}</td>
+            <td><span class="badge badge--{{ c.estado_cancion }}">{{ c.estado_cancion|capfirst }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p style="color:var(--text-muted); font-style:italic;">Este álbum aún no tiene canciones.</p>
+    {% endif %}
+
+    <div style="display:flex; gap:0.6rem; margin-top:1.5rem;">
+      <a href="{% url 'catalogo:artista_album_update' album.pk %}" class="btn-new">
+        <span class="material-icons">edit</span> Editar
+      </a>
+      <a href="{% url 'catalogo:artista_album_list' %}" class="btn-ghost">Volver</a>
+    </div>
+  </div>
+
+{% endif %}
+
+{% endblock %}

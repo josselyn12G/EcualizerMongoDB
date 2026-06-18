@@ -1,0 +1,289 @@
+{% extends "analitica/artista/_base_analitica_artista.html" %}
+{% load static %}
+
+{% block title %}Monetización — Ecualizer{% endblock %}
+{% block topbar_title %}Monetización{% endblock %}
+{% block breadcrumb %}Artista / Monetización{% endblock %}
+{% block nav_monetizacion %}active{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+  .mini-filter {
+    display: inline-flex; gap: 0.35rem; align-items: center;
+    flex-wrap: wrap;
+  }
+  .mini-filter select,
+  .mini-filter input {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    padding: 0.3rem 0.55rem;
+    color: #fff; font-size: 0.78rem;
+  }
+  .mini-filter input[type="date"]   { width: 140px; }
+  .mini-filter input[type="number"] { width: 100px; }
+  .mini-filter .btn-mini {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff; font-weight: 600; border: none;
+    border-radius: 6px; padding: 0.35rem 0.7rem;
+    display: inline-flex; align-items: center; gap: 0.2rem;
+    cursor: pointer; font-size: 0.76rem;
+  }
+  .mini-filter .btn-mini .material-icons { font-size: 0.95rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── KPIs de monetización ── #}
+<div class="an-grid an-grid--kpis" style="margin-bottom:1rem;">
+
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(34,197,94,0.13); color:#22c55e;">
+      <span class="material-icons">payments</span>
+    </div>
+    <div class="kpi-card__label">Histórico total</div>
+    <div class="kpi-card__value">${{ kpis.total_historico|default:0|floatformat:2 }}</div>
+    <div class="kpi-card__sub">Neto artista (cerrado)</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-card__icon"><span class="material-icons">schedule</span></div>
+    <div class="kpi-card__label">Pendiente de cierre</div>
+    <div class="kpi-card__value">${{ kpis.total_pendiente|default:0|floatformat:2 }}</div>
+    <div class="kpi-card__sub">Reproducciones aún no facturadas</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(168,85,247,0.13); color:#a855f7;">
+      <span class="material-icons">business</span>
+    </div>
+    <div class="kpi-card__label">A discográfica (histórico)</div>
+    <div class="kpi-card__value">${{ kpis.total_descontado|default:0|floatformat:2 }}</div>
+    <div class="kpi-card__sub">Comisión deducida</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(59,130,246,0.13); color:#3b82f6;">
+      <span class="material-icons">calendar_month</span>
+    </div>
+    <div class="kpi-card__label">Meses con cierre</div>
+    <div class="kpi-card__value">{{ kpis.meses_cerrados|default:0 }}</div>
+    <div class="kpi-card__sub">Últimos {{ filtros.meses }} meses</div>
+  </div>
+
+</div>
+
+{# ── Evolución mensual de regalías (chart + tabla) ── #}
+<div class="chart-card" style="margin-bottom:1rem;">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">show_chart</span>
+      Evolución de regalías mes a mes
+    </div>
+    <form method="get" class="mini-filter">
+      <input type="hidden" name="pend_desde"  value="{{ filtros.pend_desde|date:'Y-m-d' }}">
+      <input type="hidden" name="pend_hasta"  value="{{ filtros.pend_hasta|date:'Y-m-d' }}">
+      <input type="hidden" name="pend_tarifa" value="{{ filtros.pend_tarifa }}">
+      <input type="hidden" name="hist_desde"  value="{{ filtros.hist_desde|date:'Y-m-d' }}">
+      <input type="hidden" name="hist_hasta"  value="{{ filtros.hist_hasta|date:'Y-m-d' }}">
+      <label style="font-size:0.7rem; color:rgba(255,255,255,0.5);">Últimos</label>
+      <input type="number" name="meses" min="1" max="60" value="{{ filtros.meses }}">
+      <label style="font-size:0.7rem; color:rgba(255,255,255,0.5);">meses</label>
+      <button type="submit" class="btn-mini">
+        <span class="material-icons">search</span> Aplicar
+      </button>
+    </form>
+  </div>
+  <div class="an-grid an-grid--two">
+    <div class="chart-card__body chart-card__body--lg" style="min-height:320px;">
+      {% if evolucion %}
+        <canvas id="chartEvolucion"></canvas>
+      {% else %}
+        <div class="an-empty"><span class="material-icons">show_chart</span>Aún no hay cierres mensuales.</div>
+      {% endif %}
+    </div>
+    <div style="overflow:auto; max-height:360px;">
+      <table class="an-table">
+        <thead>
+          <tr><th>Mes</th><th class="num">Reprods</th><th class="num">Bruto</th><th class="num">Neto</th></tr>
+        </thead>
+        <tbody>
+          {% for e in evolucion %}
+          <tr>
+            <td>{{ e.Etiqueta|default:"" }}</td>
+            <td class="num">{{ e.Reproducciones }}</td>
+            <td class="num">${{ e.MontoBruto|floatformat:2 }}</td>
+            <td class="num accent">${{ e.MontoNetoArtista|floatformat:2 }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="4" class="an-empty">Sin datos.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{# ── HISTÓRICO (cerrado) — filtro: rango fechas ── #}
+<div class="chart-card" style="margin-bottom:1rem;">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">verified</span>
+      Histórico de regalías cerradas
+    </div>
+    <form method="get" class="mini-filter">
+      <input type="hidden" name="pend_desde"  value="{{ filtros.pend_desde|date:'Y-m-d' }}">
+      <input type="hidden" name="pend_hasta"  value="{{ filtros.pend_hasta|date:'Y-m-d' }}">
+      <input type="hidden" name="pend_tarifa" value="{{ filtros.pend_tarifa }}">
+      <input type="hidden" name="meses"       value="{{ filtros.meses }}">
+      <label style="font-size:0.7rem; color:rgba(255,255,255,0.5);">Desde</label>
+      <input type="date" name="hist_desde" value="{{ filtros.hist_desde|date:'Y-m-d' }}">
+      <label style="font-size:0.7rem; color:rgba(255,255,255,0.5);">Hasta</label>
+      <input type="date" name="hist_hasta" value="{{ filtros.hist_hasta|date:'Y-m-d' }}">
+      <button type="submit" class="btn-mini">
+        <span class="material-icons">search</span> Buscar
+      </button>
+    </form>
+  </div>
+  <div style="color: rgba(255,255,255,0.5); font-size:0.72rem; margin-bottom:0.5rem;">
+    Registros consolidados por <code>SP_CerrarFacturacionMensual</code> · sp_HistorialRegaliasArtista
+  </div>
+  <table class="an-table">
+    <thead>
+      <tr>
+        <th>Período</th>
+        <th>Canción</th>
+        <th>Álbum</th>
+        <th>País</th>
+        <th class="num">Reprods</th>
+        <th class="num">Bruto</th>
+        <th class="num">A discográfica</th>
+        <th class="num">Neto artista</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in historial %}
+      <tr>
+        <td><strong>{{ r.Mes }}/{{ r.Anio }}</strong></td>
+        <td>{{ r.Cancion }}</td>
+        <td>{{ r.Album }}</td>
+        <td>{{ r.Pais|default:"—" }}</td>
+        <td class="num">{{ r.Reproducciones }}</td>
+        <td class="num">${{ r.MontoBruto|floatformat:2 }}</td>
+        <td class="num">${{ r.MontoDiscografica|floatformat:2 }}</td>
+        <td class="num accent">${{ r.MontoNetoArtista|floatformat:2 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" class="an-empty"><span class="material-icons">payments</span>Aún no hay cierres en el rango.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{# ── PENDIENTE (pre-cierre) — filtro: desde + hasta + tarifa ── #}
+<div class="chart-card">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">schedule</span>
+      Pendiente de cierre (cálculo en vivo)
+    </div>
+    <form method="get" class="mini-filter">
+      <input type="hidden" name="hist_desde"  value="{{ filtros.hist_desde|date:'Y-m-d' }}">
+      <input type="hidden" name="hist_hasta"  value="{{ filtros.hist_hasta|date:'Y-m-d' }}">
+      <input type="hidden" name="meses"       value="{{ filtros.meses }}">
+      <label style="font-size:0.7rem; color:rgba(255,255,255,0.5);">Desde</label>
+      <input type="date" name="pend_desde" value="{{ filtros.pend_desde|date:'Y-m-d' }}">
+      <label style="font-size:0.7rem; color:rgba(255,255,255,0.5);">Hasta</label>
+      <input type="date" name="pend_hasta" value="{{ filtros.pend_hasta|date:'Y-m-d' }}">
+      <label style="font-size:0.7rem; color:rgba(255,255,255,0.5);">Tarifa</label>
+      <input type="number" name="pend_tarifa" step="0.0001" min="0"
+             value="{{ filtros.pend_tarifa }}">
+      <button type="submit" class="btn-mini">
+        <span class="material-icons">search</span> Buscar
+      </button>
+    </form>
+  </div>
+  <div style="color: rgba(255,255,255,0.5); font-size:0.72rem; margin-bottom:0.5rem;">
+    Simulación basada en reproducciones del rango · sp_ReporteRegaliasArtista
+  </div>
+  <table class="an-table">
+    <thead>
+      <tr>
+        <th>Canción</th>
+        <th>País</th>
+        <th class="num">Reprods</th>
+        <th class="num">Bruto</th>
+        <th class="num">A discográfica</th>
+        <th class="num">Neto artista</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in regalias_pendientes %}
+      <tr>
+        <td>{{ r.Cancion }}</td>
+        <td>{{ r.Pais|default:"—" }}</td>
+        <td class="num">{{ r.TotalReproducciones }}</td>
+        <td class="num">${{ r.MontoBruto|floatformat:2 }}</td>
+        <td class="num">${{ r.DeduccionDiscografica|floatformat:2 }}</td>
+        <td class="num accent">${{ r.MontoNetoArtista|floatformat:2 }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="an-empty"><span class="material-icons">attach_money</span>Sin reproducciones en el rango.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
+
+{% block analitica_js %}
+{{ evolucion|json_script:"data-evol" }}
+<script>
+(function () {
+  function safeJSON(id) {
+    const el = document.getElementById(id);
+    if (!el) return [];
+    try { return JSON.parse(el.textContent); } catch (e) { return []; }
+  }
+
+  const evol = safeJSON('data-evol');
+  const cv = document.getElementById('chartEvolucion');
+  if (cv && evol.length) {
+    new Chart(cv, {
+      type: 'line',
+      data: {
+        labels: evol.map(d => d.Etiqueta || ''),
+        datasets: [
+          {
+            label: 'Neto artista (USD)',
+            data: evol.map(d => Number(d.MontoNetoArtista) || 0),
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249,115,22,0.18)',
+            borderWidth: 2.5, tension: 0.35, fill: true,
+            pointBackgroundColor: '#fb923c', pointRadius: 4,
+          },
+          {
+            label: 'Bruto (USD)',
+            data: evol.map(d => Number(d.MontoBruto) || 0),
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.10)',
+            borderWidth: 2, tension: 0.35, fill: false,
+            pointBackgroundColor: '#60a5fa', pointRadius: 3,
+            borderDash: [5,3],
+          },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, ticks: {
+            callback: v => '$' + v.toFixed(2) } },
+        },
+      },
+    });
+  }
+})();
+</script>
+{% endblock %}

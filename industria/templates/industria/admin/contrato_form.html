@@ -1,0 +1,44 @@
+{% extends "industria/admin/_base_industria.html" %}
+
+{% block title %}{% if modo == 'create' %}Nuevo Contrato{% else %}Editar Contrato{% endif %} — Ecualizer{% endblock %}
+{% block topbar_title %}Comercial · Contratos{% endblock %}
+{% block breadcrumb %}Admin / Comercial / Contratos{% endblock %}
+{% block nav_comercial_open %}open{% endblock %}
+{% block nav_contratos %}active{% endblock %}
+
+{% block content %}
+
+<div class="chart-card" style="max-width:760px;">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">description</span>
+      {% if modo == 'create' %}Nuevo contrato{% else %}Editar contrato #{{ obj.id_contrato }}{% endif %}
+    </div>
+    <a href="{% url 'industria:contrato_list' %}" class="btn-cancel">Volver</a>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+      {% for field in form %}
+        <div style="{% if field.name == 'artista' or field.name == 'discografica' %}grid-column: 1/-1;{% endif %}">
+          <label class="kpi-card__label" style="display:block; margin-bottom:0.4rem;">{{ field.label }}</label>
+          {{ field }}
+          {% for e in field.errors %}<div style="color:#ef4444; font-size:0.78rem; margin-top:0.3rem;">{{ e }}</div>{% endfor %}
+        </div>
+      {% endfor %}
+    </div>
+    {% for e in form.non_field_errors %}
+      <div style="color:#ef4444; font-size:0.85rem; margin-top:0.8rem;">{{ e }}</div>
+    {% endfor %}
+    <div style="display:flex; gap:0.5rem; margin-top:1.25rem;">
+      <button type="submit" class="btn-new">
+        <span class="material-icons">save</span>
+        {% if modo == 'create' %}Crear{% else %}Guardar cambios{% endif %}
+      </button>
+      <a href="{% url 'industria:contrato_list' %}" class="btn-cancel">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

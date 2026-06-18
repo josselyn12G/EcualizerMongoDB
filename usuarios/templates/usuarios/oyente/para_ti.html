@@ -1,0 +1,79 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+
+{% block title %}Para Ti — Ecualizer{% endblock %}
+{% block topbar_title %}Para Ti{% endblock %}
+{% block breadcrumb %}Para Ti{% endblock %}
+{% block nav_para_ti %}active{% endblock %}
+
+{% block content %}
+<style>
+  .sp-hero {
+    border-radius: 18px;
+    padding: 1.75rem 1.75rem 1.5rem;
+    min-height: 180px;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 40%, #7c2d12 100%);
+    color: #fff;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .sp-hero__tag   { font-size:0.74rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:rgba(255,255,255,0.85); margin-bottom:0.5rem; }
+  .sp-hero__title { font-size:2.8rem; font-weight:800; letter-spacing:-0.03em; line-height:1; }
+  .sp-hero__sub   { font-size:0.85rem; color:rgba(255,255,255,0.85); margin-top:0.5rem; }
+
+  .track-list {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 0.35rem 0.5rem;
+    backdrop-filter: blur(20px);
+  }
+  .track-row {
+    display: grid;
+    grid-template-columns: 28px 48px 1fr 80px;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 10px;
+    transition: background 0.15s;
+  }
+  .track-row:hover { background: rgba(255,255,255,0.05); }
+  .track-row__num   { color:rgba(255,255,255,0.4); font-size:0.86rem; text-align:center; }
+  .track-row__cover { width:42px; height:42px; border-radius:8px; object-fit:cover; background:#1a1a1a; }
+  .track-row__title { color:#fff; font-weight:600; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .track-row__sub   { font-size:0.74rem; color:rgba(255,255,255,0.5); }
+  .track-row__dur   { color:rgba(255,255,255,0.4); font-size:0.82rem; text-align:right; }
+</style>
+
+<div class="sp-hero">
+  <div class="sp-hero__tag">Ecualizer · Recomendaciones</div>
+  <div class="sp-hero__title">Para Ti</div>
+  <div class="sp-hero__sub">{{ tracks|length }} canciones seleccionadas para ti</div>
+</div>
+
+{% if tracks %}
+<div class="track-list">
+  {% for t in tracks %}
+  <div class="track-row">
+    <div class="track-row__num">{{ forloop.counter }}</div>
+    {% if t.album.images %}
+    <img class="track-row__cover" src="{{ t.album.images.0.url }}" alt="{{ t.name }}">
+    {% else %}
+    <div class="track-row__cover" style="display:flex;align-items:center;justify-content:center;">
+      <span class="material-icons" style="color:rgba(255,255,255,0.3);">music_note</span>
+    </div>
+    {% endif %}
+    <div>
+      <div class="track-row__title">{{ t.name }}</div>
+      <div class="track-row__sub">{% for a in t.artists %}{{ a.name }}{% if not forloop.last %}, {% endif %}{% endfor %} · {{ t.album.name }}</div>
+    </div>
+    <div class="track-row__dur">{{ t.duration_ms|divisibleby:60000 }}:{{ t.duration_ms|stringformat:"05d" }}</div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center; padding:3rem 1rem; color:rgba(255,255,255,0.4);">
+  <span class="material-icons" style="font-size:3rem; display:block; margin-bottom:0.6rem;">music_off</span>
+  <p>No se pudieron cargar las recomendaciones.</p>
+</div>
+{% endif %}
+{% endblock %}

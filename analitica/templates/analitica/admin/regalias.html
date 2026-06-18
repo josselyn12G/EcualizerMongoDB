@@ -1,0 +1,259 @@
+{% extends "analitica/admin/_base_analitica.html" %}
+
+{% block title %}Analítica · Regalías — Ecualizer{% endblock %}
+{% block topbar_title %}Analítica · Regalías{% endblock %}
+{% block breadcrumb %}Admin / Analítica / Regalías{% endblock %}
+{% block nav_comercial_open %}open{% endblock %}
+{% block nav_regalias %}active{% endblock %}
+
+{% block content %}
+
+<!-- ── Resumen breve de cierre (solo info) ── -->
+<div class="chart-card" style="margin-bottom:1rem; padding:0.75rem 1rem;">
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+    <div>
+      <div style="color: #9ca3af; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px;">
+        <span class="material-icons" style="vertical-align:-3px; font-size:0.95rem;">history</span>
+        Último cierre
+      </div>
+      {% if cierre_info.UltimoMesCerrado %}
+        <div style="font-size:0.95rem; font-weight:600; color:#fb923c;">
+          Período {{ cierre_info.UltimoMesCerrado }}/{{ cierre_info.UltimoAnioCerrado }}
+          <span style="color:#9ca3af; font-weight:400; font-size:0.75rem;">
+            (hasta {{ cierre_info.UltimoPeriodoFin|date:"d/m/Y" }})
+          </span>
+        </div>
+      {% else %}
+        <div style="color:#9ca3af;">Nunca ejecutado</div>
+      {% endif %}
+    </div>
+    <div>
+      <div style="color: #9ca3af; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px;">
+        <span class="material-icons" style="vertical-align:-3px; font-size:0.95rem;">event_available</span>
+        Próximo cierre
+      </div>
+      <div style="font-size:0.95rem; font-weight:600; color:var(--text);">
+        Período {{ cierre_info.ProximoMesACerrar }}/{{ cierre_info.ProximoAnioACerrar }}
+        {% if cierre_info.PuedeCerrarseAhora %}
+          <span style="color:#22c55e; font-weight:400; font-size:0.75rem;">· disponible ahora</span>
+        {% else %}
+          <span style="color:#9ca3af; font-weight:400; font-size:0.75rem;">
+            · desde {{ cierre_info.ProximaFechaCierre|date:"d/m/Y" }}
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="an-grid an-grid--kpis" style="margin-bottom:1rem;">
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(34,197,94,0.13);color:#22c55e;"><span class="material-icons">payments</span></div>
+    <div class="kpi-card__label">Monto total generado</div>
+    <div class="kpi-card__value">${{ resumen.MontoTotalGenerado|default:0|floatformat:2 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon"><span class="material-icons">queue_music</span></div>
+    <div class="kpi-card__label">Reproducciones</div>
+    <div class="kpi-card__value">{{ resumen.ReproduccionesTotales|default:0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(59,130,246,0.13);color:#3b82f6;"><span class="material-icons">tag</span></div>
+    <div class="kpi-card__label">Registros</div>
+    <div class="kpi-card__value">{{ resumen.TotalRegistros|default:0 }}</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(168,85,247,0.13);color:#a855f7;"><span class="material-icons">trending_up</span></div>
+    <div class="kpi-card__label">Promedio por pago</div>
+    <div class="kpi-card__value">${{ resumen.MontoPromedio|default:0|floatformat:2 }}</div>
+  </div>
+</div>
+
+<!-- Catálogo de tarifas por país -->
+<div class="chart-card" style="margin-bottom:1rem;">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">attach_money</span>
+      Tarifa por país (USD por reproducción)
+    </div>
+    <div style="color: #6b7280; font-size:0.72rem;">
+      Catálogo aplicado al cierre mensual y al consolidado en vivo.
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:0.5rem; padding:0.5rem 0.25rem;">
+    {% for t in tasas_pais %}
+    <div style="display:flex; justify-content:space-between; align-items:center;
+                background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05);
+                border-radius:8px; padding:0.45rem 0.65rem;">
+      <span style="color:#4b5563; font-size:0.82rem;">{{ t.Pais }}</span>
+      <span style="color:#fb923c; font-weight:600; font-size:0.85rem;">
+        ${{ t.Tarifa|floatformat:4 }}
+      </span>
+    </div>
+    {% empty %}
+    <div style="color: var(--text-muted); font-size:0.8rem; padding:0.5rem;">
+      Sin catálogo cargado. Ejecuta el seed de <code>Analitica.TasaPorPais</code>.
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="an-grid an-grid--equal-2" style="margin-bottom:1rem;">
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">mic</span> Regalías por artista</div>
+    </div>
+    <table class="an-table">
+      <thead><tr><th>Artista</th><th class="num">Pagos</th><th class="num">Reprods</th><th class="num">Monto</th></tr></thead>
+      <tbody>
+        {% for r in por_artista %}
+        <tr><td>{{ r.Artista }}</td>
+            <td class="num">{{ r.PagosRegistrados }}</td>
+            <td class="num">{{ r.ReproduccionesTotales }}</td>
+            <td class="num accent">${{ r.MontoTotalGenerado|floatformat:2 }}</td></tr>
+        {% empty %}
+        <tr><td colspan="4" class="an-empty"><span class="material-icons">payments</span>Sin datos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-card__head">
+      <div class="chart-card__title"><span class="material-icons">public</span> Regalías por país</div>
+    </div>
+    <table class="an-table">
+      <thead><tr><th>País</th><th class="num">Registros</th><th class="num">Reprods</th><th class="num">Monto</th></tr></thead>
+      <tbody>
+        {% for r in por_pais %}
+        <tr><td>{{ r.Pais }}</td>
+            <td class="num">{{ r.Registros }}</td>
+            <td class="num">{{ r.Reproducciones }}</td>
+            <td class="num accent">${{ r.MontoTotal|floatformat:2 }}</td></tr>
+        {% empty %}
+        <tr><td colspan="4" class="an-empty"><span class="material-icons">map</span>Sin datos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Consolidado a pagar + acciones de cierre ── -->
+<div class="chart-card" style="margin-bottom:1rem;
+     background: linear-gradient(135deg, rgba(249,115,22,0.06), rgba(234,88,12,0.02));
+     border-color: rgba(249,115,22,0.20);">
+
+  <div class="chart-card__head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+    <div>
+      <div class="chart-card__title">
+        <span class="material-icons">calculate</span>
+        Consolidado a pagar (pendiente de cierre)
+      </div>
+      <div style="color: #9ca3af; font-size:0.72rem;">
+        Cada fila representa un período/artista/país pendiente de facturar.
+        Puedes cerrar fila por fila o todo de una vez.
+      </div>
+    </div>
+    <form method="post" action="{% url 'analitica:regalias_cerrar_todos' %}"
+          onsubmit="return confirm('¿Cerrar TODOS los períodos pendientes?\n\nEsto creará registros en Analitica.Regalia para cada (mes/año) con reproducciones pendientes. No se puede deshacer fácilmente.');">
+      {% csrf_token %}
+      <button type="submit" class="btn-new" style="white-space:nowrap;">
+        <span class="material-icons">done_all</span>
+        Ejecutar todos los cierres pendientes
+      </button>
+    </form>
+  </div>
+
+  <table class="an-table">
+    <thead>
+      <tr>
+        <th>Período</th>
+        <th>Artista</th>
+        <th>Discográfica</th>
+        <th>País</th>
+        <th class="num">Tarifa</th>
+        <th class="num">Reprods</th>
+        <th class="num">Bruto</th>
+        <th class="num">A discográfica</th>
+        <th class="num">Neto artista</th>
+        <th style="text-align:center;">Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in consolidado %}
+      <tr>
+        <td><strong>{{ c.MesPeriodo }}/{{ c.AnioPeriodo }}</strong></td>
+        <td>{{ c.BeneficiarioArtista }}</td>
+        <td>{{ c.Discografica }}</td>
+        <td>{{ c.Pais }}</td>
+        <td class="num">${{ c.TarifaPais|floatformat:4 }}</td>
+        <td class="num">{{ c.TotalReproduccionesPeriodo }}</td>
+        <td class="num">${{ c.MontoBrutoTotal|floatformat:2 }}</td>
+        <td class="num">${{ c.PagoADiscografica|floatformat:2 }}</td>
+        <td class="num accent">${{ c.PagoNetoArtista|floatformat:2 }}</td>
+        <td style="text-align:center;">
+          <form method="post" action="{% url 'analitica:regalias_cerrar' %}" style="display:inline;"
+                onsubmit="return confirm('¿Cerrar el período {{ c.MesPeriodo }}/{{ c.AnioPeriodo }}?\n\nSe procesarán TODAS las reproducciones de ese mes (no sólo esta fila), y aparecerán en el histórico.');">
+            {% csrf_token %}
+            <input type="hidden" name="mes"  value="{{ c.MesPeriodo }}">
+            <input type="hidden" name="anio" value="{{ c.AnioPeriodo }}">
+            <button type="submit"
+                    style="background:rgba(249,115,22,0.15); color:#fb923c;
+                           border:1px solid rgba(249,115,22,0.4);
+                           border-radius:6px; padding:0.25rem 0.55rem;
+                           cursor:pointer; font-size:0.75rem;
+                           display:inline-flex; align-items:center; gap:0.2rem;"
+                    title="Cerrar período {{ c.MesPeriodo }}/{{ c.AnioPeriodo }}">
+              <span class="material-icons" style="font-size:0.95rem;">play_arrow</span>
+              Cerrar
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="10" class="an-empty"><span class="material-icons">calculate</span>Sin reproducciones pendientes de facturar.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="chart-card">
+  <div class="chart-card__head" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:0.5rem;">
+    <div class="chart-card__title">
+      <span class="material-icons">table_view</span>
+      Registros históricos de Regalia
+    </div>
+    <form method="get" style="display:flex; gap:0.5rem; align-items:end;">
+      <div>
+        <label style="display:block; font-size:0.68rem; color:#9ca3af; text-transform:uppercase;">Desde</label>
+        {{ form.desde }}
+      </div>
+      <div>
+        <label style="display:block; font-size:0.68rem; color:#9ca3af; text-transform:uppercase;">Hasta</label>
+        {{ form.hasta }}
+      </div>
+      <button type="submit" class="btn-new" style="padding:0.4rem 0.7rem;">
+        <span class="material-icons" style="font-size:0.95rem;">filter_alt</span>
+        Filtrar histórico
+      </button>
+    </form>
+  </div>
+  <table class="an-table">
+    <thead><tr><th>#</th><th>Periodo</th><th>Artista</th><th>Canción</th><th>País</th><th class="num">Reprods</th><th class="num">Monto</th></tr></thead>
+    <tbody>
+      {% for r in registros %}
+      <tr><td>#{{ r.idRegalia }}</td>
+          <td>{{ r.fechaInicioPeriodo|date:"d/m/Y" }} → {{ r.fechaFinPeriodo|date:"d/m/Y" }}</td>
+          <td>{{ r.Artista }}</td>
+          <td>{{ r.Cancion }}</td>
+          <td>{{ r.paisReproduccion|default:"—" }}</td>
+          <td class="num">{{ r.cantidadReproducciones }}</td>
+          <td class="num accent">${{ r.montoTotalGenerado|floatformat:2 }}</td></tr>
+      {% empty %}
+      <tr><td colspan="7" class="an-empty"><span class="material-icons">payments</span>Sin registros en el rango.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

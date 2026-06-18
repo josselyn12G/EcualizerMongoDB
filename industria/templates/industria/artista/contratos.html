@@ -1,0 +1,125 @@
+{% extends "analitica/artista/_base_analitica_artista.html" %}
+{% load static %}
+
+{% block title %}Mis Contratos — Ecualizer{% endblock %}
+{% block topbar_title %}Mis Contratos{% endblock %}
+{% block breadcrumb %}Artista / Contratos{% endblock %}
+{% block nav_contratos %}active{% endblock %}
+
+{% block content %}
+
+{# ── KPIs ── #}
+<div class="an-grid an-grid--kpis" style="margin-bottom:1rem;">
+
+  <div class="kpi-card">
+    <div class="kpi-card__icon"><span class="material-icons">description</span></div>
+    <div class="kpi-card__label">Total contratos</div>
+    <div class="kpi-card__value">{{ kpis.total|default:0 }}</div>
+    <div class="kpi-card__sub">Históricos + vigentes</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(34,197,94,0.13);color:#22c55e;">
+      <span class="material-icons">check_circle</span>
+    </div>
+    <div class="kpi-card__label">Activos</div>
+    <div class="kpi-card__value">{{ kpis.activos|default:0 }}</div>
+    <div class="kpi-card__sub">En vigor hoy</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(59,130,246,0.13);color:#3b82f6;">
+      <span class="material-icons">flag</span>
+    </div>
+    <div class="kpi-card__label">Finalizados</div>
+    <div class="kpi-card__value">{{ kpis.finalizados|default:0 }}</div>
+    <div class="kpi-card__sub">Completados</div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-card__icon" style="background:rgba(239,68,68,0.13);color:#ef4444;">
+      <span class="material-icons">cancel</span>
+    </div>
+    <div class="kpi-card__label">Cancelados</div>
+    <div class="kpi-card__value">{{ kpis.cancelados|default:0 }}</div>
+    <div class="kpi-card__sub">Rescindidos</div>
+  </div>
+
+</div>
+
+{# ── Tabla de contratos ── #}
+<div class="chart-card">
+  <div class="chart-card__head">
+    <div class="chart-card__title">
+      <span class="material-icons">business</span>
+      Contratos discográficos
+    </div>
+    <span class="chart-card__hint">
+      Industria.ContratoDiscografica · solo tus contratos
+    </span>
+  </div>
+
+  <table class="an-table">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Discográfica</th>
+        <th>País</th>
+        <th>Inicio</th>
+        <th>Fin</th>
+        <th class="num">% Artista</th>
+        <th class="num">% Discográfica</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in contratos %}
+      <tr>
+        <td><strong>#{{ c.id_contrato }}</strong></td>
+        <td>{{ c.discografica.nombre_discografica }}</td>
+        <td>{{ c.discografica.pais_origen|default:"—" }}</td>
+        <td>{{ c.fecha_inicio|date:"d/m/Y" }}</td>
+        <td>{{ c.fecha_fin|date:"d/m/Y"|default:"Indefinido" }}</td>
+        <td class="num accent">{{ c.porcentaje_artista|floatformat:2 }}%</td>
+        <td class="num">{{ c.porcentaje_discografica|floatformat:2 }}%</td>
+        <td>
+          {% if c.estado_contrato == 'Activo' %}
+            <span style="display:inline-flex; align-items:center; gap:0.25rem;
+                         background:rgba(34,197,94,0.15); color:#22c55e;
+                         padding:0.2rem 0.55rem; border-radius:50px;
+                         font-size:0.72rem; font-weight:600;">
+              <span class="material-icons" style="font-size:0.85rem;">check_circle</span>
+              Activo
+            </span>
+          {% elif c.estado_contrato == 'Finalizado' %}
+            <span style="display:inline-flex; align-items:center; gap:0.25rem;
+                         background:rgba(59,130,246,0.15); color:#60a5fa;
+                         padding:0.2rem 0.55rem; border-radius:50px;
+                         font-size:0.72rem; font-weight:600;">
+              <span class="material-icons" style="font-size:0.85rem;">flag</span>
+              Finalizado
+            </span>
+          {% else %}
+            <span style="display:inline-flex; align-items:center; gap:0.25rem;
+                         background:rgba(239,68,68,0.15); color:#f87171;
+                         padding:0.2rem 0.55rem; border-radius:50px;
+                         font-size:0.72rem; font-weight:600;">
+              <span class="material-icons" style="font-size:0.85rem;">cancel</span>
+              {{ c.estado_contrato }}
+            </span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="8" class="an-empty">
+          <span class="material-icons">description</span>
+          Aún no tienes contratos discográficos registrados.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

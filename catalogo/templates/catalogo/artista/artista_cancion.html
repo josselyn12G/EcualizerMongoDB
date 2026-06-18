@@ -1,0 +1,490 @@
+{% extends "usuarios/artista/base_artista.html" %}
+{% load static %}
+
+{% block title %}Mis Canciones — Ecualizer{% endblock %}
+{% block topbar_title %}Mis Canciones{% endblock %}
+{% block breadcrumb %}Artista / Catálogo / Canciones{% endblock %}
+{% block nav_canciones %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Form glass (mismo lenguaje visual que el dashboard) ── */
+  .form-grid-songs {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 0.75rem;
+    align-items: end;
+  }
+  @media (max-width: 900px) { .form-grid-songs { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .form-grid-songs { grid-template-columns: 1fr; } }
+
+  .field-label {
+    display: block;
+    font-size: 0.72rem; font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 0.35rem;
+  }
+  .field-input,
+  .field-select,
+  .field-textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 10px;
+    color: var(--text);
+    padding: 0.55rem 0.85rem;
+    font-size: 0.86rem; font-family: inherit;
+    transition: var(--tr); outline: none;
+  }
+  .field-input::placeholder { color: rgba(255,255,255,0.4); }
+  .field-input:focus,
+  .field-select:focus,
+  .field-textarea:focus {
+    background: rgba(255,255,255,0.10);
+    border-color: rgba(249,115,22,0.45);
+    box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+  }
+  .field-textarea { min-height: 90px; resize: vertical; }
+
+  /* El desplegable nativo de <select> usa fondo blanco del sistema:
+     forzamos texto oscuro en las opciones para que sean legibles. */
+  .field-select option,
+  .field-select optgroup {
+    color: #1f2937;
+    background-color: #ffffff;
+  }
+
+  /* ── Tabla "songs" ── */
+  .songs-table {
+    width: 100%; border-collapse: collapse;
+  }
+  .songs-table thead th {
+    text-align: left;
+    font-size: 0.7rem; font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    padding: 0.7rem 0.85rem;
+    border-bottom: 1px solid var(--glass-border);
+    background: rgba(255,255,255,0.03);
+  }
+  .songs-table tbody td {
+    padding: 0.7rem 0.85rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text-2);
+    font-size: 0.85rem;
+    vertical-align: middle;
+  }
+  .songs-table tbody tr:last-child td { border-bottom: none; }
+  .songs-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+  .song-cover {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-3) 100%);
+    border-radius: var(--radius-sm);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; vertical-align: middle;
+    margin-right: 0.6rem;
+  }
+  .song-cover .material-icons { font-size: 1rem; }
+
+  .btn-pill-icon {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.74rem; font-weight: 600;
+    border: 1px solid var(--glass-border);
+    background: rgba(255,255,255,0.05);
+    color: var(--text-2);
+    transition: var(--tr);
+    cursor: pointer;
+  }
+  .btn-pill-icon:hover { background: var(--glass-bg-h); color: var(--text); }
+  .btn-pill-icon .material-icons { font-size: 0.85rem; }
+  .btn-pill-icon--danger {
+    background: var(--red-bg);
+    color: var(--red);
+    border-color: rgba(239,68,68,0.30);
+  }
+  .btn-pill-icon--danger:hover { background: rgba(239,68,68,0.18); color: var(--red); }
+
+  .table-wrap { overflow-x: auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if modo == 'list' %}
+
+  <!-- Header de sección -->
+  <div class="section-header">
+    <div>
+      <h3 class="section-title" style="font-size:1.35rem;">
+        <span class="material-icons">music_note</span>
+        Mis Canciones
+      </h3>
+      <small style="color: var(--text-muted);">Gestiona tu catálogo musical — {{ canciones|length }} canción{{ canciones|length|pluralize:"es" }}</small>
+    </div>
+    <a href="{% url 'catalogo:artista_cancion_create' %}" class="btn-new">
+      <span class="material-icons">add</span>
+      Nueva Canción
+    </a>
+  </div>
+
+  <!-- KPI: reproducciones del mes -->
+  {% if reproducciones_mes %}
+  <div class="panel-card">
+    <div class="panel-card__header">
+      <div class="panel-card__title">
+        <span class="material-icons">trending_up</span>
+        Reproducciones del último mes
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="songs-table">
+        <thead>
+          <tr><th>Canción</th><th>Álbum</th><th>Reproducciones</th><th>Oyentes únicos</th></tr>
+        </thead>
+        <tbody>
+          {% for r in reproducciones_mes|slice:":5" %}
+          <tr>
+            <td><strong style="color:var(--text);">{{ r.Cancion }}</strong></td>
+            <td>{{ r.Album }}</td>
+            <td><strong style="color:var(--accent);">{{ r.TotalReproducciones }}</strong></td>
+            <td>{{ r.OyentesUnicos }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Filtros glass -->
+  <form method="get" class="panel-card" style="padding:1rem 1.25rem;">
+    <div class="form-grid-songs">
+      <div>
+        <label class="field-label">Buscar</label>
+        <input type="text" name="q" class="field-input" value="{{ busqueda }}" placeholder="Nombre de la canción">
+      </div>
+      <div>
+        <label class="field-label">Álbum</label>
+        <select name="album" class="field-select">
+          <option value="">Todos</option>
+          {% for alb in albumes %}
+            <option value="{{ alb.pk }}" {% if alb.pk == album_id %}selected{% endif %}>{{ alb.titulo_album }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Estado</label>
+        <select name="estado" class="field-select">
+          <option value="">Todos</option>
+          {% for val, lbl in estados %}
+            <option value="{{ val }}" {% if val == estado_actual %}selected{% endif %}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <button type="submit" class="btn-new" style="height:38px;">
+          <span class="material-icons">filter_alt</span>
+          Filtrar
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Tabla principal -->
+  {% if canciones %}
+  <div class="panel-card">
+    <div class="table-wrap">
+      <table class="songs-table">
+        <thead>
+          <tr>
+            <th>Canción</th>
+            <th>Álbum</th>
+            <th>Pista</th>
+            <th>Duración</th>
+            <th>Calidad</th>
+            <th>Reprods.</th>
+            <th>Estado</th>
+            <th style="text-align:right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in canciones %}
+          <tr>
+            <td>
+              <span class="song-cover"><span class="material-icons">music_note</span></span>
+              <strong style="color:var(--text);">{{ c.nombreCancion }}</strong>
+            </td>
+            <td>{{ c.tituloAlbum|default:"—" }}</td>
+            <td>{{ c.numeroPista }}</td>
+            <td>{{ c.duracion }}s</td>
+            <td>{{ c.calidadKbps }} kbps</td>
+            <td><strong style="color:var(--accent);">{{ c.totalReproducciones|default:0 }}</strong></td>
+            <td><span class="badge badge--{{ c.estadoCancion }}">{{ c.estadoCancion|capfirst }}</span></td>
+            <td style="text-align:right; white-space:nowrap;">
+              <a href="{% url 'catalogo:artista_cancion_update' c.idCancion %}" class="btn-pill-icon">
+                <span class="material-icons">edit</span> Editar
+              </a>
+              <form method="post" action="{% url 'catalogo:artista_cancion_deactivate' c.idCancion %}"
+                    style="display:inline;" onsubmit="return confirm('¿Desactivar canción?');">
+                {% csrf_token %}
+                <button type="submit" class="btn-pill-icon btn-pill-icon--danger">
+                  <span class="material-icons">delete</span>
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="panel-card">
+    <div class="empty-state">
+      <span class="material-icons">music_off</span>
+      <p>No tienes canciones registradas.<br>Sube tu primera canción a un álbum existente.</p>
+      <a href="{% url 'catalogo:artista_cancion_create' %}" class="btn-new">
+        <span class="material-icons">add</span> Nueva canción
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+{% elif modo == 'create' or modo == 'update' %}
+
+  <style>
+    /* ── Gestor de géneros (chips dinámicos) ── */
+    .genres-box {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 0.85rem 1rem;
+    }
+    .genres-box__title {
+      font-size: 0.74rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.55rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .genres-box__title .material-icons { font-size: 0.95rem; color: var(--accent); }
+    .genres-row {
+      display: flex; flex-wrap: wrap; gap: 0.45rem;
+      min-height: 32px;
+    }
+    .genre-chip {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 50px;
+      font-size: 0.78rem; font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.05);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      user-select: none;
+    }
+    .genre-chip:hover {
+      background: rgba(249,115,22,0.12);
+      border-color: rgba(249,115,22,0.30);
+      color: var(--accent);
+    }
+    .genre-chip .material-icons { font-size: 0.85rem; }
+    .genre-chip--active {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(249,115,22,0.30);
+    }
+    .genre-chip--active:hover {
+      background: linear-gradient(135deg, #fb923c, #ea580c);
+      color: #fff;
+    }
+    .genre-chip__remove {
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.25);
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    .genre-chip--active:hover .genre-chip__remove { background: rgba(0,0,0,0.45); }
+    .genres-empty {
+      color: var(--text-light); font-size: 0.78rem; font-style: italic;
+    }
+  </style>
+
+  <div class="panel-card" style="padding:1.5rem 1.75rem; max-width:760px;">
+    <h3 style="font-weight:800; letter-spacing:-0.02em; margin-bottom:0.25rem;">
+      {% if modo == 'create' %}Nueva Canción{% else %}Editar Canción{% endif %}
+    </h3>
+    <small style="color: var(--text-muted); display:block; margin-bottom:1.25rem;">
+      {% if modo == 'create' %}Sube una nueva canción a tu catálogo.{% else %}Modifica los datos de la canción.{% endif %}
+    </small>
+
+    <form method="post" id="songForm">
+      {% csrf_token %}
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+        {% for field in form %}
+          {% if field.name != 'generos' %}
+          <div style="{% if field.name == 'letra_cancion' or field.name == 'nombre_cancion' or field.name == 'album' %}grid-column: 1 / -1;{% endif %}">
+            <label class="field-label">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div style="color:var(--text-light); font-size:0.72rem; margin-top:0.25rem;">{{ field.help_text }}</div>{% endif %}
+            {% for error in field.errors %}<div style="color:var(--red); font-size:0.78rem; margin-top:0.25rem;">{{ error }}</div>{% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+
+      <!-- ────────── Géneros (chips dinámicos) ────────── -->
+      <div style="margin-top:1.25rem; display:grid; grid-template-columns:1fr; gap:0.75rem;">
+
+        <div class="genres-box">
+          <div class="genres-box__title">
+            <span class="material-icons">label</span>
+            Géneros seleccionados
+            <span style="margin-left:auto; color:var(--accent);" id="genCount">0</span>
+          </div>
+          <div class="genres-row" id="genSelected">
+            <span class="genres-empty" id="genSelectedEmpty">Aún no has agregado géneros. Toca uno de la lista de abajo.</span>
+          </div>
+        </div>
+
+        <div class="genres-box">
+          <div class="genres-box__title">
+            <span class="material-icons">add_circle_outline</span>
+            Géneros disponibles
+            <small style="margin-left:auto; color:var(--text-light); text-transform:none; letter-spacing:0; font-weight:400;">
+              Click para agregar
+            </small>
+          </div>
+          <div class="genres-row" id="genAvailable">
+            {% for g in all_generos %}
+              <span class="genre-chip"
+                    data-id="{{ g.pk }}"
+                    data-name="{{ g.nombre_genero }}"
+                    {% if g.pk in generos_actuales_ids %}hidden{% endif %}>
+                <span class="material-icons">add</span>
+                {{ g.nombre_genero }}
+              </span>
+            {% empty %}
+              <span class="genres-empty">No hay géneros registrados. Pídele al administrador que cree algunos.</span>
+            {% endfor %}
+          </div>
+        </div>
+
+        {# Hidden inputs vivos — se reflejan en POST como name="generos" #}
+        <div id="genHiddenInputs">
+          {% for gid in generos_actuales_ids %}
+            <input type="hidden" name="generos" value="{{ gid }}" data-id="{{ gid }}">
+          {% endfor %}
+        </div>
+
+        {% for error in form.generos.errors %}
+          <div style="color:var(--red); font-size:0.78rem;">{{ error }}</div>
+        {% endfor %}
+      </div>
+
+      <div style="display:flex; gap:0.6rem; margin-top:1.5rem;">
+        <button type="submit" class="btn-new">
+          <span class="material-icons">save</span>
+          {% if modo == 'create' %}Crear{% else %}Guardar{% endif %}
+        </button>
+        <a href="{% url 'catalogo:artista_cancion_list' %}" class="btn-ghost">Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // ── Aplica estilo glass a inputs nativos de Django ──
+    document.querySelectorAll('form input, form select, form textarea').forEach(function(el){
+      if (el.type === 'submit' || el.type === 'button' || el.type === 'hidden') return;
+      el.classList.add(el.tagName === 'SELECT' ? 'field-select' : (el.tagName === 'TEXTAREA' ? 'field-textarea' : 'field-input'));
+    });
+
+    // ────────── Gestor de chips de géneros ──────────
+    (function(){
+      const ALL_GENRES = [
+        {% for g in all_generos %}
+          { id: {{ g.pk }}, name: "{{ g.nombre_genero|escapejs }}" }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ];
+      const initialIds = [
+        {% for gid in generos_actuales_ids %}{{ gid }}{% if not forloop.last %},{% endif %}{% endfor %}
+      ];
+
+      const selectedBox  = document.getElementById('genSelected');
+      const emptyMsg     = document.getElementById('genSelectedEmpty');
+      const availableBox = document.getElementById('genAvailable');
+      const hiddenBox    = document.getElementById('genHiddenInputs');
+      const counter      = document.getElementById('genCount');
+      const selected = new Set(initialIds);
+
+      function refresh() {
+        // Contador
+        counter.textContent = selected.size;
+        // Empty state
+        emptyMsg.style.display = selected.size === 0 ? '' : 'none';
+
+        // Repinta chips seleccionados
+        selectedBox.querySelectorAll('.genre-chip').forEach(el => el.remove());
+        ALL_GENRES.forEach(g => {
+          if (!selected.has(g.id)) return;
+          const chip = document.createElement('span');
+          chip.className = 'genre-chip genre-chip--active';
+          chip.dataset.id = g.id;
+          chip.title = 'Quitar';
+          chip.innerHTML =
+            '<span>' + g.name + '</span>' +
+            '<span class="genre-chip__remove"><span class="material-icons">close</span></span>';
+          chip.addEventListener('click', () => removeGenre(g.id));
+          selectedBox.appendChild(chip);
+        });
+
+        // Oculta los disponibles que ya están seleccionados
+        availableBox.querySelectorAll('.genre-chip').forEach(el => {
+          const gid = parseInt(el.dataset.id, 10);
+          el.hidden = selected.has(gid);
+        });
+
+        // Hidden inputs (POST name="generos")
+        hiddenBox.innerHTML = '';
+        selected.forEach(id => {
+          const inp = document.createElement('input');
+          inp.type  = 'hidden';
+          inp.name  = 'generos';
+          inp.value = id;
+          inp.dataset.id = id;
+          hiddenBox.appendChild(inp);
+        });
+      }
+
+      function addGenre(id) {
+        if (selected.has(id)) return;        // anti-duplicado
+        selected.add(id);
+        refresh();
+      }
+      function removeGenre(id) {
+        selected.delete(id);
+        refresh();
+      }
+
+      // Bind clicks en disponibles
+      availableBox.querySelectorAll('.genre-chip').forEach(el => {
+        el.addEventListener('click', () => {
+          const gid = parseInt(el.dataset.id, 10);
+          addGenre(gid);
+        });
+      });
+
+      refresh();
+    })();
+  </script>
+
+{% endif %}
+
+{% endblock %}

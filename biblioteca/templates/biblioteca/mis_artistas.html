@@ -1,0 +1,81 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+{% load static %}
+
+{% block title %}Mis Artistas — Ecualizer{% endblock %}
+{% block topbar_title %}Mis Artistas{% endblock %}
+{% block breadcrumb %}Biblioteca / Artistas que sigo{% endblock %}
+{% block nav_mis_artistas %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .lib-hero {
+    border-radius: 18px;
+    padding: 1.5rem 1.75rem;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 60%, #7c2d12 100%);
+    color: #fff;
+    margin-bottom: 1.25rem;
+  }
+  .lib-hero__tag { font-size:0.74rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:rgba(255,255,255,0.85); margin-bottom:0.4rem; }
+  .lib-hero__title { font-size:2.2rem; font-weight:800; letter-spacing:-0.02em; line-height:1; }
+  .lib-hero__sub { font-size:0.85rem; color:rgba(255,255,255,0.85); margin-top:0.4rem; }
+
+  .artists-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+  .artist-card {
+    text-align: center; cursor: pointer;
+    transition: transform 0.18s;
+    padding: 0.4rem;
+  }
+  .artist-card:hover { transform: translateY(-3px); }
+  .artist-card__photo {
+    aspect-ratio: 1; border-radius: 50%;
+    background-size: cover; background-position: center;
+    background-color: #1a1a1a;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+    transition: box-shadow 0.18s;
+  }
+  .artist-card:hover .artist-card__photo { box-shadow: 0 14px 32px rgba(249,115,22,0.35); }
+  .artist-card__name { font-weight:700; color:#fff; font-size:0.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .artist-card__role { font-size:0.72rem; color:var(--text-muted); margin-top:0.1rem; margin-bottom:0.5rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="lib-hero">
+  <div class="lib-hero__tag">Biblioteca</div>
+  <div class="lib-hero__title">Mis Artistas</div>
+  <div class="lib-hero__sub">{{ total }} artista{{ total|pluralize }} que sigues</div>
+</div>
+
+{% if artistas %}
+<div class="artists-grid">
+  {% for a in artistas %}
+  <div class="artist-card" onclick="window.location='/catalogo/artistas/{{ a.idArtista }}/'">
+    <div class="artist-card__photo" style="background-image:url('{{ a.foto }}');"></div>
+    <div class="artist-card__name">{{ a.nombreArtistico }}</div>
+    <div class="artist-card__role">Siguiendo desde {{ a.fechaSeguimiento|date:"d/m/Y" }}</div>
+    <button class="social-btn is-on" data-state="on"
+            style="padding:0.3rem 0.85rem; font-size:0.74rem;"
+            onclick="event.stopPropagation(); Social.toggle('follow', {{ a.idArtista }}, this, { onChange: (active) => { if(!active) this.closest('.artist-card').remove(); } });">
+      <span class="material-icons">check_circle</span>
+      <span class="social-btn__label">Dejar de seguir</span>
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center; padding:3rem 1rem; color:var(--text-muted);">
+  <span class="material-icons" style="font-size:3rem; opacity:0.35; display:block; margin-bottom:0.6rem;">mic</span>
+  <p style="font-size:0.95rem;">No sigues a ningún artista todavía.</p>
+  <p style="font-size:0.82rem; margin-top:0.3rem;">Entra a un artista y toca "Seguir" para verlo aquí.</p>
+</div>
+{% endif %}
+
+{% include "biblioteca/_social_js.html" %}
+
+{% endblock %}

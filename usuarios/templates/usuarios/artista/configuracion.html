@@ -1,0 +1,81 @@
+{% extends "usuarios/artista/base_artista.html" %}
+
+{% block title %}Configuración — Ecualizer{% endblock %}
+{% block topbar_title %}Configuración{% endblock %}
+{% block breadcrumb %}Artista / Configuración{% endblock %}
+{% block nav_configuracion %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .cfg-card {
+    background: var(--glass-bg, rgba(255,255,255,0.04));
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+    border-radius: 16px;
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .cfg-card h3 {
+    color: var(--text); font-size:1.05rem; font-weight:700;
+    margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;
+  }
+  .cfg-card h3 .material-icons { color:#f97316; font-size:1.2rem; }
+  .cfg-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:0.65rem 0; border-bottom:1px solid rgba(255,255,255,0.05);
+  }
+  .cfg-row:last-child { border-bottom:none; }
+  .cfg-row__label { color:var(--text-2); font-size:0.9rem; }
+  .cfg-row__value { color:var(--text-muted); font-size:0.88rem; }
+  .cfg-link { color:#f97316; text-decoration:none; font-size:0.88rem; font-weight:600; }
+  .cfg-link:hover { text-decoration:underline; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Cuenta -->
+<div class="cfg-card">
+  <h3><span class="material-icons">account_circle</span> Cuenta</h3>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Nombre</span>
+    <span class="cfg-row__value">{{ persona.primer_nombre }} {{ persona.primer_apellido }}</span>
+  </div>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Correo</span>
+    <span class="cfg-row__value">{{ persona.correo }}</span>
+  </div>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Nombre artístico</span>
+    <span class="cfg-row__value">{% if perfil %}{{ perfil.nombre_artistico }}{% else %}—{% endif %}</span>
+  </div>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Editar mis datos</span>
+    <a href="{% url 'perfil_artista' %}" class="cfg-link">Ir a Mi Perfil →</a>
+  </div>
+</div>
+
+<!-- Gestión -->
+<div class="cfg-card">
+  <h3><span class="material-icons">tune</span> Gestión de mi música</h3>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Mi catálogo de álbumes</span>
+    <a href="{% url 'catalogo:artista_album_list' %}" class="cfg-link">Ir a Mi Catálogo →</a>
+  </div>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Mis canciones</span>
+    <a href="{% url 'catalogo:artista_cancion_list' %}" class="cfg-link">Ir a Mis Canciones →</a>
+  </div>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Mis contratos</span>
+    <a href="{% url 'artista_contratos' %}" class="cfg-link">Ver contratos →</a>
+  </div>
+</div>
+
+<!-- Sesión -->
+<div class="cfg-card">
+  <h3><span class="material-icons">logout</span> Sesión</h3>
+  <div class="cfg-row">
+    <span class="cfg-row__label">Cerrar sesión en este dispositivo</span>
+    <a href="{% url 'logout' %}" class="cfg-link">Cerrar sesión →</a>
+  </div>
+</div>
+{% endblock %}

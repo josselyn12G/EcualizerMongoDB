@@ -1,0 +1,138 @@
+{% comment %}
+  Helper JS global: window.Social.toggle(kind, id, btnElement)
+  - kind: 'like' | 'follow' | 'save'
+  - id: id de canción / artista / álbum
+  - btn: el botón clickeado (se actualiza visualmente)
+
+  Cada botón debe tener:
+    data-state="on" | "off"
+  El helper alterna las clases .is-on / .is-off y el texto/ícono.
+{% endcomment %}
+
+<form style="display:none;">{% csrf_token %}</form>
+
+<script>
+(function(){
+  const ENDPOINTS = {
+    like:   '/biblioteca/like/cancion/',
+    follow: '/biblioteca/seguir/artista/',
+    save:   '/biblioteca/guardar/album/',
+  };
+  const LABELS = {
+    like:   { on: 'Quitar like',         off: 'Like' },
+    follow: { on: 'Dejar de seguir',     off: 'Seguir' },
+    save:   { on: 'Quitar de guardados', off: 'Guardar' },
+  };
+  const ICONS = {
+    like:   { on: 'favorite',         off: 'favorite_border' },
+    follow: { on: 'check_circle',     off: 'add_circle_outline' },
+    save:   { on: 'bookmark',         off: 'bookmark_border' },
+  };
+
+  function getCsrf() {
+    const inp = document.querySelector('input[name=csrfmiddlewaretoken]');
+    if (inp) return inp.value;
+    // fallback al cookie
+    const m = document.cookie.match(/csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+  }
+
+  function paint(btn, kind, active) {
+    btn.classList.toggle('is-on',  active);
+    btn.classList.toggle('is-off', !active);
+    btn.dataset.state = active ? 'on' : 'off';
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+
+    // Actualizar ícono y label si existen
+    const iconEl  = btn.querySelector('.material-icons');
+    const labelEl = btn.querySelector('.social-btn__label');
+    if (iconEl)  iconEl.textContent  = ICONS[kind][active ? 'on' : 'off'];
+    if (labelEl) labelEl.textContent = LABELS[kind][active ? 'on' : 'off'];
+  }
+
+  function toggle(kind, id, btn, opts) {
+    opts = opts || {};
+    if (!ENDPOINTS[kind]) { console.warn('Social.toggle kind desconocido:', kind); return; }
+    if (!id) return;
+    if (btn) btn.disabled = true;
+
+    fetch(ENDPOINTS[kind] + id + '/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': getCsrf() },
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (btn) btn.disabled = false;
+      if (!data.ok) {
+        if (window.Popup) Popup.error(data.error || 'No se pudo procesar');
+        return;
+      }
+      if (btn) paint(btn, kind, data.active);
+      if (window.Popup) {
+        const t = data.active
+          ? { like:'Agregada a tus me gusta', follow:'Ahora sigues a este artista', save:'Álbum guardado' }[kind]
+          : { like:'Quitada de tus me gusta', follow:'Dejaste de seguir',           save:'Quitado de guardados' }[kind];
+        Popup.success(t);
+      }
+      if (typeof opts.onChange === 'function') opts.onChange(data.active);
+    })
+    .catch((err) => {
+      if (btn) btn.disabled = false;
+      if (window.Popup) Popup.error('Error de red');
+      console.error(err);
+    });
+  }
+
+  window.Social = { toggle };
+})();
+</script>
+
+<style>
+  /* Botón social genérico (pill) — coherente con paleta naranja */
+  .social-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+    color: var(--text-2, #fff);
+    font-family: inherit;
+    font-weight: 600; font-size: 0.82rem;
+    padding: 0.45rem 1rem;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .social-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+  .social-btn .material-icons { font-size: 1rem; }
+  .social-btn:disabled { opacity: 0.6; cursor: wait; }
+
+  /* Estado ACTIVO — naranja sólido */
+  .social-btn.is-on {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(249,115,22,0.35);
+  }
+  .social-btn.is-on:hover {
+    box-shadow: 0 8px 22px rgba(249,115,22,0.50);
+  }
+
+  /* Variante ícono-only (corazoncito de fila) */
+  .social-icon-btn {
+    width: 32px; height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--text-muted, rgba(255,255,255,0.45));
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .social-icon-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .social-icon-btn.is-on {
+    color: #f97316;
+    background: rgba(249,115,22,0.12);
+  }
+  .social-icon-btn.is-on:hover { color: #fb923c; background: rgba(249,115,22,0.18); }
+  .social-icon-btn .material-icons { font-size: 1.15rem; }
+  .social-icon-btn:disabled { opacity: 0.6; cursor: wait; }
+</style>

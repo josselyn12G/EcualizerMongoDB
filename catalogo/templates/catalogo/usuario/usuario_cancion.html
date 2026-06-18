@@ -1,0 +1,752 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+{% load static %}
+
+{% block title %}Canciones — Ecualizer{% endblock %}
+{% block topbar_title %}Canciones{% endblock %}
+{% block breadcrumb %}Catálogo / Canciones{% endblock %}
+{% block nav_canciones %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ══════════════════════════════════════════════════════
+     PANEL OYENTE · Canciones — estilo Apple Music
+     Paleta: negro + naranja (#f97316)
+  ══════════════════════════════════════════════════════ */
+  .page-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 1.25rem;
+  }
+  @media (max-width: 1100px) { .page-grid { grid-template-columns: 1fr; } }
+
+  /* ── Hero artista ─────────────────────────────────── */
+  .artist-hero {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    padding: 1.75rem 1.75rem 1.5rem;
+    min-height: 240px;
+    background:
+      linear-gradient(120deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.25) 65%, transparent 100%),
+      linear-gradient(135deg, #f97316 0%, #ea580c 40%, #7c2d12 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .artist-hero__photo {
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 55%;
+    background-size: cover;
+    background-position: center top;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 35%);
+            mask-image: linear-gradient(90deg, transparent 0%, #000 35%);
+    z-index: 0;
+  }
+  .artist-hero__content { position: relative; z-index: 1; max-width: 55%; }
+  .artist-hero__tag {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.74rem; font-weight: 600;
+    color: #fdba74;
+    margin-bottom: 0.5rem;
+  }
+  .artist-hero__tag .material-icons { font-size: 0.95rem; color: #fb923c; }
+  .artist-hero__name {
+    font-size: 3rem; font-weight: 800; letter-spacing: -0.03em;
+    line-height: 1; margin-bottom: 0.5rem;
+  }
+  .artist-hero__sub {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.84rem; color: rgba(255,255,255,0.85);
+    margin-bottom: 1rem;
+  }
+  .artist-hero__sub .material-icons { font-size: 1rem; }
+  .artist-hero__actions { display: flex; gap: 0.55rem; }
+  .btn-play {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    background: #f97316; color: #fff;
+    font-weight: 700; font-size: 0.85rem;
+    padding: 0.6rem 1.5rem; border-radius: 50px; border: none;
+    box-shadow: 0 8px 22px rgba(249,115,22,0.40);
+    transition: all 0.18s ease;
+  }
+  .btn-play:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(249,115,22,0.55); }
+  .btn-play .material-icons { font-size: 1.05rem; }
+  .btn-follow {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: #fff;
+    font-weight: 600; font-size: 0.82rem;
+    padding: 0.55rem 1.2rem; border-radius: 50px;
+    transition: all 0.18s ease;
+  }
+  .btn-follow:hover { background: rgba(255,255,255,0.18); }
+  .btn-follow .material-icons { font-size: 1rem; color: #22c55e; }
+
+  /* ── Section header tipo "Popular | See All" ───────── */
+  .sec-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 1.5rem 0 0.5rem;
+  }
+  .sec-head__title {
+    font-size: 1.05rem; font-weight: 700; color: #fff;
+    letter-spacing: -0.01em;
+  }
+  .sec-head__link {
+    font-size: 0.78rem; color: var(--text-muted);
+    transition: color 0.18s;
+  }
+  .sec-head__link:hover { color: var(--orange); }
+
+  /* ── Tabla "Popular" (canciones) ───────────────────── */
+  .pop-list {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 0.35rem 0.5rem;
+    backdrop-filter: blur(20px);
+  }
+  .pop-row {
+    display: grid;
+    grid-template-columns: 28px 48px 1fr 160px 70px 32px 32px;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 10px;
+    transition: background 0.15s;
+    cursor: pointer;
+  }
+  .pop-row:hover { background: rgba(255,255,255,0.05); }
+  .pop-row__rank {
+    color: var(--text-muted);
+    font-size: 0.86rem; font-weight: 600;
+    text-align: center;
+  }
+  .pop-row__cover {
+    width: 42px; height: 42px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1rem;
+    overflow: hidden;
+    background-size: cover; background-position: center;
+  }
+  .pop-row__title { color: #fff; font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pop-row__plays { color: var(--text-muted); font-size: 0.85rem; display: flex; align-items: center; gap: 0.35rem; }
+  .pop-row__plays .material-icons { font-size: 0.95rem; }
+  .pop-row__time { color: var(--text-muted); font-size: 0.85rem; display: flex; align-items: center; gap: 0.3rem; }
+  .pop-row__time .material-icons { font-size: 0.95rem; }
+  .pop-row__icon {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    background: transparent; border: none;
+  }
+  .pop-row__icon:hover { color: var(--orange); background: rgba(249,115,22,0.10); }
+  .pop-row__icon .material-icons { font-size: 1.1rem; }
+
+  /* ── Popular Releases (grid de álbumes con título) ── */
+  .releases-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.85rem;
+  }
+  .release-card {
+    cursor: pointer;
+    transition: transform 0.18s;
+  }
+  .release-card:hover { transform: translateY(-3px); }
+  .release-card__cover {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background-size: cover; background-position: center;
+    margin-bottom: 0.55rem;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    transition: box-shadow 0.18s;
+  }
+  .release-card:hover .release-card__cover {
+    box-shadow: 0 12px 26px rgba(249,115,22,0.25);
+  }
+  .release-card__title {
+    color: #fff; font-weight: 600; font-size: 0.85rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .release-card__artist {
+    color: var(--text-muted); font-size: 0.72rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin-top: 0.1rem;
+  }
+
+  /* ── Right column ──────────────────────────────────── */
+  .right-col { margin-right: 80px; display: flex; flex-direction: column; gap: 1.25rem; }
+  .right-card {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 1rem 1rem 0.85rem;
+    backdrop-filter: blur(20px);
+  }
+  .right-card__head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0.85rem;
+  }
+  .right-card__title { font-size: 0.92rem; font-weight: 700; color: #fff; }
+  .right-card__link  { font-size: 0.74rem; color: var(--text-muted); }
+  .right-card__link:hover { color: var(--orange); }
+
+  .fan-card {
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center;
+    padding: 0.5rem 0 0.25rem;
+  }
+  .fan-card__img {
+    width: 100%; aspect-ratio: 1;
+    border-radius: 10px;
+    background-size: cover; background-position: center;
+    background-color: #1a1a1a;
+    margin-bottom: 0.55rem;
+  }
+  .fan-card__name { font-weight: 700; color: #fff; font-size: 0.88rem; }
+  .fan-card__role { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+  .recent-row {
+    display: grid;
+    grid-template-columns: 34px 1fr auto;
+    gap: 0.55rem;
+    align-items: center;
+    padding: 0.4rem 0.15rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background 0.15s;
+  }
+  .recent-row:hover { background: rgba(255,255,255,0.04); }
+  .recent-row__cover {
+    width: 34px; height: 34px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background-size: cover; background-position: center;
+  }
+  .recent-row__title { font-weight: 600; color:#fff; font-size: 0.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .recent-row__sub   { font-size: 0.7rem; color: var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .recent-row__time  { font-size: 0.7rem; color: var(--text-light); }
+
+  /* ── Filtros (chips de género) ─────────────────────── */
+  .filters-bar {
+    display: flex; flex-wrap: wrap; gap: 0.4rem;
+    margin: 1rem 0;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: var(--text-2);
+    border-radius: 50px;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.78rem; font-weight: 500;
+    transition: all 0.18s;
+  }
+  .chip:hover, .chip.active {
+    background: rgba(249,115,22,0.15);
+    border-color: rgba(249,115,22,0.35);
+    color: var(--orange);
+  }
+  .chip .material-icons { font-size: 0.9rem; }
+
+  .search-pill {
+    display: flex; align-items: center; gap: 0.5rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 50px;
+    padding: 0.4rem 0.85rem;
+    margin-bottom: 1rem;
+  }
+  .search-pill input {
+    flex: 1; background: transparent; border: none; outline: none;
+    color: #fff; font-size: 0.85rem;
+  }
+  .search-pill input::placeholder { color: var(--text-muted); }
+  .search-pill .material-icons { color: var(--text-muted); font-size: 1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if modo == 'list' or modo == 'filter' %}
+
+<div class="page-grid">
+
+  <!-- ═══════════════ COLUMNA PRINCIPAL ═══════════════ -->
+  <div>
+
+    <!-- Buscador -->
+    <form method="get" action="{% url 'catalogo:usuario_cancion_list' %}" class="search-pill">
+      <span class="material-icons">search</span>
+      <input type="text" name="q" value="{{ busqueda }}" placeholder="Search music, artist, album...">
+    </form>
+
+    <!-- Hero artista destacado -->
+    <div class="artist-hero">
+      {% if featured_image %}
+      <div class="artist-hero__photo" style="background-image: url('{{ featured_image }}');"></div>
+      {% endif %}
+      <div class="artist-hero__content">
+        <div class="artist-hero__tag">
+          <span class="material-icons">verified</span> Verified Artist
+        </div>
+        <div class="artist-hero__name">{{ featured_artist|default:"Tu Música" }}</div>
+        <div class="artist-hero__sub">
+          <span class="material-icons">headphones</span>
+          {{ canciones|length }} canciones disponibles
+        </div>
+        <div class="artist-hero__actions">
+          <button class="btn-play"><span class="material-icons">play_arrow</span> PLAY</button>
+          <button class="btn-follow"><span class="material-icons">check_circle</span> FOLLOWING</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros por género -->
+    <div class="filters-bar">
+      <a href="{% url 'catalogo:usuario_cancion_list' %}"
+         class="chip {% if modo == 'list' %}active{% endif %}">
+        <span class="material-icons">all_inclusive</span> Todos
+      </a>
+      {% for g in generos %}
+        <a href="{% url 'catalogo:usuario_cancion_filter' g.pk %}"
+           class="chip {% if g.pk == genero_actual %}active{% endif %}">
+          <span class="material-icons">music_note</span> {{ g.nombre_genero }}
+        </a>
+      {% endfor %}
+    </div>
+
+    <!-- Popular -->
+    <div class="sec-head">
+      <div class="sec-head__title">
+        {% if modo == 'filter' %}Género: {{ genero_nombre }}{% else %}Popular{% endif %}
+      </div>
+      <a href="#" class="sec-head__link">See All</a>
+    </div>
+
+    <div class="pop-list">
+      {% for c in canciones %}
+      <div class="pop-row" onclick="window.EzPlayer && EzPlayer.play({{ c.idCancion }})">
+        <div class="pop-row__rank">{{ forloop.counter }}</div>
+        <div class="pop-row__cover"
+             {% if c.coverUrl %}style="background-image:url('{{ c.coverUrl }}');"{% endif %}>
+          {% if not c.coverUrl %}<span class="material-icons">music_note</span>{% endif %}
+        </div>
+        <div>
+          <div class="pop-row__title">{{ c.nombreCancion }}</div>
+          <div style="font-size:0.74rem; color:var(--text-muted);">
+            {{ c.nombreArtistico|default:"" }}
+          </div>
+        </div>
+        <div class="pop-row__plays">
+          <span class="material-icons">headphones</span>
+          {{ c.totalReproducciones|default:0 }}
+        </div>
+        <div class="pop-row__time">
+          <span class="material-icons">schedule</span>
+          {{ c.duracion }}s
+        </div>
+        <button class="social-icon-btn {% if c.idCancion in liked_ids %}is-on{% else %}is-off{% endif %}"
+                data-state="{% if c.idCancion in liked_ids %}on{% else %}off{% endif %}"
+                title="Me gusta"
+                onclick="event.stopPropagation(); Social.toggle('like', {{ c.idCancion }}, this);">
+          <span class="material-icons">{% if c.idCancion in liked_ids %}favorite{% else %}favorite_border{% endif %}</span>
+        </button>
+        <button class="social-icon-btn" onclick="event.stopPropagation(); window.location='{% url 'catalogo:usuario_cancion_detail' c.idCancion %}';" title="Abrir">
+          <span class="material-icons">open_in_new</span>
+        </button>
+      </div>
+      {% empty %}
+      <div style="text-align:center; padding:2.5rem 1rem; color: var(--text-muted);">
+        <span class="material-icons" style="font-size:2rem; opacity:0.4; display:block; margin-bottom:0.5rem;">music_off</span>
+        <p>No se encontraron canciones.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Popular Releases -->
+    {% if canciones %}
+    <div class="sec-head">
+      <div class="sec-head__title">Popular Releases</div>
+      <a href="{% url 'catalogo:usuario_album_list' %}" class="sec-head__link">See All</a>
+    </div>
+    <div class="releases-row">
+      {% for c in canciones|slice:":12" %}
+      <div class="release-card" onclick="window.location='{% url 'catalogo:usuario_cancion_detail' c.idCancion %}'">
+        <div class="release-card__cover"
+             {% if c.coverUrl %}style="background-image:url('{{ c.coverUrl }}');"{% endif %}></div>
+        <div class="release-card__title">{{ c.tituloAlbum|default:c.nombreCancion }}</div>
+        <div class="release-card__artist">{{ c.nombreArtistico|default:"" }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- ═══════════════ COLUMNA DERECHA ═══════════════ -->
+  <div class="right-col">
+
+    <!-- Fans Also Like -->
+    {% if featured_image %}
+    <div class="right-card">
+      <div class="right-card__head">
+        <div class="right-card__title">Fans Also Like</div>
+        <a href="#" class="right-card__link">See All</a>
+      </div>
+      <div class="fan-card">
+        <div class="fan-card__img" style="background-image: url('{{ featured_image }}');"></div>
+        <div class="fan-card__name">{{ featured_artist }}</div>
+        <div class="fan-card__role">Artist</div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Played -->
+    <div class="right-card">
+      <div class="right-card__head">
+        <div class="right-card__title">Recent Played</div>
+        <a href="#" class="right-card__link">See All</a>
+      </div>
+      {% for c in canciones|slice:":6" %}
+      <div class="recent-row" onclick="window.location='{% url 'catalogo:usuario_cancion_detail' c.idCancion %}'">
+        <div class="recent-row__cover"
+             {% if c.coverUrl %}style="background-image:url('{{ c.coverUrl }}');"{% endif %}></div>
+        <div style="min-width:0;">
+          <div class="recent-row__title">{{ c.nombreCancion }}</div>
+          <div class="recent-row__sub">{{ c.nombreArtistico|default:"" }}</div>
+        </div>
+        <div class="recent-row__time">{{ c.duracion }}s</div>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
+
+</div>
+
+{% elif modo == 'detail' %}
+
+  <style>
+    /* ── Detalle de canción (estilo Spotify) ── */
+    .song-detail-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .song-back {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-size: 0.82rem; color: var(--text-muted);
+      margin-bottom: 0.7rem;
+    }
+    .song-back:hover { color: var(--orange); }
+    .song-back .material-icons { font-size: 1rem; }
+
+    .song-hero {
+      position: relative;
+      border-radius: 14px 14px 0 0;
+      overflow: hidden;
+      padding: 1.5rem 1.75rem;
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 1.5rem;
+      align-items: center;
+      color: #fff;
+      background:
+        linear-gradient(115deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 60%, transparent 100%),
+        linear-gradient(135deg, #f97316 0%, #ea580c 45%, #7c2d12 100%);
+    }
+    .song-hero__bg {
+      position: absolute; inset: 0;
+      background-size: cover; background-position: center;
+      filter: blur(50px) saturate(1.2) brightness(0.5);
+      opacity: 0.55;
+      z-index: 0;
+      transform: scale(1.15);
+    }
+    .song-hero__cover {
+      position: relative; z-index: 1;
+      width: 200px; height: 200px;
+      border-radius: 12px;
+      background-size: cover; background-position: center;
+      background-color: #1a1a1a;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+    }
+    .song-hero__info { position: relative; z-index: 1; }
+    .song-hero__tag {
+      font-size: 0.78rem; font-weight: 600; color: #fff;
+      margin-bottom: 0.4rem;
+    }
+    .song-hero__title {
+      font-size: 3.4rem; font-weight: 800; letter-spacing: -0.03em;
+      line-height: 1; margin-bottom: 0.8rem;
+      text-shadow: 0 4px 14px rgba(0,0,0,0.45);
+      word-break: break-word;
+    }
+    .song-hero__meta {
+      display: flex; align-items: center; flex-wrap: wrap;
+      gap: 0.4rem;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.90);
+    }
+    .song-hero__meta .artist-mini {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: rgba(0,0,0,0.25);
+      padding: 0.15rem 0.5rem 0.15rem 0.15rem;
+      border-radius: 50px;
+      font-weight: 600;
+    }
+    .song-hero__meta .artist-mini__photo {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background-size: cover; background-position: center;
+      background-color: #1a1a1a;
+    }
+    .song-hero__meta .dot {
+      width: 3px; height: 3px; border-radius: 50%;
+      background: rgba(255,255,255,0.55);
+    }
+
+    /* Toolbar bajo el hero */
+    .song-toolbar {
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(20px);
+      padding: 1rem 1.75rem;
+      border-radius: 0 0 14px 14px;
+      display: flex; align-items: center; gap: 0.65rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .play-fab {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      border: none;
+      background: #f97316;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 10px 28px rgba(249,115,22,0.45);
+      transition: transform 0.18s;
+      cursor: pointer;
+    }
+    .play-fab:hover { transform: scale(1.05); }
+    .play-fab.playing {
+      background: #ea580c;
+      box-shadow: inset 0 4px 12px rgba(0,0,0,0.35), 0 4px 12px rgba(249,115,22,0.35);
+      transform: scale(0.98);
+    }
+    .play-fab .material-icons { font-size: 1.7rem; }
+    .icon-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all 0.15s; cursor: pointer;
+    }
+    .icon-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+    .icon-btn .material-icons { font-size: 1.3rem; }
+
+    /* ── Sección Letra (deslizable) ── */
+    .lyrics-section {
+      margin-top: 1rem;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 1.5rem 1.75rem;
+      color: var(--text-2);
+    }
+    .lyrics-section h3 {
+      font-size: 1.6rem; font-weight: 800;
+      color: #fff; letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+      display: flex; align-items: center; gap: 0.6rem;
+    }
+    .lyrics-source {
+      font-size: 0.7rem; font-weight: 500;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 0.18rem 0.55rem;
+      border-radius: 50px;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .lyrics-body {
+      white-space: pre-wrap;
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #fff;
+      max-height: 65vh;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+    .lyrics-body::-webkit-scrollbar { width: 8px; }
+    .lyrics-body::-webkit-scrollbar-track { background: rgba(255,255,255,0.03); border-radius: 4px; }
+    .lyrics-body::-webkit-scrollbar-thumb {
+      background: rgba(249,115,22,0.35);
+      border-radius: 4px;
+    }
+    .lyrics-body::-webkit-scrollbar-thumb:hover { background: rgba(249,115,22,0.55); }
+    .lyrics-empty {
+      padding: 2rem 0;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .lyrics-empty .material-icons {
+      font-size: 2rem; opacity: 0.4;
+      display: block; margin: 0 auto 0.5rem;
+    }
+
+    @media (max-width: 760px) {
+      .song-hero { grid-template-columns: 1fr; text-align: center; }
+      .song-hero__cover { margin: 0 auto; }
+      .song-hero__title { font-size: 2rem; }
+      .song-hero__meta { justify-content: center; }
+    }
+  </style>
+
+  <div class="song-detail-wrap">
+
+    <a href="{% url 'catalogo:usuario_cancion_list' %}" class="btn-back">
+      <span class="material-icons">arrow_back</span> Canciones
+    </a>
+
+    <!-- HERO de la canción -->
+    <div class="song-hero">
+      {% if cover_url %}
+      <div class="song-hero__bg" style="background-image:url('{{ cover_url }}');"></div>
+      {% endif %}
+      <div class="song-hero__cover"
+           {% if cover_url %}style="background-image:url('{{ cover_url }}');"{% endif %}></div>
+      <div class="song-hero__info">
+        <div class="song-hero__tag">Canción</div>
+        <h1 class="song-hero__title">{{ cancion.nombre_cancion }}</h1>
+        <div class="song-hero__meta">
+          <span class="artist-mini">
+            <span class="artist-mini__photo"
+                  {% if artist_image %}style="background-image:url('{{ artist_image }}');"{% endif %}></span>
+            {{ cancion.album.artista.nombre_artistico }}
+          </span>
+          <span>·</span>
+          <span>{{ cancion.album.titulo_album }}</span>
+          <span class="dot"></span>
+          <span>{{ cancion.fecha_lanzamiento|date:"Y" }}</span>
+          <span class="dot"></span>
+          <span>{{ cancion.duracion_formateada }}</span>
+          <span class="dot"></span>
+          <span>{{ cancion.total_reproducciones|default:0 }} reproducciones</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="song-toolbar">
+      <button class="play-fab" onclick="reproducir({{ cancion.pk }}, this);" title="Reproducir">
+        <span class="material-icons">play_arrow</span>
+      </button>
+      <button class="social-btn {% if cancion_liked %}is-on{% else %}is-off{% endif %}"
+              data-state="{% if cancion_liked %}on{% else %}off{% endif %}"
+              onclick="Social.toggle('like', {{ cancion.pk }}, this);">
+        <span class="material-icons">{% if cancion_liked %}favorite{% else %}favorite_border{% endif %}</span>
+        <span class="social-btn__label">{% if cancion_liked %}Quitar like{% else %}Like{% endif %}</span>
+      </button>
+      <button class="icon-btn" title="Añadir"><span class="material-icons">add_circle_outline</span></button>
+      <button class="icon-btn" title="Descargar"><span class="material-icons">download</span></button>
+      <button class="icon-btn" title="Más"><span class="material-icons">more_horiz</span></button>
+    </div>
+
+    <!-- Letra desde lyrics.ovh (API) -->
+    <div class="lyrics-section">
+      <h3>
+        Letra
+        <span class="lyrics-source">lyrics.ovh</span>
+      </h3>
+
+      {% if letra_api %}
+        <div class="lyrics-body">{{ letra_api }}</div>
+      {% else %}
+        <div class="lyrics-empty">
+          <span class="material-icons">lyrics</span>
+          lyrics.ovh no tiene letra para esta canción.
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Letra desde la base de datos de Ecualizer -->
+    <div class="lyrics-section" style="margin-top:1rem;">
+      <h3>
+        Letra original del artista
+        <span class="lyrics-source">Ecualizer · BD</span>
+      </h3>
+
+      {% if letra_db %}
+        <div class="lyrics-body">{{ letra_db }}</div>
+      {% else %}
+        <div class="lyrics-empty">
+          <span class="material-icons">edit_note</span>
+          El artista aún no ha subido la letra oficial a Ecualizer.
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+{% endif %}
+
+{% include "catalogo/usuario/_player.html" %}
+{% include "biblioteca/_social_js.html" %}
+
+<form style="display:none;">{% csrf_token %}</form>
+
+<script>
+function reproducir(id, btn) {
+  if (window.EzPlayer) EzPlayer.play(id);
+  btn.disabled = true;
+  const url = '/catalogo/canciones/' + id + '/';
+  const fd = new FormData();
+  fd.append('duracion_escuchada', '30');
+  fd.append('fue_saltada', 'N');
+  fd.append('pais', 'Ecuador');
+  const csrf = document.querySelector('input[name=csrfmiddlewaretoken]');
+  if (csrf) fd.append('csrfmiddlewaretoken', csrf.value);
+  fetch(url, {
+    method: 'POST', body: fd,
+    headers: { 'X-CSRFToken': document.cookie.split('csrftoken=')[1]?.split(';')[0] || '' },
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      btn.innerHTML = '<span class="material-icons">pause</span>';
+      btn.classList.add('playing');
+      const audio = document.getElementById('ezAudio');
+      if (audio) {
+        const checkPlaying = () => {
+          if (audio.paused || audio.ended) {
+            btn.innerHTML = '<span class="material-icons">play_arrow</span>';
+            btn.classList.remove('playing');
+            btn.disabled = false;
+          } else {
+            requestAnimationFrame(checkPlaying);
+          }
+        };
+        checkPlaying();
+      }
+    } else { 
+      alert('Error: ' + (data.error || 'desconocido'));
+      btn.disabled = false;
+    }
+  })
+  .catch(() => { btn.disabled = false; });
+}
+</script>
+
+{% endblock %}

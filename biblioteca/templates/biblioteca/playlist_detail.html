@@ -1,0 +1,279 @@
+{% extends "usuarios/oyente/base_oyente.html" %}
+{% load static %}
+
+{% block title %}{{ playlist.nombrePlaylist }} — Ecualizer{% endblock %}
+{% block topbar_title %}{{ playlist.nombrePlaylist }}{% endblock %}
+{% block breadcrumb %}Biblioteca / Playlists / {{ playlist.nombrePlaylist }}{% endblock %}
+{% block nav_playlists %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .pl-hero {
+    position: relative;
+    border-radius: 18px;
+    overflow: hidden;
+    padding: 1.75rem 1.75rem 1.5rem;
+    min-height: 200px;
+    margin-bottom: 1.25rem;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 40%, #7c2d12 100%);
+    color: #fff;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .pl-hero__tag   { font-size:0.74rem; font-weight:600; text-transform:uppercase; letter-spacing:0.06em; color:rgba(255,255,255,0.85); margin-bottom:0.5rem; }
+  .pl-hero__title { font-size:2.8rem; font-weight:800; letter-spacing:-0.03em; line-height:1; }
+  .pl-hero__sub   { font-size:0.85rem; color:rgba(255,255,255,0.85); margin-top:0.5rem; }
+  .pl-hero__back  { position:absolute; top:1rem; left:1rem; background:rgba(0,0,0,0.3); border:none; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#fff; text-decoration:none; }
+
+  .pop-list {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 0.35rem 0.5rem;
+    backdrop-filter: blur(20px);
+    margin-bottom: 1.25rem;
+  }
+  .pop-row {
+    display: grid;
+    grid-template-columns: 28px 48px 1fr 160px 70px 36px;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 10px;
+    transition: background 0.15s;
+  }
+  .pop-row:hover { background: rgba(255,255,255,0.05); }
+  .pop-row__rank  { color: var(--text-muted); font-size:0.86rem; font-weight:600; text-align:center; }
+  .pop-row__cover { width:42px; height:42px; border-radius:8px; background:#1a1a1a; display:flex; align-items:center; justify-content:center; }
+  .pop-row__cover .material-icons { font-size:1.2rem; color:rgba(255,255,255,0.3); }
+  .pop-row__cover--play { cursor:pointer; transition:background 0.15s; }
+  .pop-row__cover--play:hover { background:#f97316; }
+  .pop-row__cover--play:hover .material-icons { color:#fff; }
+  .btn-play-all {
+    display:inline-flex; align-items:center; gap:0.4rem;
+    background:#f97316; color:#fff; border:none; border-radius:50px;
+    padding:0.6rem 1.6rem; font-size:0.92rem; font-weight:700; cursor:pointer;
+  }
+  .btn-play-all:hover { background:#ea580c; }
+  .btn-play-all .material-icons { font-size:1.2rem; }
+  .pop-row__title { color:#fff; font-weight:600; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pop-row__sub   { font-size:0.74rem; color:var(--text-muted); }
+  .pop-row__plays { color: var(--text-muted); font-size:0.85rem; display:flex; align-items:center; gap:0.35rem; }
+  .pop-row__time  { color: var(--text-muted); font-size:0.85rem; }
+  .btn-remove { background:none; border:none; cursor:pointer; color:rgba(239,68,68,0.6); display:flex; align-items:center; }
+  .btn-remove:hover { color:#ef4444; }
+
+  .add-cancion-card {
+    background: rgba(0,0,0,0.40);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    padding: 1.25rem;
+    backdrop-filter: blur(20px);
+  }
+  .add-cancion-card h4 { color:#fff; font-size:0.95rem; font-weight:700; margin-bottom:1rem; }
+  .add-cancion-form { display:flex; gap:0.75rem; }
+  .add-cancion-form select {
+    flex:1; background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:10px; padding:0.6rem 0.9rem;
+    color:#fff; font-size:0.88rem;
+  }
+  .add-cancion-form select option { background:#1a1a2e; }
+  .btn-add {
+    background:#f97316; color:#fff; border:none;
+    border-radius:10px; padding:0.6rem 1.25rem;
+    font-size:0.88rem; font-weight:600; cursor:pointer;
+  }
+  .btn-add:hover { background:#ea580c; }
+
+  /* ── Buscador para agregar canciones ── */
+  .add-search {
+    display:flex; align-items:center; gap:0.5rem;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:10px; padding:0.5rem 0.85rem; margin-bottom:0.85rem;
+  }
+  .add-search .material-icons { color:rgba(255,255,255,0.45); font-size:1.1rem; }
+  .add-search input {
+    flex:1; background:transparent; border:none; outline:none;
+    color:#fff; font-size:0.88rem;
+  }
+  .add-search input::placeholder { color:rgba(255,255,255,0.4); }
+  .add-song-list { max-height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:0.2rem; }
+  .add-song-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0.55rem 0.75rem; border-radius:10px; transition:background 0.15s;
+  }
+  .add-song-row:hover { background:rgba(255,255,255,0.05); }
+  .add-song-name   { color:#fff; font-size:0.88rem; font-weight:600; }
+  .add-song-artist { color:rgba(255,255,255,0.5); font-size:0.76rem; }
+  .btn-add-mini {
+    background:rgba(249,115,22,0.15); color:#f97316;
+    border:1px solid rgba(249,115,22,0.4); border-radius:50%;
+    width:32px; height:32px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .btn-add-mini:hover { background:#f97316; color:#fff; }
+  .btn-add-mini .material-icons { font-size:1.05rem; }
+  .add-song-empty { color:rgba(255,255,255,0.4); font-size:0.85rem; text-align:center; padding:1rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if playlist %}
+<div class="pl-hero">
+  <a href="{% url 'biblioteca:mis_playlists' %}" class="pl-hero__back">
+    <span class="material-icons">arrow_back</span>
+  </a>
+  <a href="{% url 'biblioteca:editar_playlist' playlist.idPlaylist %}"
+     style="position:absolute; top:1rem; right:1rem; background:rgba(0,0,0,0.3); border:none; border-radius:50%; width:36px; height:36px; display:flex; align-items:center; justify-content:center; color:#fff; text-decoration:none;">
+    <span class="material-icons">edit</span>
+  </a>
+  <div class="pl-hero__tag">{{ playlist.tipoPlaylist }} · {{ playlist.tipoVisibilidad }}</div>
+  <div class="pl-hero__title">{{ playlist.nombrePlaylist }}</div>
+  <div class="pl-hero__sub">
+    {{ total }} canción{{ total|pluralize:"es" }}
+    {% if playlist.descripcionPlaylist %} · {{ playlist.descripcionPlaylist }}{% endif %}
+  </div>
+</div>
+
+{% if canciones %}
+<div style="margin-bottom:1rem;">
+  <button type="button" class="btn-play-all" onclick="playFrom(0)">
+    <span class="material-icons">play_arrow</span> Reproducir
+  </button>
+</div>
+{% endif %}
+
+{% if canciones %}
+<div class="pop-list">
+  {% for c in canciones %}
+  <div class="pop-row">
+    <div class="pop-row__rank">{{ c.posicionPlaylist }}</div>
+    <div class="pop-row__cover pop-row__cover--play" title="Reproducir"
+         onclick="playFrom({{ forloop.counter0 }})">
+      <span class="material-icons">play_arrow</span>
+    </div>
+    <div>
+      <div class="pop-row__title">{{ c.nombreCancion }}</div>
+      <div class="pop-row__sub">{{ c.nombreArtistico }} · {{ c.tituloAlbum }}</div>
+    </div>
+    <div class="pop-row__plays">
+      <span class="material-icons">headphones</span>{{ c.totalReproducciones|default:0 }}
+    </div>
+    <div class="pop-row__time">{{ c.duracion }}s</div>
+    <button type="button" class="btn-remove" title="Eliminar de playlist"
+        onclick="quitarCancion({{ c.idCancion }}, '{{ c.nombreCancion|escapejs }}')">
+      <span class="material-icons">remove_circle_outline</span>
+    </button>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="text-align:center; padding:2rem 1rem; color:rgba(255,255,255,0.4);">
+  <span class="material-icons" style="font-size:2.5rem; opacity:0.35; display:block; margin-bottom:0.5rem;">queue_music</span>
+  <p>Esta playlist no tiene canciones todavía.</p>
+</div>
+{% endif %}
+
+<!-- Modal ÚNICO para quitar canción (fuera de .pop-list para que el overlay
+     cubra toda la pantalla y no quede debajo de las secciones) -->
+<div id="rmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+  <div style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:2rem; max-width:400px; width:90%; text-align:center;">
+    <span class="material-icons" style="font-size:3rem; color:#ef4444; margin-bottom:1rem; display:block;">remove_circle</span>
+    <h3 style="color:#fff; font-size:1.2rem; font-weight:800; margin-bottom:0.5rem;">Quitar canción</h3>
+    <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin-bottom:1.5rem;">
+      ¿Quitar <strong id="rmNombre" style="color:#fff;"></strong> de esta playlist?
+    </p>
+    <div style="display:flex; gap:0.75rem; justify-content:center;">
+      <button type="button" onclick="cerrarRm()"
+              style="background:rgba(255,255,255,0.08); color:#fff; border:none; border-radius:50px; padding:0.6rem 1.5rem; font-size:0.9rem; cursor:pointer;">
+        Cancelar
+      </button>
+      <form id="rmForm" method="post" action="" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit"
+                style="background:#ef4444; color:#fff; border:none; border-radius:50px; padding:0.6rem 1.5rem; font-size:0.9rem; font-weight:700; cursor:pointer;">
+          Sí, quitar
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  // URL base de "eliminar canción" con un id placeholder (0) que sustituimos.
+  var RM_TPL = "{% url 'biblioteca:eliminar_cancion_playlist' playlist.idPlaylist 0 %}";
+  function quitarCancion(id, nombre){
+    document.getElementById('rmNombre').textContent = nombre;
+    document.getElementById('rmForm').setAttribute('action', RM_TPL.replace(/\/0\/?$/, '/' + id + '/'));
+    document.getElementById('rmModal').style.display = 'flex';
+  }
+  function cerrarRm(){ document.getElementById('rmModal').style.display = 'none'; }
+  // Cerrar al hacer clic en el fondo oscuro
+  document.getElementById('rmModal').addEventListener('click', function(e){
+    if (e.target === this) cerrarRm();
+  });
+</script>
+
+<!-- Agregar canción (buscador del catálogo) -->
+<div class="add-cancion-card">
+  <h4>Agregar canciones</h4>
+  <div class="add-search">
+    <span class="material-icons">search</span>
+    <input type="text" id="songSearch" placeholder="Buscar canción o artista en el catálogo...">
+  </div>
+  <div class="add-song-list" id="songList">
+    {% for c in todas_canciones %}
+    <div class="add-song-row" data-text="{{ c.nombreCancion|lower }} {{ c.nombreArtistico|lower }}">
+      <div class="add-song-info">
+        <div class="add-song-name">{{ c.nombreCancion }}</div>
+        <div class="add-song-artist">{{ c.nombreArtistico }}</div>
+      </div>
+      <form method="post" action="{% url 'biblioteca:agregar_cancion_playlist' playlist.idPlaylist %}">
+        {% csrf_token %}
+        <input type="hidden" name="cancion_id" value="{{ c.idCancion }}">
+        <button type="submit" class="btn-add-mini" title="Agregar a la playlist">
+          <span class="material-icons">add</span>
+        </button>
+      </form>
+    </div>
+    {% empty %}
+    <div class="add-song-empty">No hay canciones en el catálogo.</div>
+    {% endfor %}
+    <div class="add-song-empty" id="songEmpty" style="display:none;">Sin resultados para tu búsqueda.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var input = document.getElementById('songSearch');
+  var rows  = Array.prototype.slice.call(document.querySelectorAll('#songList .add-song-row'));
+  var empty = document.getElementById('songEmpty');
+  if (!input) return;
+  input.addEventListener('input', function(){
+    var q = input.value.toLowerCase().trim();
+    var visibles = 0;
+    rows.forEach(function(r){
+      var match = q === '' || (r.dataset.text || '').indexOf(q) !== -1;
+      r.style.display = match ? '' : 'none';
+      if (match) visibles++;
+    });
+    if (empty) empty.style.display = visibles === 0 ? '' : 'none';
+  });
+})();
+</script>
+
+{# Reproducción de la playlist en orden + autoplay #}
+<script>
+  var PLAYLIST_IDS = [{% for c in canciones %}{{ c.idCancion }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+  function playFrom(i){
+    if (window.EzPlayer && PLAYLIST_IDS.length) {
+      EzPlayer.playQueue(PLAYLIST_IDS, i);
+    }
+  }
+</script>
+{% include "catalogo/usuario/_player.html" %}
+{% endif %}
+
+{% endblock %}

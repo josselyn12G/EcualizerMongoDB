@@ -1,0 +1,53 @@
+{% extends "analitica/admin/_base_analitica.html" %}
+
+{% block title %}Analítica · Álbumes — Ecualizer{% endblock %}
+{% block topbar_title %}Analítica · Álbumes{% endblock %}
+{% block breadcrumb %}Admin / Analítica / Álbumes{% endblock %}
+{% block nav_analitica_open %}open{% endblock %}
+{% block nav_an_albumes %}active{% endblock %}
+
+{% block content %}
+
+<div class="chart-card" style="margin-bottom:1rem;">
+  <div class="chart-card__head">
+    <div class="chart-card__title"><span class="material-icons">bookmark</span> Álbumes más guardados</div>
+  </div>
+  <div class="chart-card__body chart-card__body--lg">
+    <canvas id="chartGuardados"></canvas>
+  </div>
+</div>
+
+<div class="chart-card">
+  <div class="chart-card__head">
+    <div class="chart-card__title"><span class="material-icons">table_view</span> Detalle</div>
+  </div>
+  <table class="an-table">
+    <thead><tr><th>#</th><th>Álbum</th><th>Artista</th><th class="num">Guardado</th></tr></thead>
+    <tbody>
+      {% for a in mas_guardados %}
+      <tr><td>{{ forloop.counter }}</td><td>{{ a.Album }}</td><td>{{ a.Artista }}</td>
+          <td class="num accent">{{ a.VecesGuardado }}</td></tr>
+      {% empty %}
+      <tr><td colspan="4" class="an-empty"><span class="material-icons">album</span>Sin datos.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{{ mas_guardados|json_script:"d_alb" }}
+{% endblock %}
+
+{% block analitica_js %}
+<script>
+(function(){
+  const data = JSON.parse(document.getElementById('d_alb').textContent);
+  new Chart(document.getElementById('chartGuardados'), {
+    type: 'bar',
+    data: { labels: data.map(d=>d.Album),
+            datasets: [{ label:'Veces guardado', data:data.map(d=>d.VecesGuardado),
+                         backgroundColor: window.AN_PALETTE, borderRadius:6 }] },
+    options: { indexAxis:'y', maintainAspectRatio:false, plugins:{legend:{display:false}} },
+  });
+})();
+</script>
+{% endblock %}
