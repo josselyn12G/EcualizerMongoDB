@@ -12,7 +12,6 @@ urlpatterns = [
     path('',                views.ResumenGeneralView.as_view(), name='resumen'),
 
     # ── Subsecciones de analítica
-    path('usuarios/',       views.UsuariosView.as_view(),       name='usuarios'),
     path('musica/',         views.MusicaView.as_view(),         name='musica'),
     path('albumes/',        views.AlbumesView.as_view(),        name='albumes'),
     path('reproducciones/', views.ReproduccionesView.as_view(), name='reproducciones'),
@@ -23,12 +22,12 @@ urlpatterns = [
     # ── Reportes y regalías
     path('reportes/',       views.ReportesView.as_view(),       name='reportes'),
     path('regalias/',       views.RegaliasView.as_view(),       name='regalias'),
-    path('regalias/cerrar-facturacion/',
-         views.CerrarFacturacionMensualView.as_view(),
-         name='regalias_cerrar'),
-    path('regalias/cerrar-facturacion/todos/',
-         views.CerrarFacturacionTodosView.as_view(),
-         name='regalias_cerrar_todos'),
+    path('regalias/confirmar/',
+         views.ConfirmarRegaliasView.as_view(),
+         name='regalias_confirmar'),
+    path('regalias/confirmar/todos/',
+         views.ConfirmarRegaliasTodosView.as_view(),
+         name='regalias_confirmar_todos'),
 
     # ── Comercial (lectura desde analítica)
     path('discograficas/',  views.DiscograficasView.as_view(),  name='discograficas'),

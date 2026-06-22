@@ -171,41 +171,50 @@ class AnalyticsArtistaView(RequiereArtista, View):
 # Monetización (regalías pre-cierre + histórico + chart)
 # ──────────────────────────────────────────────────────────
 class MonetizacionArtistaView(RequiereArtista, View):
-    """Página de monetización: regalías pendientes + histórico + evolución."""
+    """Página de monetización: regalías pendientes + histórico + evolución.
+    Datos desde MongoDB (colección Regalias + vistas vw_regalias_*)."""
     template_name = 'analitica/artista/monetizacion.html'
 
     def get(self, request):
-        persona, perfil = _get_persona_y_artista(request)
-        id_artista = request.session.get('usuario_id')
+        from usuarios.mongo_service import find_user_by_identifier, build_user_namespace
+        from ...services import regalias_mongo
+
+        uid = request.session.get('usuario_id')
+        doc = find_user_by_identifier(uid) if uid else None
+        persona = build_user_namespace(doc) if doc else None
+        perfil = getattr(persona, 'artista', None) if persona else None
+
         hoy = date.today()
         g = request.GET
 
+        # Rango por defecto amplio (los cierres existentes son de ~2024) para
+        # que la página muestre datos sin tener que filtrar manualmente.
+        amplio = hoy - timedelta(days=900)
+
         # Filtros — sección "Pendiente" (pre-cierre)
-        f_pend_desde = _fecha(g.get('pend_desde'),
-                              date(hoy.year, hoy.month, 1))
+        f_pend_desde = _fecha(g.get('pend_desde'), amplio)
         f_pend_hasta = _fecha(g.get('pend_hasta'), hoy)
         f_pend_tarifa = float(g.get('pend_tarifa') or 0.004)
 
         # Filtros — sección "Histórico" (post-cierre)
-        f_hist_desde = _fecha(g.get('hist_desde'), hoy - timedelta(days=365))
+        f_hist_desde = _fecha(g.get('hist_desde'), amplio)
         f_hist_hasta = _fecha(g.get('hist_hasta'), hoy)
 
         # Filtros — gráfico de evolución
         f_meses = _int(g.get('meses'), 12) or 12
 
-        regalias_pendientes = artista_service.regalias_artista(
-            id_artista,
+        regalias_pendientes = regalias_mongo.pendiente_regalias(
+            uid,
             f_pend_desde.isoformat(),
             f_pend_hasta.isoformat(),
             f_pend_tarifa,
         )
-        historial = artista_service.historial_regalias_artista(
-            id_artista,
+        historial = regalias_mongo.historial_regalias(
+            uid,
             f_hist_desde.isoformat(),
             f_hist_hasta.isoformat(),
         )
-        evolucion = artista_service.resumen_mensual_regalias_artista(
-            id_artista, f_meses)
+        evolucion = regalias_mongo.evolucion_regalias(uid, f_meses)
 
         total_pendiente = sum(float(r.get('MontoNetoArtista') or 0)
                               for r in regalias_pendientes)
@@ -214,6 +223,9 @@ class MonetizacionArtistaView(RequiereArtista, View):
         total_bruto_hist = sum(float(r.get('MontoBruto') or 0)
                                for r in historial)
         total_descontado = total_bruto_hist - total_historico
+        # Pagado = regalías ya confirmadas por el administrador.
+        total_pagado = sum(float(r.get('MontoNetoArtista') or 0)
+                           for r in historial if r.get('EstadoPago') == 'Pagado')
 
         return render(request, self.template_name, {
             'persona': persona, 'perfil': perfil,
@@ -232,6 +244,7 @@ class MonetizacionArtistaView(RequiereArtista, View):
                 'total_pendiente':  round(total_pendiente, 2),
                 'total_historico':  round(total_historico, 2),
                 'total_descontado': round(total_descontado, 2),
+                'total_pagado':     round(total_pagado, 2),
                 'meses_cerrados':   len(evolucion),
             },
         })

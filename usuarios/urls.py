@@ -3,6 +3,8 @@ from . import views
 from pagos.artista_views import ArtistaMonetizacionView
 from pagos.admin_views import (
     AdminPlanesListView,
+    AdminPlanCrearView,
+    AdminPlanEditarView,
     AdminSuscripcionesListView,
     AdminPagosListView,
     AdminIngresosView,
@@ -47,28 +49,30 @@ urlpatterns = [
 
     # Oyentes
     path('admin/oyentes/',                   views.AdminOyenteListView.as_view(),   name='admin_oyente_list'),
-    path('admin/oyentes/<int:pk>/',          views.AdminOyenteDetailView.as_view(), name='admin_oyente_detail'),
-    path('admin/oyentes/<int:pk>/editar/',   views.AdminOyenteEditView.as_view(),   name='admin_oyente_edit'),
-    path('admin/oyentes/<int:pk>/eliminar/', views.AdminOyenteDeleteView.as_view(), name='admin_oyente_delete'),
+    path('admin/oyentes/<str:pk>/',          views.AdminOyenteDetailView.as_view(), name='admin_oyente_detail'),
+    path('admin/oyentes/<str:pk>/editar/',   views.AdminOyenteEditView.as_view(),   name='admin_oyente_edit'),
+    path('admin/oyentes/<str:pk>/eliminar/', views.AdminOyenteDeleteView.as_view(), name='admin_oyente_delete'),
 
     # Artistas
     path('admin/artistas/',                   views.AdminArtistaListView.as_view(),   name='admin_artista_list'),
-    path('admin/artistas/<int:pk>/',          views.AdminArtistaDetailView.as_view(), name='admin_artista_detail'),
-    path('admin/artistas/<int:pk>/editar/',   views.AdminArtistaEditView.as_view(),   name='admin_artista_edit'),
-    path('admin/artistas/<int:pk>/eliminar/', views.AdminArtistaDeleteView.as_view(), name='admin_artista_delete'),
+    path('admin/artistas/<str:pk>/',          views.AdminArtistaDetailView.as_view(), name='admin_artista_detail'),
+    path('admin/artistas/<str:pk>/editar/',   views.AdminArtistaEditView.as_view(),   name='admin_artista_edit'),
+    path('admin/artistas/<str:pk>/eliminar/', views.AdminArtistaDeleteView.as_view(), name='admin_artista_delete'),
 
     # Administradores
     path('admin/admins/',                   views.AdminAdminListView.as_view(),   name='admin_admin_list'),
-    path('admin/admins/<int:pk>/',          views.AdminAdminDetailView.as_view(), name='admin_admin_detail'),
-    path('admin/admins/<int:pk>/editar/',   views.AdminAdminEditView.as_view(),   name='admin_admin_edit'),
-    path('admin/admins/<int:pk>/eliminar/', views.AdminAdminDeleteView.as_view(), name='admin_admin_delete'),
+    path('admin/admins/<str:pk>/',          views.AdminAdminDetailView.as_view(), name='admin_admin_detail'),
+    path('admin/admins/<str:pk>/editar/',   views.AdminAdminEditView.as_view(),   name='admin_admin_edit'),
+    path('admin/admins/<str:pk>/eliminar/', views.AdminAdminDeleteView.as_view(), name='admin_admin_delete'),
 
     # Personas
     path('admin/personas/',        views.AdminPersonaListView.as_view(),   name='admin_persona_list'),
-    path('admin/personas/<int:pk>/', views.AdminPersonaDetailView.as_view(), name='admin_persona_detail'),
+    path('admin/personas/<str:pk>/', views.AdminPersonaDetailView.as_view(), name='admin_persona_detail'),
 
     # Comercial — Planes, Suscripciones, Pagos
     path('admin/comercial/planes/',        AdminPlanesListView.as_view(),        name='admin_planes_list'),
+    path('admin/comercial/planes/nuevo/',  AdminPlanCrearView.as_view(),         name='admin_plan_crear'),
+    path('admin/comercial/planes/<str:pk>/editar/', AdminPlanEditarView.as_view(), name='admin_plan_editar'),
     path('admin/comercial/suscripciones/', AdminSuscripcionesListView.as_view(), name='admin_suscripciones_list'),
     path('admin/comercial/pagos/',         AdminPagosListView.as_view(),         name='admin_pagos_list'),
 

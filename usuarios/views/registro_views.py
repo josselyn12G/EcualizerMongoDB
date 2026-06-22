@@ -8,17 +8,17 @@ gracias al partial `usuarios/_popups.html`.
 """
 
 import logging
-import traceback
 
 from django.shortcuts import render, redirect
 from django.views import View
-from django.db import transaction, DatabaseError, IntegrityError
 from django.contrib import messages
+from pymongo.errors import DuplicateKeyError, PyMongoError
 
-from ..forms import (
+from usuarios.forms import (
     RegistroPersonaForm, RegistroUsuarioForm,
     RegistroArtistaForm, RegistroAdministradorForm,
 )
+from usuarios.mongo_service import create_user_document, session_payload
 
 
 logger = logging.getLogger('ecualizer.registro')
@@ -77,42 +77,26 @@ class RegistroOyenteView(View):
 
         if p_ok and u_ok:
             try:
-                with transaction.atomic():
-                    logger.info('Guardando Persona...')
-                    persona = persona_form.save()
-                    logger.info('Persona OK · id=%s correo=%s',
-                                persona.id_usuario, persona.correo)
+                persona = create_user_document(
+                    persona_form.cleaned_data,
+                    'oyente',
+                    usuario_form.cleaned_data,
+                )
+                logger.info('Registro oyente COMPLETADO id=%s', persona.id_usuario)
 
-                    logger.info('Guardando Usuario (oyente) asociado...')
-                    usuario = usuario_form.save(commit=False)
-                    usuario.id_usuario = persona
-                    usuario.save()
-                    logger.info('Usuario OK · alias=%s', usuario.alias)
-
-                    # Plan Free por defecto para todo oyente nuevo.
-                    from pagos.services import asegurar_plan_free
-                    asegurar_plan_free(persona.id_usuario)
-                    logger.info('Plan Free asignado por defecto a id=%s',
-                                persona.id_usuario)
-
-                request.session['usuario_id'] = persona.id_usuario
-                request.session['usuario_nombre'] = persona.primer_nombre
-                request.session['tipo_usuario'] = 'oyente'
+                request.session.update(session_payload(persona))
 
                 messages.success(
                     request,
                     f'¡Bienvenido a Ecualizer, {persona.primer_nombre}! '
                     f'Tu cuenta de oyente fue creada correctamente.'
                 )
-                logger.info('Registro oyente COMPLETADO id=%s', persona.id_usuario)
                 return redirect('dashboard_oyente')
 
-            except (DatabaseError, IntegrityError) as e:
-                logger.error('Error de BD al crear oyente: %s', e)
-                logger.error(traceback.format_exc())
-                persona_form.add_error(None, f'Error de base de datos: {e}')
-                messages.error(request, f'No se pudo crear la cuenta. {e}')
-            except Exception as e:
+            except (DuplicateKeyError, PyMongoError, ValueError, TypeError):
+                persona_form.add_error(None, 'Ya existe una cuenta con esos datos.')
+                messages.error(request, 'Ya existe una cuenta con esos datos.')
+            except (KeyError, AttributeError) as e:
                 logger.exception('Excepción inesperada al crear oyente')
                 persona_form.add_error(None, f'Error inesperado: {e}')
                 messages.error(request, f'Error inesperado: {e}')
@@ -160,36 +144,26 @@ class RegistroArtistaView(View):
 
         if p_ok and a_ok:
             try:
-                with transaction.atomic():
-                    logger.info('Guardando Persona (artista)...')
-                    persona = persona_form.save()
-                    logger.info('Persona OK · id=%s correo=%s',
-                                persona.id_usuario, persona.correo)
+                persona = create_user_document(
+                    persona_form.cleaned_data,
+                    'artista',
+                    artista_form.cleaned_data,
+                )
+                logger.info('Registro artista COMPLETADO id=%s', persona.id_usuario)
 
-                    logger.info('Guardando Artista asociado...')
-                    artista = artista_form.save(commit=False)
-                    artista.id_usuario = persona
-                    artista.save()
-                    logger.info('Artista OK · nombre=%s', artista.nombre_artistico)
-
-                request.session['usuario_id'] = persona.id_usuario
-                request.session['usuario_nombre'] = persona.primer_nombre
-                request.session['tipo_usuario'] = 'artista'
+                request.session.update(session_payload(persona))
 
                 messages.success(
                     request,
-                    f'¡Bienvenido a Ecualizer, {artista.nombre_artistico}! '
+                    f'¡Bienvenido a Ecualizer, {persona.artista.nombre_artistico}! '
                     f'Tu cuenta de artista fue creada correctamente.'
                 )
-                logger.info('Registro artista COMPLETADO id=%s', persona.id_usuario)
                 return redirect('dashboard_artista')
 
-            except (DatabaseError, IntegrityError) as e:
-                logger.error('Error de BD al crear artista: %s', e)
-                logger.error(traceback.format_exc())
-                persona_form.add_error(None, f'Error de base de datos: {e}')
-                messages.error(request, f'No se pudo crear la cuenta. {e}')
-            except Exception as e:
+            except (DuplicateKeyError, PyMongoError, ValueError, TypeError):
+                persona_form.add_error(None, 'Ya existe una cuenta con esos datos.')
+                messages.error(request, 'Ya existe una cuenta con esos datos.')
+            except (KeyError, AttributeError) as e:
                 logger.exception('Excepción inesperada al crear artista')
                 persona_form.add_error(None, f'Error inesperado: {e}')
                 messages.error(request, f'Error inesperado: {e}')
@@ -236,25 +210,22 @@ class RegistroAdminView(View):
 
         if p_ok and a_ok:
             try:
-                with transaction.atomic():
-                    persona = persona_form.save()
-                    admin = admin_form.save(commit=False)
-                    admin.id_usuario = persona
-                    admin.save()
-                request.session['usuario_id'] = persona.id_usuario
-                request.session['usuario_nombre'] = persona.primer_nombre
-                request.session['tipo_usuario'] = 'administrador'
+                persona = create_user_document(
+                    persona_form.cleaned_data,
+                    'admin',
+                    admin_form.cleaned_data,
+                )
+                request.session.update(session_payload(persona))
+                request.session['tipo_usuario'] = 'admin'
                 messages.success(
                     request,
                     f'¡Bienvenido al panel, {persona.primer_nombre}!'
                 )
                 return redirect('admin_dashboard')
-            except (DatabaseError, IntegrityError) as e:
-                logger.error('Error de BD al crear admin: %s', e)
-                logger.error(traceback.format_exc())
-                persona_form.add_error(None, f'Error de base de datos: {e}')
-                messages.error(request, f'No se pudo crear la cuenta. {e}')
-            except Exception as e:
+            except (DuplicateKeyError, PyMongoError, ValueError, TypeError):
+                persona_form.add_error(None, 'Ya existe una cuenta con esos datos.')
+                messages.error(request, 'Ya existe una cuenta con esos datos.')
+            except (KeyError, AttributeError) as e:
                 logger.exception('Excepción inesperada al crear admin')
                 persona_form.add_error(None, f'Error inesperado: {e}')
                 messages.error(request, f'Error inesperado: {e}')

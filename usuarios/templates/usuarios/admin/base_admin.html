@@ -43,9 +43,6 @@
           <a href="{% url 'analitica:resumen' %}" class="nav-item {% block nav_an_resumen %}{% endblock %}">
             <span class="material-icons">space_dashboard</span> Resumen General
           </a>
-          <a href="{% url 'analitica:usuarios' %}" class="nav-item {% block nav_an_usuarios %}{% endblock %}">
-            <span class="material-icons">groups</span> Usuarios
-          </a>
           <a href="{% url 'analitica:musica' %}" class="nav-item {% block nav_an_musica %}{% endblock %}">
             <span class="material-icons">music_note</span> Música
           </a>
@@ -134,10 +131,10 @@
           <a href="{% url 'analitica:regalias' %}" class="nav-item {% block nav_regalias %}{% endblock %}">
             <span class="material-icons">payments</span> Regalías
           </a>
-          <a href="{% url 'analitica:planes' %}" class="nav-item {% block nav_planes %}{% endblock %}">
+          <a href="{% url 'admin_planes_list' %}" class="nav-item {% block nav_planes %}{% endblock %}">
             <span class="material-icons">card_membership</span> Planes
           </a>
-          <a href="{% url 'analitica:suscripciones' %}" class="nav-item {% block nav_suscripciones %}{% endblock %}">
+          <a href="{% url 'admin_suscripciones_list' %}" class="nav-item {% block nav_suscripciones %}{% endblock %}">
             <span class="material-icons">subscriptions</span> Suscripciones
           </a>
           <a href="{% url 'admin_pagos_list' %}" class="nav-item {% block nav_pagos %}{% endblock %}">

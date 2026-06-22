@@ -28,12 +28,15 @@ class ReportesView(RequiereAdmin, View):
 
 
 class RegaliasView(RequiereAdmin, View):
+    """Panel de regalías del administrador (datos desde MongoDB)."""
     template_name = 'analitica/admin/regalias.html'
 
     def get(self, request):
+        from ...services import regalias_admin_mongo as rm
+
         hoy = date.today()
         defaults = {
-            'desde': hoy - timedelta(days=365),
+            'desde': hoy - timedelta(days=900),  # amplio: los cierres son ~2024
             'hasta': hoy,
         }
         form = ConsolidadoRegaliasForm(request.GET or defaults)
@@ -44,15 +47,13 @@ class RegaliasView(RequiereAdmin, View):
 
         return render(request, self.template_name, {
             'form':         form,
-            'resumen':      services.regalias_resumen(),
-            'por_artista':  services.regalias_por_artista(20),
-            'por_pais':     services.regalias_por_pais(),
-            'consolidado':  services.consolidado_pagos_artistas(
-                                desde.isoformat(), hasta.isoformat()),
-            'registros':    services.listar_regalias(
-                                desde.isoformat(), hasta.isoformat()),
-            'cierre_info':  services.cierre_facturacion_info(),
-            'tasas_pais':   services.listar_tasas_por_pais(),
+            'resumen':      rm.resumen(),
+            'por_artista':  rm.por_artista(20),
+            'por_pais':     rm.por_pais(),
+            'consolidado':  rm.por_periodo(),
+            'registros':    rm.listar_registros(desde.isoformat(), hasta.isoformat()),
+            'cierre_info':  rm.info_periodos(),
+            'tasas_pais':   rm.tarifas_por_pais(),
         })
 
 
@@ -63,47 +64,39 @@ def _parse_int(v):
         return None
 
 
-class CerrarFacturacionMensualView(RequiereAdmin, View):
-    """
-    POST → Ejecuta `Analitica.SP_CerrarFacturacionMensual` para un período.
-
-    Acepta opcionalmente `mes` y `anio` por POST para cerrar un período
-    específico. Si no se pasan, el SP cierra el mes anterior (legacy).
-    """
+class ConfirmarRegaliasView(RequiereAdmin, View):
+    """POST → CONFIRMA el pago de las regalías de un período (las marca como
+    'Pagado'). El artista lo verá reflejado en su monetización."""
 
     def post(self, request):
-        mes  = _parse_int(request.POST.get('mes'))
+        from ...services import regalias_admin_mongo as rm
+        mes = _parse_int(request.POST.get('mes'))
         anio = _parse_int(request.POST.get('anio'))
-        ok, mensaje, _filas = services.cerrar_facturacion_mensual(mes, anio)
-        if ok:
-            messages.success(request, mensaje)
+        artista_id = request.POST.get('artista_id') or None
+        pais = request.POST.get('pais') or None
+        n = rm.confirmar_periodo(mes, anio, artista_id, pais)
+        if n:
+            messages.success(request, f'Pago confirmado: {n} registro(s) de regalías marcados como pagados.')
         else:
-            messages.error(request, f'No se pudo cerrar la facturación: {mensaje}')
+            messages.info(request, 'No se encontraron regalías para confirmar.')
         return redirect(reverse('analitica:regalias'))
 
     def get(self, request):
         return redirect(reverse('analitica:regalias'))
 
 
-class CerrarFacturacionTodosView(RequiereAdmin, View):
-    """POST → Cierra todos los períodos pendientes en serie."""
+class ConfirmarRegaliasTodosView(RequiereAdmin, View):
+    """POST → CONFIRMA el pago de todas las regalías del rango indicado."""
 
     def post(self, request):
-        exitosos, fallidos, errores = services.cerrar_facturacion_todos()
-        if exitosos and not fallidos:
-            messages.success(
-                request, f'{exitosos} período(s) cerrado(s) correctamente.')
-        elif exitosos and fallidos:
-            messages.warning(
-                request,
-                f'{exitosos} cerrado(s), {fallidos} con error: '
-                + '; '.join(errores[:3]))
-        elif not exitosos and not fallidos:
-            messages.info(request, 'No hay períodos pendientes de cerrar.')
+        from ...services import regalias_admin_mongo as rm
+        desde = request.POST.get('desde') or None
+        hasta = request.POST.get('hasta') or None
+        n = rm.confirmar_rango(desde, hasta)
+        if n:
+            messages.success(request, f'Pago confirmado: {n} registro(s) marcados como pagados.')
         else:
-            messages.error(
-                request,
-                'Ningún período pudo cerrarse: ' + '; '.join(errores[:3]))
+            messages.info(request, 'No había regalías en el rango indicado.')
         return redirect(reverse('analitica:regalias'))
 
     def get(self, request):

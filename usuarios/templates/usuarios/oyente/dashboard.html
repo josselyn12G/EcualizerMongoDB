@@ -8,49 +8,181 @@
 {% block content %}
 <div class="d-grid">
 
-  <!-- COLUMNA PRINCIPAL -->
+  <!-- ══ COLUMNA PRINCIPAL ══════════════════════════════ -->
   <div class="d-main">
 
-    <div class="section-intro">
-      <div>
-        <div class="section-tag">¿Qué está sonando?</div>
-        <h2 class="section-title">Tendencias</h2>
-      </div>
-      <a href="{% url 'tendencias' %}" class="section-more">
-        Ver más <span class="material-icons">chevron_right</span>
+    <!-- Saludo contextual estilo Spotify ("Good afternoon") -->
+    <div class="greeting">
+      <h2 class="greeting__title">
+        {{ saludo|default:"Hola" }}{% if perfil and perfil.alias %}, {{ perfil.alias }}{% elif persona %}, {{ persona.primer_nombre }}{% endif %}
+      </h2>
+      <p class="greeting__sub">Esto es lo que está sonando para ti hoy.</p>
+    </div>
+
+    <!-- Cuadrícula de accesos rápidos (tiles compactos estilo Spotify) -->
+    <div class="quick-grid">
+      <a href="{% url 'para_ti' %}" class="quick-tile">
+        <span class="quick-tile__art quick-tile__art--a"><span class="material-icons">auto_awesome</span></span>
+        <span class="quick-tile__name">Para Ti</span>
+        <span class="quick-tile__play"><span class="material-icons">play_arrow</span></span>
+      </a>
+      <a href="{% url 'biblioteca:mis_canciones_liked' %}" class="quick-tile">
+        <span class="quick-tile__art quick-tile__art--b"><span class="material-icons">favorite</span></span>
+        <span class="quick-tile__name">Me gusta</span>
+        <span class="quick-tile__play"><span class="material-icons">play_arrow</span></span>
+      </a>
+      <a href="{% url 'tendencias' %}" class="quick-tile">
+        <span class="quick-tile__art quick-tile__art--c"><span class="material-icons">trending_up</span></span>
+        <span class="quick-tile__name">Tendencias</span>
+        <span class="quick-tile__play"><span class="material-icons">play_arrow</span></span>
+      </a>
+      <a href="{% url 'novedades' %}" class="quick-tile">
+        <span class="quick-tile__art quick-tile__art--d"><span class="material-icons">new_releases</span></span>
+        <span class="quick-tile__name">Novedades</span>
+        <span class="quick-tile__play"><span class="material-icons">play_arrow</span></span>
+      </a>
+      <a href="{% url 'biblioteca:mis_playlists' %}" class="quick-tile">
+        <span class="quick-tile__art quick-tile__art--e"><span class="material-icons">queue_music</span></span>
+        <span class="quick-tile__name">Playlists</span>
+        <span class="quick-tile__play"><span class="material-icons">play_arrow</span></span>
+      </a>
+      <a href="{% url 'biblioteca:mis_albumes' %}" class="quick-tile">
+        <span class="quick-tile__art quick-tile__art--f"><span class="material-icons">bookmark</span></span>
+        <span class="quick-tile__name">Mis Álbumes</span>
+        <span class="quick-tile__play"><span class="material-icons">play_arrow</span></span>
       </a>
     </div>
 
+    <!-- Hero de bienvenida -->
     {% include "usuarios/oyente/components/welcome_banner.html" %}
 
     {% if plan_activo == 'Free' %}
-    <!-- BANNER ANUNCIO FREE - llamativo -->
-    <div style="margin: 1rem 0; border-radius: 14px; overflow: hidden; position: relative;">
-      <div style="background: linear-gradient(90deg, #1a1a1a 0%, #2a1a0a 100%); border: 1px solid rgba(249,115,22,0.4); padding: 1rem 1.25rem; display:flex; align-items:center; gap:1rem;">
-        <div style="width:48px; height:48px; background:rgba(249,115,22,0.2); border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-          <span class="material-icons" style="color:#f97316; font-size:1.5rem;">campaign</span>
-        </div>
-        <div style="flex:1;">
-          <div style="color:#fff; font-weight:700; font-size:0.95rem;">Publicidad — Mejora tu experiencia con Ecualizer Premium</div>
-          <div style="color:rgba(255,255,255,0.5); font-size:0.78rem; margin-top:0.2rem;">Sin anuncios · Descargas · Alta calidad · Desde $4.99/mes</div>
-        </div>
-        <a href="{% url 'pagos:historial' %}" style="background:#f97316; color:#fff; border-radius:50px; padding:0.5rem 1.25rem; font-size:0.82rem; font-weight:700; text-decoration:none; white-space:nowrap; flex-shrink:0;">
-          Ver planes
-        </a>
+    <!-- BANNER ANUNCIO FREE -->
+    <div class="ad-banner">
+      <div class="ad-banner__icon">
+        <span class="material-icons">campaign</span>
       </div>
+      <div class="ad-banner__body">
+        <div class="ad-banner__title">Publicidad — Mejora tu experiencia con Ecualizer Premium</div>
+        <div class="ad-banner__sub">Sin anuncios · Descargas · Alta calidad · Desde $4.99/mes</div>
+      </div>
+      <a href="{% url 'pagos:historial' %}" class="ad-banner__btn">Ver planes</a>
     </div>
     {% endif %}
 
+    <!-- ── Sección: Hecho para ti (recomendaciones) ── -->
+    {% if recomendaciones %}
+    <section>
+      <div class="section-intro">
+        <div>
+          <div class="section-tag">Recomendado</div>
+          <h2 class="section-title">Hecho para ti</h2>
+        </div>
+        <a href="{% url 'para_ti' %}" class="section-more">
+          Ver más <span class="material-icons">chevron_right</span>
+        </a>
+      </div>
+      <div class="card-grid">
+        {% for r in recomendaciones|slice:":6" %}
+        <a href="{% url 'para_ti' %}" class="m-card">
+          <div class="m-card__cover">
+            {% if r.coverUrl %}
+              <img src="{{ r.coverUrl }}" alt="" loading="lazy">
+            {% else %}
+              <span class="material-icons">music_note</span>
+            {% endif %}
+            <span class="m-card__play"><span class="material-icons">play_arrow</span></span>
+          </div>
+          <div class="m-card__title">{{ r.nombreCancion|default:r.titulo|default:"Recomendación" }}</div>
+          <div class="m-card__sub">{{ r.nombreArtistico|default:r.artista|default:"Para ti" }}</div>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- ── Sección: Tu top del mes ── -->
+    {% if top_canciones %}
+    <section>
+      <div class="section-intro">
+        <div>
+          <div class="section-tag">Lo que más escuchas</div>
+          <h2 class="section-title">Tu top del mes</h2>
+        </div>
+        <a href="{% url 'catalogo:usuario_cancion_list' %}" class="section-more">
+          Ver más <span class="material-icons">chevron_right</span>
+        </a>
+      </div>
+      <div class="card-grid">
+        {% for t in top_canciones|slice:":6" %}
+        <a href="{% url 'catalogo:usuario_cancion_list' %}" class="m-card">
+          <div class="m-card__cover">
+            {% if t.coverUrl %}
+              <img src="{{ t.coverUrl }}" alt="" loading="lazy">
+            {% else %}
+              <span class="material-icons">music_note</span>
+            {% endif %}
+            <span class="m-card__play"><span class="material-icons">play_arrow</span></span>
+          </div>
+          <div class="m-card__title">{{ t.nombreCancion|default:t.NombreCancion|default:"Canción" }}</div>
+          <div class="m-card__sub">{{ t.nombreArtistico|default:t.NombreArtistico|default:"Artista" }}</div>
+        </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <!-- Historial de reproducciones -->
     {% include "usuarios/oyente/components/recent_activity.html" %}
 
   </div>
 
-  <!-- COLUMNA DERECHA -->
+  <!-- ══ COLUMNA DERECHA / PANEL CONTEXTUAL ══════════════ -->
   <aside class="d-right">
 
+    <!-- Plan actual -->
+    <div class="promo-card">
+      <span class="material-icons promo-card__icon">
+        {% if plan_activo == 'Free' %}workspace_premium{% else %}headphones{% endif %}
+      </span>
+      <div class="promo-card__title">
+        {% if plan_activo == 'Free' %}¡Actualiza tu plan!{% else %}Plan {{ plan_activo }}{% endif %}
+      </div>
+      <div class="promo-card__sub">
+        {% if plan_activo == 'Free' %}
+          Estás en el plan gratuito. Mejora para disfrutar sin anuncios.
+        {% else %}
+          Disfruta de música sin límites con tu plan activo.
+        {% endif %}
+      </div>
+      <a href="{% url 'pagos:historial' %}" class="promo-card__link">
+        {% if plan_activo == 'Free' %}Ver planes{% else %}Gestionar suscripción{% endif %}
+        <span class="material-icons">arrow_outward</span>
+      </a>
+    </div>
+
+    <!-- Géneros favoritos -->
+    {% if generos %}
     <div class="rs-block">
       <div class="rs-header">
-        <span class="rs-title">Accesos Rápidos</span>
+        <span class="rs-title">Tus géneros</span>
+        <a href="{% url 'explorar' %}" class="rs-see-all">Ver todo</a>
+      </div>
+      <div class="genre-tags">
+        {% for g in generos|slice:":8" %}
+        <a href="{% url 'explorar' %}" class="genre-tag">
+          <span class="material-icons">label</span>
+          {{ g.nombreGenero|default:g.NombreGenero|default:g.genero|default:g }}
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Accesos rápidos -->
+    <div class="rs-block">
+      <div class="rs-header">
+        <span class="rs-title">Accesos rápidos</span>
         <a href="{% url 'explorar' %}" class="rs-see-all">Ver todo</a>
       </div>
       <div class="played-list">
@@ -89,43 +221,18 @@
       </div>
     </div>
 
-    <!-- Promo / Suscripción -->
-    <div class="promo-card">
-      <span class="material-icons promo-card__icon">
-        {% if plan_activo == 'Free' %}workspace_premium{% else %}headphones{% endif %}
-      </span>
-      <div class="promo-card__title">
-        {% if plan_activo == 'Free' %}
-          ¡Actualiza tu plan!
-        {% else %}
-          Plan {{ plan_activo }}
-        {% endif %}
-      </div>
-      <div class="promo-card__sub">
-        {% if plan_activo == 'Free' %}
-          Estás en el plan gratuito. Mejora para disfrutar sin anuncios.
-        {% else %}
-          Disfruta de música sin límites con tu plan activo.
-        {% endif %}
-      </div>
-      <a href="{% url 'pagos:historial' %}" class="promo-card__link">
-        {% if plan_activo == 'Free' %}Ver planes{% else %}Gestionar suscripción{% endif %}
-        <span class="material-icons">arrow_outward</span>
-      </a>
-    </div>
-
   </aside>
 
 </div>
 
 <!-- Modal descarga (solo premium) -->
 <div id="modal-descarga" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
-  <div style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:2.5rem; max-width:380px; width:90%; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,0.5);">
+  <div style="background:#0f1733; border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:2.5rem; max-width:380px; width:90%; text-align:center; box-shadow:0 25px 60px rgba(0,0,0,0.5);">
     <span class="material-icons" style="font-size:3.5rem; color:#22c55e; margin-bottom:1rem; display:block;">check_circle</span>
     <h3 style="color:#fff; font-size:1.4rem; font-weight:800; margin-bottom:0.5rem;">Descargado correctamente</h3>
     <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin-bottom:1.5rem;">Tu música está lista para escuchar sin conexión.</p>
     <button onclick="document.getElementById('modal-descarga').style.display='none'"
-            style="background:#f97316; color:#fff; border:none; border-radius:50px; padding:0.7rem 2rem; font-size:0.9rem; font-weight:700; cursor:pointer;">
+            style="background:#3b82f6; color:#fff; border:none; border-radius:50px; padding:0.7rem 2rem; font-size:0.9rem; font-weight:700; cursor:pointer;">
       Aceptar
     </button>
   </div>

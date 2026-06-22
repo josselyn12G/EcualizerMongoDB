@@ -30,8 +30,13 @@ ALLOWED_HOSTS = []
 
 # Application definition
 
+# Nota: la autenticación de Ecualizer es propia y se apoya en MongoDB Atlas
+# (ver usuarios/mongo_service.py) + sesiones en cookies firmadas. NO se usa
+# django.contrib.auth para iniciar sesión ni el admin integrado de Django
+# (ambos requieren una BD relacional, que aquí no existe). Se conserva
+# django.contrib.auth solo porque expone los hashers de contraseñas
+# (make_password / check_password) que reutiliza mongo_service.
 INSTALLED_APPS = [
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -50,7 +55,9 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # AuthenticationMiddleware removido: resolvía request.user contra la BD
+    # relacional (dummy) y rompía las páginas cuando el navegador enviaba una
+    # cookie de sesión antigua con _auth_user_id. La app usa request.session.
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -65,7 +72,8 @@ TEMPLATES = [
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
+                # 'django.contrib.auth.context_processors.auth' removido:
+                # inyectaba request.user (resuelto contra la BD relacional).
                 'django.contrib.messages.context_processors.messages',
                 'usuarios.context_processors.notificaciones_oyente',
             ],
@@ -81,16 +89,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'Ecualizer',
-        'USER': 'login_Administrador',
-        'PASSWORD': 'Admin@Ecualizer2026!',
-        'HOST': '.\\SQLEXPRESS',
-        'PORT': '',
-        'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
-            'extra_params': 'TrustServerCertificate=yes;',
-        },
+        'ENGINE': 'django.db.backends.dummy',
     }
 }
 

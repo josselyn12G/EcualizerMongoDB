@@ -1,4 +1,5 @@
 from django.shortcuts import redirect
+from django.views import View
 from django.contrib import messages
 
 
@@ -8,7 +9,7 @@ class RequiereLogin:
         if not request.session.get('usuario_id'):
             messages.error(request, 'Debes iniciar sesion para acceder.')
             return redirect('login')
-        return super().dispatch(request, *args, **kwargs)
+        return View.dispatch(self, request, *args, **kwargs)
 
 
 class RequiereAdmin:
@@ -17,10 +18,10 @@ class RequiereAdmin:
         if not request.session.get('usuario_id'):
             messages.error(request, 'Debes iniciar sesion para acceder.')
             return redirect('login')
-        if request.session.get('tipo_usuario') != 'administrador':
+        if request.session.get('tipo_usuario') not in ('admin', 'administrador'):
             messages.error(request, 'No tienes permisos para acceder al panel de administracion.')
             return redirect('login')
-        return super().dispatch(request, *args, **kwargs)
+        return View.dispatch(self, request, *args, **kwargs)
 
 
 class RequiereArtista:
@@ -32,7 +33,7 @@ class RequiereArtista:
         if request.session.get('tipo_usuario') != 'artista':
             messages.error(request, 'Solo los artistas pueden acceder a esta seccion.')
             return redirect('login')
-        return super().dispatch(request, *args, **kwargs)
+        return View.dispatch(self, request, *args, **kwargs)
 
 
 class RequiereOyente:
@@ -44,4 +45,4 @@ class RequiereOyente:
         if request.session.get('tipo_usuario') != 'oyente':
             messages.error(request, 'Esta seccion es solo para oyentes.')
             return redirect('login')
-        return super().dispatch(request, *args, **kwargs)
+        return View.dispatch(self, request, *args, **kwargs)

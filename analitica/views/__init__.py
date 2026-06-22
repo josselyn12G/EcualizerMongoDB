@@ -10,7 +10,6 @@ Se re-exportan las clases del admin para mantener compat con `analitica.urls`.
 
 from .admin import (  # noqa: F401
     ResumenGeneralView,
-    UsuariosView,
     MusicaView,
     AlbumesView,
     ReproduccionesView,
@@ -19,8 +18,8 @@ from .admin import (  # noqa: F401
     ActividadView,
     ReportesView,
     RegaliasView,
-    CerrarFacturacionMensualView,
-    CerrarFacturacionTodosView,
+    ConfirmarRegaliasView,
+    ConfirmarRegaliasTodosView,
     DiscograficasView,
     ContratosView,
     PlanesView,

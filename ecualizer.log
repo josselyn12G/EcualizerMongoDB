@@ -548,3 +548,174 @@
 [2026-06-07 01:20:17,970] ERROR   ecualizer.analitica: Analitica SP error · EXEC Analitica.sp_TiempoTotalEscucha @idUsuario=%s, @periodo=%s; · ('42000', "[42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Could not find stored procedure 'Analitica.sp_TiempoTotalEscucha'. (2812) (SQLExecDirectW)")
 [2026-06-07 01:20:17,972] ERROR   ecualizer.analitica: Analitica SP error · EXEC Analitica.sp_GenerosFavoritosUsuario @idUsuario=%s, @periodo=%s; · ('42000', "[42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Could not find stored procedure 'Analitica.sp_GenerosFavoritosUsuario'. (2812) (SQLExecDirectW)")
 [2026-06-07 01:20:17,973] ERROR   ecualizer.analitica: Analitica SP error · EXEC Analitica.sp_RecomendacionesSemanales @idUsuario=%s; · ('42000', "[42000] [Microsoft][ODBC Driver 17 for SQL Server][SQL Server]Could not find stored procedure 'Analitica.sp_RecomendacionesSemanales'. (2812) (SQLExecDirectW)")
+[2026-06-21 00:05:09,244] WARNING ecualizer.auth: LOGIN inválido · errors={"correo": [{"message": "Enter a valid email address.", "code": "invalid"}]}
+[2026-06-21 00:05:34,846] WARNING ecualizer.auth: LOGIN inválido · errors={"correo": [{"message": "Enter a valid email address.", "code": "invalid"}]}
+[2026-06-21 00:05:46,880] WARNING ecualizer.auth: LOGIN inválido · errors={"contrasena": [{"message": "This field is required.", "code": "required"}]}
+[2026-06-21 00:05:54,443] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:05:55,482] WARNING ecualizer.auth: LOGIN inválido · errors={"__all__": [{"message": "Correo o contrase\u00f1a incorrectos.", "code": ""}]}
+[2026-06-21 00:14:09,645] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:14:10,107] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:14:10,821] WARNING ecualizer.auth: LOGIN inválido · errors={"__all__": [{"message": "Correo o contrase\u00f1a incorrectos.", "code": ""}]}
+[2026-06-21 00:14:11,256] WARNING ecualizer.auth: LOGIN inválido · errors={"__all__": [{"message": "Correo o contrase\u00f1a incorrectos.", "code": ""}]}
+[2026-06-21 00:16:30,493] DEBUG   ecualizer.registro: GET RegistroOyenteView
+[2026-06-21 00:17:16,871] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['csrfmiddlewaretoken', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'cedula_usuario', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 00:17:17,440] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 00:17:18,767] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a3773dd94385bd5efffb18c
+[2026-06-21 00:19:55,318] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:20:16,324] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:20:16,712] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 00:20:17,263] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 00:20:18,328] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a3774916a61f2df70e893f1
+[2026-06-21 00:20:19,518] INFO    ecualizer.auth: LOGIN form válido
+[2026-06-21 00:20:19,518] INFO    ecualizer.auth: LOGIN persona=qa.oyente@ecualizer.test tipo=oyente
+[2026-06-21 00:20:19,681] INFO    ecualizer.registro: POST RegistroArtistaView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'nombre_artistico', 'biografia']
+[2026-06-21 00:20:20,156] INFO    ecualizer.registro: Validación · persona=True artista=True
+[2026-06-21 00:20:21,210] INFO    ecualizer.registro: Registro artista COMPLETADO id=6a3774946a61f2df70e893f3
+[2026-06-21 00:20:22,242] INFO    ecualizer.auth: LOGIN form válido
+[2026-06-21 00:20:22,242] INFO    ecualizer.auth: LOGIN persona=qa.artista@ecualizer.test tipo=artista
+[2026-06-21 00:20:22,411] INFO    ecualizer.registro: POST RegistroAdminView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'codigo_autorizacion', 'rol_admin', 'departamento']
+[2026-06-21 00:20:22,744] INFO    ecualizer.registro: Validación · persona=True admin=True
+[2026-06-21 00:20:24,729] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 00:21:07,513] DEBUG   ecualizer.registro: GET RegistroOyenteView
+[2026-06-21 00:21:40,628] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['csrfmiddlewaretoken', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'cedula_usuario', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 00:21:42,993] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:21:43,535] INFO    ecualizer.registro: Validación · persona=False usuario=False
+[2026-06-21 00:21:43,536] WARNING ecualizer.registro: OYENTE persona · errores en RegistroPersonaForm: {"cedula_usuario": [{"message": "Ya existe una cuenta registrada con esta c\u00e9dula.", "code": ""}], "correo": [{"message": "Ya existe una cuenta registrada con este correo.", "code": ""}]}
+[2026-06-21 00:21:43,536] WARNING ecualizer.registro:   · cedula_usuario → Ya existe una cuenta registrada con esta cédula.
+[2026-06-21 00:21:43,566] WARNING ecualizer.registro:   · correo → Ya existe una cuenta registrada con este correo.
+[2026-06-21 00:21:43,567] WARNING ecualizer.registro: OYENTE usuario · errores en RegistroUsuarioForm: {"alias": [{"message": "Este alias ya est\u00e1 en uso.", "code": ""}]}
+[2026-06-21 00:21:43,567] WARNING ecualizer.registro:   · alias → Este alias ya está en uso.
+[2026-06-21 00:22:16,503] INFO    ecualizer.auth: LOGIN form válido
+[2026-06-21 00:22:16,503] INFO    ecualizer.auth: LOGIN persona=jospao@hotmail.com tipo=oyente
+[2026-06-21 00:22:35,347] DEBUG   ecualizer.registro: GET RegistroArtistaView
+[2026-06-21 00:23:09,829] INFO    ecualizer.registro: POST RegistroArtistaView · keys=['csrfmiddlewaretoken', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'cedula_usuario', 'correo', 'contrasena', 'confirmar_contrasena', 'nombre_artistico', 'biografia']
+[2026-06-21 00:23:10,317] INFO    ecualizer.registro: Validación · persona=True artista=True
+[2026-06-21 00:23:11,520] INFO    ecualizer.registro: Registro artista COMPLETADO id=6a37753e41145b0ee81ae4c1
+[2026-06-21 00:23:48,802] WARNING ecualizer.auth: ADMIN LOGIN inválido · errors={"__all__": [{"message": "Correo o contrase\u00f1a incorrectos.", "code": ""}]}
+[2026-06-21 00:23:53,890] WARNING ecualizer.auth: ADMIN LOGIN inválido · errors={"contrasena": [{"message": "This field is required.", "code": "required"}]}
+[2026-06-21 00:25:05,697] INFO    ecualizer.registro: POST RegistroAdminView · keys=['csrfmiddlewaretoken', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'cedula_usuario', 'correo', 'contrasena', 'rol_admin', 'departamento', 'codigo_autorizacion']
+[2026-06-21 00:25:06,112] INFO    ecualizer.registro: Validación · persona=False admin=True
+[2026-06-21 00:25:06,112] WARNING ecualizer.registro: ADMIN persona · errores en RegistroPersonaForm: {"confirmar_contrasena": [{"message": "This field is required.", "code": "required"}]}
+[2026-06-21 00:25:06,112] WARNING ecualizer.registro:   · confirmar_contrasena → This field is required.
+[2026-06-21 00:25:19,533] INFO    ecualizer.registro: POST RegistroAdminView · keys=['csrfmiddlewaretoken', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'cedula_usuario', 'correo', 'contrasena', 'rol_admin', 'departamento', 'codigo_autorizacion']
+[2026-06-21 00:25:19,868] INFO    ecualizer.registro: Validación · persona=False admin=True
+[2026-06-21 00:25:19,868] WARNING ecualizer.registro: ADMIN persona · errores en RegistroPersonaForm: {"confirmar_contrasena": [{"message": "This field is required.", "code": "required"}]}
+[2026-06-21 00:25:19,868] WARNING ecualizer.registro:   · confirmar_contrasena → This field is required.
+[2026-06-21 00:25:37,831] INFO    ecualizer.registro: POST RegistroAdminView · keys=['csrfmiddlewaretoken', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'cedula_usuario', 'correo', 'contrasena', 'rol_admin', 'departamento', 'codigo_autorizacion']
+[2026-06-21 00:25:38,190] INFO    ecualizer.registro: Validación · persona=False admin=True
+[2026-06-21 00:25:38,191] WARNING ecualizer.registro: ADMIN persona · errores en RegistroPersonaForm: {"confirmar_contrasena": [{"message": "This field is required.", "code": "required"}]}
+[2026-06-21 00:25:38,191] WARNING ecualizer.registro:   · confirmar_contrasena → This field is required.
+[2026-06-21 00:27:54,916] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:28:12,410] INFO    ecualizer.registro: POST RegistroAdminView · keys=['csrfmiddlewaretoken', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'cedula_usuario', 'correo', 'contrasena', 'rol_admin', 'departamento', 'codigo_autorizacion']
+[2026-06-21 00:28:15,405] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:28:15,770] INFO    ecualizer.registro: Validación · persona=False admin=True
+[2026-06-21 00:28:15,771] WARNING ecualizer.registro: ADMIN persona · errores en RegistroPersonaForm: {"correo": [{"message": "Ya existe una cuenta registrada con este correo.", "code": ""}], "confirmar_contrasena": [{"message": "This field is required.", "code": "required"}]}
+[2026-06-21 00:28:15,771] WARNING ecualizer.registro:   · correo → Ya existe una cuenta registrada con este correo.
+[2026-06-21 00:28:15,771] WARNING ecualizer.registro:   · confirmar_contrasena → This field is required.
+[2026-06-21 00:28:28,115] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 00:41:35,061] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:41:36,470] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 00:42:59,544] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:43:00,902] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 00:45:08,220] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:56:14,581] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:56:15,860] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 00:57:49,120] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 00:57:50,204] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 01:00:15,560] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 01:01:58,648] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 01:01:59,898] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 01:08:08,237] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 01:08:08,609] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 01:08:09,154] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 01:08:10,312] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a377fc918678bde6178d5e1
+[2026-06-21 01:08:12,973] INFO    ecualizer.registro: POST RegistroArtistaView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'nombre_artistico', 'biografia']
+[2026-06-21 01:08:13,581] INFO    ecualizer.registro: Validación · persona=True artista=True
+[2026-06-21 01:08:14,808] INFO    ecualizer.registro: Registro artista COMPLETADO id=6a377fcd18678bde6178d5e3
+[2026-06-21 01:08:22,896] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 01:17:48,612] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 01:17:49,908] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 01:18:25,697] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 01:18:26,187] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 01:18:27,203] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a378232504e36e7ad219f70
+[2026-06-21 01:27:14,058] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 01:27:14,390] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 01:27:14,908] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 01:27:15,869] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a378442fb434dfa8830466f
+[2026-06-21 01:28:41,157] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 01:28:41,495] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 01:28:42,264] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 01:28:43,452] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a37849aeb6800b3a5adf508
+[2026-06-21 01:31:48,437] DEBUG   ecualizer.registro: GET RegistroArtistaView
+[2026-06-21 01:32:38,968] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 01:32:39,272] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 01:32:39,787] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 01:32:40,631] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a378587a55cfc7160184c24
+[2026-06-21 01:33:26,381] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 01:33:26,697] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 01:33:27,210] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 01:33:28,246] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a3785b7ef89cf6030d0b5de
+[2026-06-21 01:34:07,332] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 01:34:08,014] INFO    ecualizer.auth: LOGIN form válido
+[2026-06-21 01:34:08,014] INFO    ecualizer.auth: LOGIN persona=jospao@hotmail.com tipo=oyente
+[2026-06-21 01:35:45,377] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 13:22:33,809] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 13:22:34,624] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 13:22:51,115] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 13:22:51,640] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 13:22:52,417] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a382bfb36ca8e16c2f52362
+[2026-06-21 13:27:40,154] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 13:33:40,610] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 13:33:43,438] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 13:37:19,694] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 13:37:47,140] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 13:40:04,809] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 13:41:10,693] INFO    ecualizer.auth: LOGIN form válido
+[2026-06-21 13:41:10,694] INFO    ecualizer.auth: LOGIN persona=jospao@hotmail.com tipo=oyente
+[2026-06-21 13:41:30,021] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 13:46:02,406] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 13:46:03,222] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 13:46:05,575] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 13:46:06,091] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 13:46:06,939] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a38316ec7a2d758223d779f
+[2026-06-21 13:53:48,757] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 13:54:25,452] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'primer_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 13:54:28,112] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 13:54:28,628] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 13:54:29,427] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a3833640b787f9f686b57c0
+[2026-06-21 13:56:11,595] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 14:00:42,668] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 14:00:42,954] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 14:00:43,481] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 14:00:44,327] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a3834dbde7997a209ec9e66
+[2026-06-21 14:01:17,260] INFO    ecualizer.auth: LOGIN form válido
+[2026-06-21 14:01:17,260] INFO    ecualizer.auth: LOGIN persona=jospao@hotmail.com tipo=oyente
+[2026-06-21 14:04:22,291] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 14:04:22,642] INFO    ecualizer.registro: POST RegistroOyenteView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'alias', 'pais_usuario', 'fecha_nacimiento', 'genero']
+[2026-06-21 14:04:23,650] INFO    ecualizer.registro: Validación · persona=True usuario=True
+[2026-06-21 14:04:25,024] INFO    ecualizer.registro: Registro oyente COMPLETADO id=6a3835b7227622e80a4f2ad3
+[2026-06-21 14:05:03,226] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 14:05:03,900] INFO    ecualizer.auth: LOGIN form válido
+[2026-06-21 14:05:03,900] INFO    ecualizer.auth: LOGIN persona=jospao@hotmail.com tipo=oyente
+[2026-06-21 14:14:46,233] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 14:16:03,169] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 14:16:40,515] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 14:16:40,791] INFO    ecualizer.registro: POST RegistroArtistaView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'nombre_artistico', 'biografia']
+[2026-06-21 14:16:41,318] INFO    ecualizer.registro: Validación · persona=True artista=True
+[2026-06-21 14:16:42,146] INFO    ecualizer.registro: Registro artista COMPLETADO id=6a383899369d2373c4b5fdbe
+[2026-06-21 14:18:59,075] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 14:18:59,460] INFO    ecualizer.registro: POST RegistroArtistaView · keys=['cedula_usuario', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'correo', 'contrasena', 'confirmar_contrasena', 'nombre_artistico', 'biografia']
+[2026-06-21 14:19:00,879] INFO    ecualizer.registro: Validación · persona=True artista=True
+[2026-06-21 14:19:02,794] INFO    ecualizer.registro: Registro artista COMPLETADO id=6a383924ab2325f3a528f9b8
+[2026-06-21 19:42:43,105] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 19:42:47,440] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 19:45:02,416] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 19:45:14,548] DEBUG   ecualizer.registro: GET RegistroArtistaView
+[2026-06-21 19:45:53,925] INFO    ecualizer.registro: POST RegistroArtistaView · keys=['csrfmiddlewaretoken', 'primer_nombre', 'segundo_nombre', 'primer_apellido', 'segundo_apellido', 'cedula_usuario', 'correo', 'contrasena', 'confirmar_contrasena', 'nombre_artistico', 'biografia']
+[2026-06-21 19:45:54,437] INFO    ecualizer.registro: Validación · persona=True artista=True
+[2026-06-21 19:45:55,653] INFO    ecualizer.registro: Registro artista COMPLETADO id=6a3885c27baf46e1412a54b5
+[2026-06-21 19:47:18,009] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 19:59:19,548] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 19:59:21,504] INFO    ecualizer.auth: ADMIN LOGIN form válido
+[2026-06-21 20:00:29,810] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.
+[2026-06-21 20:05:54,887] INFO    ecualizer.auth: Conexion exitosa a MongoDB Atlas.

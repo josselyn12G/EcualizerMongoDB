@@ -104,8 +104,11 @@
       </div>
       <div class="form-group"><label class="form-label">Cédula de Identidad</label>{{ persona_form.cedula_usuario }}</div>
       <div class="form-group"><label class="form-label">Correo Institucional</label>{{ persona_form.correo }}</div>
-      <div class="form-group"><label class="form-label">Contraseña</label>{{ persona_form.contrasena }}</div>
-      
+      <div class="row">
+        <div class="col"><div class="form-group"><label class="form-label">Contraseña</label>{{ persona_form.contrasena }}</div></div>
+        <div class="col"><div class="form-group"><label class="form-label">Confirmar Contraseña</label>{{ persona_form.confirmar_contrasena }}</div></div>
+      </div>
+
       <button type="button" class="btn btn-primary" onclick="nextStep()">Siguiente</button>
     </div>
 

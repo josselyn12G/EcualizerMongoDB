@@ -1,31 +1,61 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.views import View
-from django.db.models import Q
-from django.contrib import messages
-from django.contrib.auth.hashers import make_password
+"""Panel de administración · Gestión de usuarios sobre MongoDB.
 
-from ..models import Persona, Usuario, Artista, Administrador
-from ..mixins import RequiereAdmin
-from ..forms import (
-    AdminEditPersonaForm, AdminEditUsuarioForm,
-    AdminEditArtistaForm, AdminEditAdministradorForm,
+Todas las vistas leen y escriben en la colección `Usuarios` de MongoDB Atlas
+a través de usuarios.mongo_service (conexión centralizada vía config). No se
+usa el ORM de SQL Server. Los objetos que se pasan a las plantillas conservan
+la forma anidada original (objeto de subtipo con `.id_usuario` = Persona).
+"""
+
+from types import SimpleNamespace
+
+from django.shortcuts import render, redirect
+from django.views import View
+from django.http import Http404
+from django.contrib import messages
+
+from usuarios.mixins import RequiereAdmin
+from usuarios.forms import (
+    MongoAdminPersonaForm, MongoAdminOyenteForm,
+    MongoAdminArtistaForm, MongoAdminAdministradorForm,
+)
+from usuarios.mongo_service import (
+    admin_dashboard_stats, admin_recent_users,
+    admin_list_users, admin_get_user,
+    admin_list_personas, admin_get_persona_detail,
+    admin_update_user, admin_soft_delete,
 )
 
 
 def _ctx_admin(request):
-    """Contexto base para todas las vistas del panel admin."""
-    uid = request.session.get('usuario_id')
-    perfil_admin = None
-    persona_admin = None
-    if uid:
-        try:
-            persona_admin = Persona.objects.get(pk=uid)
-            perfil_admin = persona_admin.administrador
-        except (Persona.DoesNotExist, Administrador.DoesNotExist):
-            pass
+    """Contexto base (admin conectado) para el sidebar/topbar.
+    Se construye desde la SESIÓN (sin consultar MongoDB en cada página) para
+    no añadir un round-trip a Atlas por request."""
+    s = request.session
+    if not s.get('usuario_id'):
+        return {'admin_persona': None, 'admin_perfil': None}
+    persona_admin = SimpleNamespace(
+        primer_nombre=s.get('usuario_nombre', ''),
+        primer_apellido=s.get('usuario_apellido', ''),
+    )
+    perfil_admin = SimpleNamespace(
+        get_rol_admin_display=s.get('admin_rol') or 'Administrador',
+    )
     return {
         'admin_persona': persona_admin,
         'admin_perfil': perfil_admin,
+    }
+
+
+def _persona_initial(persona):
+    """Valores iniciales del formulario de datos personales."""
+    return {
+        'cedula_usuario': persona.cedula_usuario,
+        'primer_nombre': persona.primer_nombre,
+        'segundo_nombre': persona.segundo_nombre,
+        'primer_apellido': persona.primer_apellido,
+        'segundo_apellido': persona.segundo_apellido,
+        'correo': persona.correo,
+        'estado': persona.estado,
     }
 
 
@@ -35,28 +65,9 @@ def _ctx_admin(request):
 
 class AdminDashboardView(RequiereAdmin, View):
     def get(self, request):
-        total_oyentes = Usuario.objects.count()
-        total_artistas = Artista.objects.count()
-        total_admins = Administrador.objects.count()
-
-        activos = Persona.objects.filter(estado='activo').count()
-        inactivos = Persona.objects.filter(estado='inactivo').count()
-        suspendidos = Persona.objects.filter(estado='suspendido').count()
-
-        recientes = Persona.objects.order_by('-fecha_registro', '-id_usuario')[:5]
-
         ctx = _ctx_admin(request)
-        ctx.update({
-            'stats': {
-                'oyentes': total_oyentes,
-                'artistas': total_artistas,
-                'admins': total_admins,
-                'activos': activos,
-                'inactivos': inactivos,
-                'suspendidos': suspendidos,
-            },
-            'recientes': recientes,
-        })
+        ctx['stats'] = admin_dashboard_stats()
+        ctx['recientes'] = admin_recent_users(5)
         return render(request, 'usuarios/admin/dashboard.html', ctx)
 
 
@@ -66,28 +77,21 @@ class AdminDashboardView(RequiereAdmin, View):
 
 class AdminOyenteListView(RequiereAdmin, View):
     def get(self, request):
-        qs = Usuario.objects.select_related('id_usuario').all()
         q = request.GET.get('q', '').strip()
         estado = request.GET.get('estado', '')
-
-        if q:
-            qs = qs.filter(
-                Q(id_usuario__primer_nombre__icontains=q) |
-                Q(id_usuario__primer_apellido__icontains=q) |
-                Q(id_usuario__correo__icontains=q) |
-                Q(alias__icontains=q)
-            )
-        if estado:
-            qs = qs.filter(id_usuario__estado=estado)
-
         ctx = _ctx_admin(request)
-        ctx.update({'oyentes': qs, 'q': q, 'estado_sel': estado})
+        ctx.update({
+            'oyentes': admin_list_users('oyente', q, estado),
+            'q': q, 'estado_sel': estado,
+        })
         return render(request, 'usuarios/admin/usuarios/lista.html', ctx)
 
 
 class AdminOyenteDetailView(RequiereAdmin, View):
     def get(self, request, pk):
-        oyente = get_object_or_404(Usuario, pk=pk)
+        oyente = admin_get_user(pk, 'oyente')
+        if not oyente:
+            raise Http404('Oyente no encontrado')
         ctx = _ctx_admin(request)
         ctx['oyente'] = oyente
         return render(request, 'usuarios/admin/usuarios/detalle.html', ctx)
@@ -96,30 +100,33 @@ class AdminOyenteDetailView(RequiereAdmin, View):
 class AdminOyenteEditView(RequiereAdmin, View):
     template_name = 'usuarios/admin/usuarios/editar.html'
 
-    def _get_forms(self, request, oyente, data=None):
-        return (
-            AdminEditPersonaForm(data, instance=oyente.id_usuario),
-            AdminEditUsuarioForm(data, instance=oyente),
-        )
-
     def get(self, request, pk):
-        oyente = get_object_or_404(Usuario, pk=pk)
-        p_form, u_form = self._get_forms(request, oyente)
+        oyente = admin_get_user(pk, 'oyente')
+        if not oyente:
+            raise Http404('Oyente no encontrado')
+        p_form = MongoAdminPersonaForm(initial=_persona_initial(oyente.id_usuario), pk=pk)
+        u_form = MongoAdminOyenteForm(initial={
+            'alias': oyente.alias,
+            'pais_usuario': oyente.pais_usuario,
+            'fecha_nacimiento': oyente.fecha_nacimiento,
+            'genero': oyente.genero,
+        }, pk=pk)
         ctx = _ctx_admin(request)
         ctx.update({'oyente': oyente, 'p_form': p_form, 'u_form': u_form})
         return render(request, self.template_name, ctx)
 
     def post(self, request, pk):
-        oyente = get_object_or_404(Usuario, pk=pk)
-        p_form, u_form = self._get_forms(request, oyente, request.POST)
+        oyente = admin_get_user(pk, 'oyente')
+        if not oyente:
+            raise Http404('Oyente no encontrado')
+        p_form = MongoAdminPersonaForm(request.POST, pk=pk)
+        u_form = MongoAdminOyenteForm(request.POST, pk=pk)
 
         if p_form.is_valid() and u_form.is_valid():
-            persona = p_form.save(commit=False)
-            nueva_pass = request.POST.get('nueva_contrasena', '').strip()
-            if nueva_pass:
-                persona.contrasena = make_password(nueva_pass)
-            persona.save()
-            u_form.save()
+            admin_update_user(
+                pk, p_form.cleaned_data, u_form.cleaned_data, 'oyente',
+                request.POST.get('nueva_contrasena', '').strip() or None,
+            )
             messages.success(request, 'Oyente actualizado correctamente.')
             return redirect('admin_oyente_list')
 
@@ -130,17 +137,17 @@ class AdminOyenteEditView(RequiereAdmin, View):
 
 class AdminOyenteDeleteView(RequiereAdmin, View):
     def get(self, request, pk):
-        oyente = get_object_or_404(Usuario, pk=pk)
+        oyente = admin_get_user(pk, 'oyente')
+        if not oyente:
+            raise Http404('Oyente no encontrado')
         ctx = _ctx_admin(request)
         ctx.update({'objeto': oyente.id_usuario, 'tipo': 'oyente', 'pk': pk})
         return render(request, 'usuarios/admin/confirmar_eliminar.html', ctx)
 
     def post(self, request, pk):
-        oyente = get_object_or_404(Usuario, pk=pk)
-        persona = oyente.id_usuario
-        persona.estado = 'inactivo'
-        persona.save()
-        messages.success(request, f'Oyente {persona.primer_nombre} desactivado.')
+        persona = admin_soft_delete(pk)
+        if persona:
+            messages.success(request, f'Oyente {persona.primer_nombre} desactivado.')
         return redirect('admin_oyente_list')
 
 
@@ -150,28 +157,21 @@ class AdminOyenteDeleteView(RequiereAdmin, View):
 
 class AdminArtistaListView(RequiereAdmin, View):
     def get(self, request):
-        qs = Artista.objects.select_related('id_usuario').all()
         q = request.GET.get('q', '').strip()
         estado = request.GET.get('estado', '')
-
-        if q:
-            qs = qs.filter(
-                Q(id_usuario__primer_nombre__icontains=q) |
-                Q(id_usuario__primer_apellido__icontains=q) |
-                Q(id_usuario__correo__icontains=q) |
-                Q(nombre_artistico__icontains=q)
-            )
-        if estado:
-            qs = qs.filter(id_usuario__estado=estado)
-
         ctx = _ctx_admin(request)
-        ctx.update({'artistas': qs, 'q': q, 'estado_sel': estado})
+        ctx.update({
+            'artistas': admin_list_users('artista', q, estado),
+            'q': q, 'estado_sel': estado,
+        })
         return render(request, 'usuarios/admin/artistas/lista.html', ctx)
 
 
 class AdminArtistaDetailView(RequiereAdmin, View):
     def get(self, request, pk):
-        artista = get_object_or_404(Artista, pk=pk)
+        artista = admin_get_user(pk, 'artista')
+        if not artista:
+            raise Http404('Artista no encontrado')
         ctx = _ctx_admin(request)
         ctx['artista'] = artista
         return render(request, 'usuarios/admin/artistas/detalle.html', ctx)
@@ -180,30 +180,31 @@ class AdminArtistaDetailView(RequiereAdmin, View):
 class AdminArtistaEditView(RequiereAdmin, View):
     template_name = 'usuarios/admin/artistas/editar.html'
 
-    def _get_forms(self, request, artista, data=None):
-        return (
-            AdminEditPersonaForm(data, instance=artista.id_usuario),
-            AdminEditArtistaForm(data, instance=artista),
-        )
-
     def get(self, request, pk):
-        artista = get_object_or_404(Artista, pk=pk)
-        p_form, a_form = self._get_forms(request, artista)
+        artista = admin_get_user(pk, 'artista')
+        if not artista:
+            raise Http404('Artista no encontrado')
+        p_form = MongoAdminPersonaForm(initial=_persona_initial(artista.id_usuario), pk=pk)
+        a_form = MongoAdminArtistaForm(initial={
+            'nombre_artistico': artista.nombre_artistico,
+            'biografia': artista.biografia,
+        }, pk=pk)
         ctx = _ctx_admin(request)
         ctx.update({'artista': artista, 'p_form': p_form, 'a_form': a_form})
         return render(request, self.template_name, ctx)
 
     def post(self, request, pk):
-        artista = get_object_or_404(Artista, pk=pk)
-        p_form, a_form = self._get_forms(request, artista, request.POST)
+        artista = admin_get_user(pk, 'artista')
+        if not artista:
+            raise Http404('Artista no encontrado')
+        p_form = MongoAdminPersonaForm(request.POST, pk=pk)
+        a_form = MongoAdminArtistaForm(request.POST, pk=pk)
 
         if p_form.is_valid() and a_form.is_valid():
-            persona = p_form.save(commit=False)
-            nueva_pass = request.POST.get('nueva_contrasena', '').strip()
-            if nueva_pass:
-                persona.contrasena = make_password(nueva_pass)
-            persona.save()
-            a_form.save()
+            admin_update_user(
+                pk, p_form.cleaned_data, a_form.cleaned_data, 'artista',
+                request.POST.get('nueva_contrasena', '').strip() or None,
+            )
             messages.success(request, 'Artista actualizado correctamente.')
             return redirect('admin_artista_list')
 
@@ -214,66 +215,32 @@ class AdminArtistaEditView(RequiereAdmin, View):
 
 class AdminArtistaDeleteView(RequiereAdmin, View):
     def get(self, request, pk):
-        artista = get_object_or_404(Artista, pk=pk)
+        artista = admin_get_user(pk, 'artista')
+        if not artista:
+            raise Http404('Artista no encontrado')
         ctx = _ctx_admin(request)
         ctx.update({'objeto': artista.id_usuario, 'tipo': 'artista', 'pk': pk})
         return render(request, 'usuarios/admin/confirmar_eliminar.html', ctx)
 
     def post(self, request, pk):
-        artista = get_object_or_404(Artista, pk=pk)
-        persona = artista.id_usuario
-        persona.estado = 'inactivo'
-        persona.save()
-        messages.success(request, f'Artista {artista.nombre_artistico} desactivado.')
+        persona = admin_soft_delete(pk)
+        if persona:
+            messages.success(request, f'Artista {persona.primer_nombre} desactivado.')
         return redirect('admin_artista_list')
 
 
 # ─────────────────────────────────────────────
 # CRUD PERSONAS · vista global de todas las personas
-# (Persona es el supertipo de Oyente/Artista/Admin)
 # ─────────────────────────────────────────────
 
 class AdminPersonaListView(RequiereAdmin, View):
-    """Lista todas las Personas con su rol calculado.
-    No tiene paginación → muestra todos los registros."""
+    """Lista todas las personas (cualquier tipo) con su rol calculado."""
 
     def get(self, request):
-        qs = Persona.objects.all().order_by('-fecha_registro', '-id_usuario')
-
         q = request.GET.get('q', '').strip()
         estado = request.GET.get('estado', '')
         tipo = request.GET.get('tipo', '')
-
-        if q:
-            qs = qs.filter(
-                Q(primer_nombre__icontains=q) |
-                Q(primer_apellido__icontains=q) |
-                Q(correo__icontains=q) |
-                Q(cedula_usuario__icontains=q)
-            )
-        if estado:
-            qs = qs.filter(estado=estado)
-
-        # Materializamos para poder calcular tipo por cada persona.
-        # Las queries de subtype son rápidas (PK lookups).
-        oyente_ids = set(Usuario.objects.values_list('id_usuario_id', flat=True))
-        artista_ids = set(Artista.objects.values_list('id_usuario_id', flat=True))
-        admin_ids = set(Administrador.objects.values_list('id_usuario_id', flat=True))
-
-        personas = []
-        for p in qs:
-            tipo_persona = []
-            if p.id_usuario in oyente_ids:
-                tipo_persona.append('oyente')
-            if p.id_usuario in artista_ids:
-                tipo_persona.append('artista')
-            if p.id_usuario in admin_ids:
-                tipo_persona.append('administrador')
-            p.tipos = tipo_persona  # atributo dinámico para el template
-            p.tipo_principal = tipo_persona[0] if tipo_persona else 'sin rol'
-            if not tipo or p.tipo_principal == tipo:
-                personas.append(p)
-
+        personas = admin_list_personas(q, estado, tipo)
         ctx = _ctx_admin(request)
         ctx.update({
             'personas': personas,
@@ -285,27 +252,16 @@ class AdminPersonaListView(RequiereAdmin, View):
 
 class AdminPersonaDetailView(RequiereAdmin, View):
     def get(self, request, pk):
-        persona = get_object_or_404(Persona, pk=pk)
-        # Detectar todos los perfiles asociados
-        try:
-            oyente = Usuario.objects.get(pk=persona.pk)
-        except Usuario.DoesNotExist:
-            oyente = None
-        try:
-            artista = Artista.objects.get(pk=persona.pk)
-        except Artista.DoesNotExist:
-            artista = None
-        try:
-            admin_perfil = Administrador.objects.get(pk=persona.pk)
-        except Administrador.DoesNotExist:
-            admin_perfil = None
-
+        detalle = admin_get_persona_detail(pk)
+        if not detalle:
+            raise Http404('Persona no encontrada')
+        persona, oyente_p, artista_p, admin_p = detalle
         ctx = _ctx_admin(request)
         ctx.update({
             'persona': persona,
-            'oyente_p': oyente,
-            'artista_p': artista,
-            'admin_p': admin_perfil,
+            'oyente_p': oyente_p,
+            'artista_p': artista_p,
+            'admin_p': admin_p,
         })
         return render(request, 'usuarios/admin/personas/detalle.html', ctx)
 
@@ -316,27 +272,21 @@ class AdminPersonaDetailView(RequiereAdmin, View):
 
 class AdminAdminListView(RequiereAdmin, View):
     def get(self, request):
-        qs = Administrador.objects.select_related('id_usuario').all()
         q = request.GET.get('q', '').strip()
         estado = request.GET.get('estado', '')
-
-        if q:
-            qs = qs.filter(
-                Q(id_usuario__primer_nombre__icontains=q) |
-                Q(id_usuario__primer_apellido__icontains=q) |
-                Q(id_usuario__correo__icontains=q)
-            )
-        if estado:
-            qs = qs.filter(id_usuario__estado=estado)
-
         ctx = _ctx_admin(request)
-        ctx.update({'admins': qs, 'q': q, 'estado_sel': estado})
+        ctx.update({
+            'admins': admin_list_users('admin', q, estado),
+            'q': q, 'estado_sel': estado,
+        })
         return render(request, 'usuarios/admin/admins/lista.html', ctx)
 
 
 class AdminAdminDetailView(RequiereAdmin, View):
     def get(self, request, pk):
-        admin = get_object_or_404(Administrador, pk=pk)
+        admin = admin_get_user(pk, 'admin')
+        if not admin:
+            raise Http404('Administrador no encontrado')
         ctx = _ctx_admin(request)
         ctx['admin_obj'] = admin
         return render(request, 'usuarios/admin/admins/detalle.html', ctx)
@@ -345,30 +295,31 @@ class AdminAdminDetailView(RequiereAdmin, View):
 class AdminAdminEditView(RequiereAdmin, View):
     template_name = 'usuarios/admin/admins/editar.html'
 
-    def _get_forms(self, request, admin, data=None):
-        return (
-            AdminEditPersonaForm(data, instance=admin.id_usuario),
-            AdminEditAdministradorForm(data, instance=admin),
-        )
-
     def get(self, request, pk):
-        admin = get_object_or_404(Administrador, pk=pk)
-        p_form, a_form = self._get_forms(request, admin)
+        admin = admin_get_user(pk, 'admin')
+        if not admin:
+            raise Http404('Administrador no encontrado')
+        p_form = MongoAdminPersonaForm(initial=_persona_initial(admin.id_usuario), pk=pk)
+        a_form = MongoAdminAdministradorForm(initial={
+            'rol_admin': admin.rol_admin,
+            'departamento': admin.departamento,
+        }, pk=pk)
         ctx = _ctx_admin(request)
         ctx.update({'admin_obj': admin, 'p_form': p_form, 'a_form': a_form})
         return render(request, self.template_name, ctx)
 
     def post(self, request, pk):
-        admin = get_object_or_404(Administrador, pk=pk)
-        p_form, a_form = self._get_forms(request, admin, request.POST)
+        admin = admin_get_user(pk, 'admin')
+        if not admin:
+            raise Http404('Administrador no encontrado')
+        p_form = MongoAdminPersonaForm(request.POST, pk=pk)
+        a_form = MongoAdminAdministradorForm(request.POST, pk=pk)
 
         if p_form.is_valid() and a_form.is_valid():
-            persona = p_form.save(commit=False)
-            nueva_pass = request.POST.get('nueva_contrasena', '').strip()
-            if nueva_pass:
-                persona.contrasena = make_password(nueva_pass)
-            persona.save()
-            a_form.save()
+            admin_update_user(
+                pk, p_form.cleaned_data, a_form.cleaned_data, 'admin',
+                request.POST.get('nueva_contrasena', '').strip() or None,
+            )
             messages.success(request, 'Administrador actualizado correctamente.')
             return redirect('admin_admin_list')
 
@@ -379,19 +330,19 @@ class AdminAdminEditView(RequiereAdmin, View):
 
 class AdminAdminDeleteView(RequiereAdmin, View):
     def get(self, request, pk):
-        admin = get_object_or_404(Administrador, pk=pk)
+        admin = admin_get_user(pk, 'admin')
+        if not admin:
+            raise Http404('Administrador no encontrado')
         ctx = _ctx_admin(request)
         ctx.update({'objeto': admin.id_usuario, 'tipo': 'administrador', 'pk': pk})
         return render(request, 'usuarios/admin/confirmar_eliminar.html', ctx)
 
     def post(self, request, pk):
-        admin = get_object_or_404(Administrador, pk=pk)
-        persona = admin.id_usuario
-        # Proteger: no desactivar al propio admin logueado
-        if persona.id_usuario == request.session.get('usuario_id'):
+        # Protección: un admin no puede desactivar su propia cuenta.
+        if str(pk) == str(request.session.get('usuario_id')):
             messages.error(request, 'No puedes desactivar tu propia cuenta.')
             return redirect('admin_admin_list')
-        persona.estado = 'inactivo'
-        persona.save()
-        messages.success(request, f'Administrador {persona.primer_nombre} desactivado.')
+        persona = admin_soft_delete(pk)
+        if persona:
+            messages.success(request, f'Administrador {persona.primer_nombre} desactivado.')
         return redirect('admin_admin_list')

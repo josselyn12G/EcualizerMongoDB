@@ -1,0 +1,12 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^python -c \"import pymongo, bcrypt; print\\('pymongo', pymongo\\.__version__\\); print\\('bcrypt ok'\\)\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^python -m pip show bcrypt pymongo$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

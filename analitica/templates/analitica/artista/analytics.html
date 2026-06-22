@@ -25,7 +25,7 @@
   .mini-filter input { width: 90px; }
   .mini-filter input[type="date"] { width: 140px; }
   .mini-filter .btn-mini {
-    background: linear-gradient(135deg, #f97316, #ea580c);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
     color: #fff; font-weight: 600; border: none;
     border-radius: 6px; padding: 0.35rem 0.7rem;
     display: inline-flex; align-items: center; gap: 0.2rem;
@@ -59,7 +59,7 @@
     </form>
   </div>
   <div class="chart-card__hint" style="margin-bottom:0.7rem;">
-    SP: <code style="color:#fb923c;">Analitica.sp_OyentesMensualesCrecimiento</code>
+    SP: <code style="color:#60a5fa;">Analitica.sp_OyentesMensualesCrecimiento</code>
     · período: {{ oyentes_kpi.label|default:"—" }}
   </div>
 
@@ -120,7 +120,7 @@
     </form>
   </div>
   <div class="chart-card__hint" style="margin-bottom:0.7rem;">
-    SP: <code style="color:#fb923c;">Analitica.sp_Top10CancionesArtista</code>
+    SP: <code style="color:#60a5fa;">Analitica.sp_Top10CancionesArtista</code>
     · período: {{ filtros.top_periodo }}
   </div>
   <div class="an-grid an-grid--equal-2">
@@ -176,7 +176,7 @@
     </form>
   </div>
   <div class="chart-card__hint" style="margin-bottom:0.7rem;">
-    SP: <code style="color:#fb923c;">Analitica.sp_DistribucionGeograficaArtista</code>
+    SP: <code style="color:#60a5fa;">Analitica.sp_DistribucionGeograficaArtista</code>
     · período: {{ filtros.geo_periodo }}
   </div>
   <div class="an-grid an-grid--equal-2">
@@ -239,7 +239,7 @@
     </form>
   </div>
   <div class="chart-card__hint" style="margin-bottom:0.7rem;">
-    SP: <code style="color:#fb923c;">Analitica.sp_ReporteReproduccionesPorCancion</code>
+    SP: <code style="color:#60a5fa;">Analitica.sp_ReporteReproduccionesPorCancion</code>
     · período: {{ filtros.rep_periodo }}
     {% if filtros.rep_album %}· álbum filtrado{% else %}· todos los álbumes{% endif %}
   </div>

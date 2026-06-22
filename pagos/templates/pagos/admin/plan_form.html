@@ -1,0 +1,71 @@
+{% extends "usuarios/admin/base_admin.html" %}
+{% block title %}{% if modo == 'crear' %}Nuevo plan{% else %}Editar plan{% endif %} — Ecualizer Admin{% endblock %}
+{% block topbar_title %}{% if modo == 'crear' %}Nuevo plan{% else %}Editar plan{% endif %}{% endblock %}
+{% block nav_comercial_open %}open{% endblock %}
+{% block nav_planes %}active{% endblock %}
+{% block breadcrumb %}Admin / Comercial / <a href="{% url 'admin_planes_list' %}">Planes</a> / {% if modo == 'crear' %}Nuevo{% else %}Editar{% endif %}{% endblock %}
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h3 class="mb-0">{% if modo == 'crear' %}Crear nuevo plan{% else %}Editar plan{% endif %}</h3>
+    <small class="text-muted">
+      {% if modo == 'editar' %}Modifica los datos del plan{% else %}Define un nuevo plan de suscripción{% endif %}
+    </small>
+  </div>
+</div>
+
+<!-- Nota: precios y futuras compras -->
+<div class="flash flash--info" style="margin-bottom:1.25rem;">
+  <span class="material-icons flash__icon">info</span>
+  Si actualizas el precio de un plan, el nuevo valor se aplicará únicamente a las
+  <strong>futuras compras</strong>. Las suscripciones ya contratadas conservan el
+  precio que tenían al momento de contratarse.
+</div>
+
+{% if form.non_field_errors %}
+<div class="flash flash--error" style="margin-bottom:1rem;">
+  <span class="material-icons flash__icon">error</span>
+  {% for e in form.non_field_errors %}{{ e }} {% endfor %}
+</div>
+{% endif %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  <div class="form-card" style="max-width:640px;">
+    <div class="row g-3">
+      <div class="col-md-8">
+        <label class="form-label">{{ form.nombre_plan.label }}</label>
+        {{ form.nombre_plan }}
+        {% if form.nombre_plan.errors %}<div class="text-danger small mt-1">{{ form.nombre_plan.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">{{ form.precio.label }}</label>
+        {{ form.precio }}
+        {% if form.precio.errors %}<div class="text-danger small mt-1">{{ form.precio.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">{{ form.duracion.label }}</label>
+        {{ form.duracion }}
+        {% if form.duracion.errors %}<div class="text-danger small mt-1">{{ form.duracion.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="col-md-12">
+        <label class="form-label">{{ form.descripcion.label }}</label>
+        {{ form.descripcion }}
+        {% if form.descripcion.errors %}<div class="text-danger small mt-1">{{ form.descripcion.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn-save">
+        <span class="material-icons" style="font-size:0.9rem; vertical-align:middle;">save</span>
+        {% if modo == 'crear' %}Crear plan{% else %}Guardar cambios{% endif %}
+      </button>
+      <a href="{% url 'admin_planes_list' %}" class="btn-back">Cancelar</a>
+    </div>
+  </div>
+</form>
+{% endblock %}

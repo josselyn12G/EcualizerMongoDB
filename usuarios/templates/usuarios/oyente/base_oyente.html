@@ -42,7 +42,7 @@
       padding: 0.85rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.08);
       font-weight: 700; color: #fff; font-size: 0.95rem;
     }
-    .notif__count { font-size: 0.72rem; font-weight: 600; color: #f97316; }
+    .notif__count { font-size: 0.72rem; font-weight: 600; color: #3b82f6; }
     .notif__list { max-height: 380px; overflow-y: auto; }
     .notif__item {
       display: flex; gap: 0.7rem; align-items: flex-start;
@@ -53,7 +53,7 @@
     .notif__ico {
       flex-shrink: 0; width: 36px; height: 36px; border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center;
-      background: rgba(249,115,22,0.18); color: #f97316;
+      background: rgba(59,130,246,0.18); color: #3b82f6;
     }
     .notif__item--renovacion .notif__ico { background: rgba(59,130,246,0.18); color: #3b82f6; }
     .notif__ico .material-icons { font-size: 1.15rem; }
@@ -94,99 +94,105 @@
       </div>
     </div>
 
-    <!-- Nav plana -->
+    <!-- Nav agrupada estilo Spotify -->
     <nav class="sidebar-nav">
-      <div class="sb-bottom">
-      <a href="{% url 'dashboard_oyente' %}"
-         class="sb-item {% block nav_inicio %}{% endblock %}">
-        <span class="material-icons">home</span>
-        <span class="sb-item__label">Inicio</span>
-      </a>
 
-      <a href="{% url 'para_ti' %}" class="sb-item {% block nav_para_ti %}{% endblock %}">
-        <span class="material-icons">auto_awesome</span>
-        <span class="sb-item__label">Para Ti</span>
-      </a>
+      <!-- Grupo: principal -->
+      <div class="sb-group">
+        <a href="{% url 'dashboard_oyente' %}"
+           class="sb-item {% block nav_inicio %}{% endblock %}">
+          <span class="material-icons">home</span>
+          <span class="sb-item__label">Inicio</span>
+        </a>
 
-      <a href="{% url 'explorar' %}" class="sb-item {% block nav_explorar %}{% endblock %}">
-        <span class="material-icons">explore</span>
-        <span class="sb-item__label">Explorar</span>
-      </a>
+        <a href="{% url 'explorar' %}" class="sb-item {% block nav_explorar %}{% endblock %}">
+          <span class="material-icons">search</span>
+          <span class="sb-item__label">Explorar</span>
+        </a>
+      </div>
 
-      <a href="{% url 'tendencias' %}" class="sb-item {% block nav_tendencias %}{% endblock %}">
-        <span class="material-icons">trending_up</span>
-        <span class="sb-item__label">Tendencias</span>
-      </a>
+      <!-- Grupo: Descubrir -->
+      <div class="sb-group">
+        <a href="{% url 'para_ti' %}" class="sb-item {% block nav_para_ti %}{% endblock %}">
+          <span class="material-icons">auto_awesome</span>
+          <span class="sb-item__label">Para Ti</span>
+        </a>
 
-      <a href="{% url 'novedades' %}" class="sb-item {% block nav_novedades %}{% endblock %}">
-        <span class="material-icons">new_releases</span>
-        <span class="sb-item__label">Novedades</span>
-      </a>
+        <a href="{% url 'tendencias' %}" class="sb-item {% block nav_tendencias %}{% endblock %}">
+          <span class="material-icons">trending_up</span>
+          <span class="sb-item__label">Tendencias</span>
+        </a>
 
-      <!-- Divisor Biblioteca -->
-      <div class="sb-divider"></div>
+        <a href="{% url 'novedades' %}" class="sb-item {% block nav_novedades %}{% endblock %}">
+          <span class="material-icons">new_releases</span>
+          <span class="sb-item__label">Novedades</span>
+        </a>
+      </div>
 
-      <a href="{% url 'catalogo:usuario_album_list' %}"
-         class="sb-item {% block nav_albumes %}{% endblock %}">
-        <span class="material-icons">album</span>
-        <span class="sb-item__label">Álbumes</span>
-      </a>
+      <!-- Grupo: Catálogo -->
+      <div class="sb-group">
+        <a href="{% url 'catalogo:usuario_album_list' %}"
+           class="sb-item {% block nav_albumes %}{% endblock %}">
+          <span class="material-icons">album</span>
+          <span class="sb-item__label">Álbumes</span>
+        </a>
 
-      <a href="{% url 'catalogo:usuario_cancion_list' %}"
-         class="sb-item {% block nav_canciones %}{% endblock %}">
-        <span class="material-icons">music_note</span>
-        <span class="sb-item__label">Canciones</span>
-      </a>
+        <a href="{% url 'catalogo:usuario_cancion_list' %}"
+           class="sb-item {% block nav_canciones %}{% endblock %}">
+          <span class="material-icons">music_note</span>
+          <span class="sb-item__label">Canciones</span>
+        </a>
 
-      <a href="{% url 'catalogo:usuario_artista_list' %}"
-         class="sb-item {% block nav_artistas %}{% endblock %}">
-        <span class="material-icons">mic</span>
-        <span class="sb-item__label">Artistas</span>
-      </a>
+        <a href="{% url 'catalogo:usuario_artista_list' %}"
+           class="sb-item {% block nav_artistas %}{% endblock %}">
+          <span class="material-icons">mic</span>
+          <span class="sb-item__label">Artistas</span>
+        </a>
+      </div>
 
-      <a href="{% url 'biblioteca:mis_playlists' %}" class="sb-item {% block nav_playlists %}{% endblock %}">
-        <span class="material-icons">queue_music</span>
-        <span class="sb-item__label">Playlists</span>
-      </a>
+      <!-- Grupo: Tu Biblioteca -->
+      <div class="sb-group">
+        <a href="{% url 'biblioteca:mis_playlists' %}" class="sb-item {% block nav_playlists %}{% endblock %}">
+          <span class="material-icons">queue_music</span>
+          <span class="sb-item__label">Playlists</span>
+        </a>
 
-      <!-- ── Biblioteca · social ───────────────── -->
-      <div class="sb-divider"></div>
+        <a href="{% url 'biblioteca:mis_canciones_liked' %}"
+           class="sb-item {% block nav_mis_likes %}{% endblock %}">
+          <span class="material-icons">favorite</span>
+          <span class="sb-item__label">Canciones que me gustan</span>
+        </a>
 
-      <a href="{% url 'biblioteca:mis_canciones_liked' %}"
-         class="sb-item {% block nav_mis_likes %}{% endblock %}">
-        <span class="material-icons">favorite</span>
-        <span class="sb-item__label">Canciones que me gustan</span>
-      </a>
+        <a href="{% url 'biblioteca:mis_artistas' %}"
+           class="sb-item {% block nav_mis_artistas %}{% endblock %}">
+          <span class="material-icons">favorite_border</span>
+          <span class="sb-item__label">Mis Artistas</span>
+        </a>
 
-      <a href="{% url 'biblioteca:mis_artistas' %}"
-         class="sb-item {% block nav_mis_artistas %}{% endblock %}">
-        <span class="material-icons">favorite_border</span>
-        <span class="sb-item__label">Mis Artistas</span>
-      </a>
+        <a href="{% url 'biblioteca:mis_albumes' %}"
+           class="sb-item {% block nav_mis_albumes %}{% endblock %}">
+          <span class="material-icons">bookmark</span>
+          <span class="sb-item__label">Mis Álbumes</span>
+        </a>
+      </div>
 
-      <a href="{% url 'biblioteca:mis_albumes' %}"
-         class="sb-item {% block nav_mis_albumes %}{% endblock %}">
-        <span class="material-icons">bookmark</span>
-        <span class="sb-item__label">Mis Álbumes</span>
-      </a>
+      <!-- Grupo: Cuenta -->
+      <div class="sb-group">
+        <a href="{% url 'pagos:historial' %}" class="sb-item {% block nav_suscripcion %}{% endblock %}">
+          <span class="material-icons">card_membership</span>
+          <span class="sb-item__label">Suscripción</span>
+        </a>
 
-      <div class="sb-divider"></div>
+        <a href="{% url 'perfil_oyente' %}" class="sb-item {% block nav_perfil %}{% endblock %}">
+          <span class="material-icons">person</span>
+          <span class="sb-item__label">Perfil</span>
+        </a>
 
-      <a href="{% url 'pagos:historial' %}" class="sb-item {% block nav_suscripcion %}{% endblock %}">
-        <span class="material-icons">card_membership</span>
-        <span class="sb-item__label">Suscripción</span>
-      </a>
-
-      <a href="{% url 'perfil_oyente' %}" class="sb-item {% block nav_perfil %}{% endblock %}">
-        <span class="material-icons">person</span>
-        <span class="sb-item__label">Perfil</span>
-      </a>
-
-      <a href="{% url 'configuracion_oyente' %}" class="sb-item {% block nav_configuracion %}{% endblock %}">
-        <span class="material-icons">settings</span>
-        <span class="sb-item__label">Configuración</span>
-      </a>
-       </div>
+        <a href="{% url 'configuracion_oyente' %}" class="sb-item {% block nav_configuracion %}{% endblock %}">
+          <span class="material-icons">settings</span>
+          <span class="sb-item__label">Configuración</span>
+        </a>
+      </div>
     </nav>
 
     <!-- Footer usuario -->
@@ -304,7 +310,7 @@
   const searchInput = sidebar.querySelector('.sb-search__input');
   if (searchInput) {
     const items    = sidebar.querySelectorAll('.sidebar-nav .sb-item');
-    const dividers = sidebar.querySelectorAll('.sidebar-nav .sb-divider');
+    const dividers = sidebar.querySelectorAll('.sidebar-nav .sb-group__title');
 
     const applyFilter = function () {
       const q = searchInput.value.toLowerCase().trim();

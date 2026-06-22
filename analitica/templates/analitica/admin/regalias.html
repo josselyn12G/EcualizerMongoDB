@@ -14,33 +14,23 @@
     <div>
       <div style="color: #9ca3af; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px;">
         <span class="material-icons" style="vertical-align:-3px; font-size:0.95rem;">history</span>
-        Último cierre
+        Último período registrado
       </div>
       {% if cierre_info.UltimoMesCerrado %}
-        <div style="font-size:0.95rem; font-weight:600; color:#fb923c;">
-          Período {{ cierre_info.UltimoMesCerrado }}/{{ cierre_info.UltimoAnioCerrado }}
-          <span style="color:#9ca3af; font-weight:400; font-size:0.75rem;">
-            (hasta {{ cierre_info.UltimoPeriodoFin|date:"d/m/Y" }})
-          </span>
+        <div style="font-size:0.95rem; font-weight:600; color:#60a5fa;">
+          {{ cierre_info.UltimoMesCerrado }}/{{ cierre_info.UltimoAnioCerrado }}
         </div>
       {% else %}
-        <div style="color:#9ca3af;">Nunca ejecutado</div>
+        <div style="color:#9ca3af;">Sin regalías registradas</div>
       {% endif %}
     </div>
     <div>
       <div style="color: #9ca3af; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.5px;">
         <span class="material-icons" style="vertical-align:-3px; font-size:0.95rem;">event_available</span>
-        Próximo cierre
+        Períodos con regalías
       </div>
       <div style="font-size:0.95rem; font-weight:600; color:var(--text);">
-        Período {{ cierre_info.ProximoMesACerrar }}/{{ cierre_info.ProximoAnioACerrar }}
-        {% if cierre_info.PuedeCerrarseAhora %}
-          <span style="color:#22c55e; font-weight:400; font-size:0.75rem;">· disponible ahora</span>
-        {% else %}
-          <span style="color:#9ca3af; font-weight:400; font-size:0.75rem;">
-            · desde {{ cierre_info.ProximaFechaCierre|date:"d/m/Y" }}
-          </span>
-        {% endif %}
+        {{ cierre_info.TotalPeriodos|default:0 }} período(s)
       </div>
     </div>
   </div>
@@ -86,7 +76,7 @@
                 background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05);
                 border-radius:8px; padding:0.45rem 0.65rem;">
       <span style="color:#4b5563; font-size:0.82rem;">{{ t.Pais }}</span>
-      <span style="color:#fb923c; font-weight:600; font-size:0.85rem;">
+      <span style="color:#60a5fa; font-weight:600; font-size:0.85rem;">
         ${{ t.Tarifa|floatformat:4 }}
       </span>
     </div>
@@ -140,26 +130,27 @@
 
 <!-- ── Consolidado a pagar + acciones de cierre ── -->
 <div class="chart-card" style="margin-bottom:1rem;
-     background: linear-gradient(135deg, rgba(249,115,22,0.06), rgba(234,88,12,0.02));
-     border-color: rgba(249,115,22,0.20);">
+     background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(37,99,235,0.02));
+     border-color: rgba(59,130,246,0.20);">
 
   <div class="chart-card__head" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
     <div>
       <div class="chart-card__title">
-        <span class="material-icons">calculate</span>
-        Consolidado a pagar (pendiente de cierre)
+        <span class="material-icons">receipt_long</span>
+        Regalías por período
       </div>
       <div style="color: #9ca3af; font-size:0.72rem;">
-        Cada fila representa un período/artista/país pendiente de facturar.
-        Puedes cerrar fila por fila o todo de una vez.
+        Cada fila es un período/artista/país. Al <strong>confirmar</strong> se
+        registra el pago al artista (lo verá en su monetización).
       </div>
     </div>
-    <form method="post" action="{% url 'analitica:regalias_cerrar_todos' %}"
-          onsubmit="return confirm('¿Cerrar TODOS los períodos pendientes?\n\nEsto creará registros en Analitica.Regalia para cada (mes/año) con reproducciones pendientes. No se puede deshacer fácilmente.');">
+    <form method="post" action="{% url 'analitica:regalias_confirmar_todos' %}"
+          onsubmit="return confirm('¿Confirmar el pago de TODAS las regalías pendientes?\n\nSe marcarán como pagadas y el artista las verá en su monetización.');">
       {% csrf_token %}
-      <button type="submit" class="btn-new" style="white-space:nowrap;">
+      <button type="submit" class="btn-new"
+              style="white-space:nowrap; background:#22c55e;">
         <span class="material-icons">done_all</span>
-        Ejecutar todos los cierres pendientes
+        Confirmar todos los pagos
       </button>
     </form>
   </div>
@@ -176,6 +167,7 @@
         <th class="num">Bruto</th>
         <th class="num">A discográfica</th>
         <th class="num">Neto artista</th>
+        <th style="text-align:center;">Estado</th>
         <th style="text-align:center;">Acción</th>
       </tr>
     </thead>
@@ -192,26 +184,45 @@
         <td class="num">${{ c.PagoADiscografica|floatformat:2 }}</td>
         <td class="num accent">${{ c.PagoNetoArtista|floatformat:2 }}</td>
         <td style="text-align:center;">
-          <form method="post" action="{% url 'analitica:regalias_cerrar' %}" style="display:inline;"
-                onsubmit="return confirm('¿Cerrar el período {{ c.MesPeriodo }}/{{ c.AnioPeriodo }}?\n\nSe procesarán TODAS las reproducciones de ese mes (no sólo esta fila), y aparecerán en el histórico.');">
+          {% if c.Estado == 'Pagado' %}
+            <span style="background:rgba(34,197,94,0.13); color:#16a34a;
+                         border:1px solid rgba(34,197,94,0.3); border-radius:20px;
+                         padding:0.15rem 0.6rem; font-size:0.72rem; font-weight:600;">Pagado</span>
+          {% else %}
+            <span style="background:rgba(234,179,8,0.13); color:#b45309;
+                         border:1px solid rgba(234,179,8,0.3); border-radius:20px;
+                         padding:0.15rem 0.6rem; font-size:0.72rem; font-weight:600;">Pendiente</span>
+          {% endif %}
+        </td>
+        <td style="text-align:center;">
+          {% if c.Estado == 'Pagado' %}
+            <span style="color:#16a34a; font-size:0.75rem; display:inline-flex; align-items:center; gap:0.2rem;">
+              <span class="material-icons" style="font-size:0.95rem;">check_circle</span> Confirmado
+            </span>
+          {% else %}
+          <form method="post" action="{% url 'analitica:regalias_confirmar' %}" style="display:inline;"
+                onsubmit="return confirm('¿Confirmar el pago a {{ c.BeneficiarioArtista }} · {{ c.MesPeriodo }}/{{ c.AnioPeriodo }} · {{ c.Pais }}?\n\nSe marcará como pagado y el artista lo verá en su monetización.');">
             {% csrf_token %}
-            <input type="hidden" name="mes"  value="{{ c.MesPeriodo }}">
-            <input type="hidden" name="anio" value="{{ c.AnioPeriodo }}">
+            <input type="hidden" name="mes"        value="{{ c.MesPeriodo }}">
+            <input type="hidden" name="anio"       value="{{ c.AnioPeriodo }}">
+            <input type="hidden" name="artista_id" value="{{ c.artistaId }}">
+            <input type="hidden" name="pais"       value="{{ c.Pais }}">
             <button type="submit"
-                    style="background:rgba(249,115,22,0.15); color:#fb923c;
-                           border:1px solid rgba(249,115,22,0.4);
+                    style="background:rgba(34,197,94,0.13); color:#16a34a;
+                           border:1px solid rgba(34,197,94,0.4);
                            border-radius:6px; padding:0.25rem 0.55rem;
                            cursor:pointer; font-size:0.75rem;
                            display:inline-flex; align-items:center; gap:0.2rem;"
-                    title="Cerrar período {{ c.MesPeriodo }}/{{ c.AnioPeriodo }}">
-              <span class="material-icons" style="font-size:0.95rem;">play_arrow</span>
-              Cerrar
+                    title="Confirmar pago {{ c.MesPeriodo }}/{{ c.AnioPeriodo }}">
+              <span class="material-icons" style="font-size:0.95rem;">paid</span>
+              Confirmar
             </button>
           </form>
+          {% endif %}
         </td>
       </tr>
       {% empty %}
-      <tr><td colspan="10" class="an-empty"><span class="material-icons">calculate</span>Sin reproducciones pendientes de facturar.</td></tr>
+      <tr><td colspan="11" class="an-empty"><span class="material-icons">calculate</span>Sin regalías registradas.</td></tr>
       {% endfor %}
     </tbody>
   </table>

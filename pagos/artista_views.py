@@ -24,6 +24,8 @@ class ArtistaMonetizacionView(RequiereArtista, View):
         error = None
 
         if fecha_inicio and fecha_fin:
+            # El reporte de regalías (colección Regalias) aún no se migró a
+            # MongoDB en esta versión del módulo de pagos.
             try:
                 with connection.cursor() as cur:
                     cur.execute(
@@ -33,8 +35,8 @@ class ArtistaMonetizacionView(RequiereArtista, View):
                     )
                     cols = [c[0] for c in cur.description]
                     regalias = [dict(zip(cols, row)) for row in cur.fetchall()]
-            except DatabaseError as e:
-                error = str(e)
+            except Exception:
+                error = 'El reporte de regalías aún no está disponible en esta versión.'
 
         total_monto = sum(float(r.get('MontoNetoArtista') or 0) for r in regalias)
 

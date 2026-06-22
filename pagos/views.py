@@ -1,51 +1,10 @@
-from django.views import View
-from django.shortcuts import render
-from django.db import DatabaseError
-
-from usuarios.mixins import RequiereOyente
-from .services import sp_historial_suscripciones_pagos
-
-
+"""Vistas del oyente para el módulo de pagos (datos desde MongoDB)."""
 from django.views import View
 from django.shortcuts import render, redirect
-from django.db import DatabaseError, connection
 from django.contrib import messages
 
 from usuarios.mixins import RequiereOyente
-from .services import sp_historial_suscripciones_pagos
-
-
-def _get_planes():
-    try:
-        with connection.cursor() as cur:
-            cur.execute(
-                "SELECT idTipoPlan, nombrePlan, precio, descripcionPlan FROM Pagos.TipoPlan ORDER BY precio"
-            )
-            cols = [c[0] for c in cur.description]
-            return [dict(zip(cols, row)) for row in cur.fetchall()]
-    except DatabaseError:
-        return []
-
-
-def _get_plan_activo(usuario_id):
-    try:
-        with connection.cursor() as cur:
-            cur.execute(
-                """
-                SELECT tp.idTipoPlan, tp.nombrePlan, tp.precio,
-                       s.fechaInicio, s.fechaFin
-                FROM Pagos.Suscripcion s
-                INNER JOIN Pagos.TipoPlan tp ON tp.idTipoPlan = s.TipoPlan_idTipoPlan
-                WHERE s.Usuario_idUsuario = %s
-                AND s.estadoSuscripcion = 'activa'
-                """,
-                [usuario_id]
-            )
-            cols = [c[0] for c in cur.description]
-            row = cur.fetchone()
-            return dict(zip(cols, row)) if row else None
-    except DatabaseError:
-        return None
+from . import mongo_service as svc
 
 
 class HistorialSuscripcionesView(RequiereOyente, View):
@@ -53,88 +12,55 @@ class HistorialSuscripcionesView(RequiereOyente, View):
 
     def get(self, request):
         uid = request.session.get('usuario_id')
-        try:
-            historial = sp_historial_suscripciones_pagos(uid)
-        except DatabaseError:
-            historial = []
+        # Garantiza el plan Free por defecto si el oyente no tiene suscripción.
+        svc.asegurar_plan_free(uid)
 
-        plan_activo = _get_plan_activo(uid)
-        planes = _get_planes()
-
+        historial = svc.historial_oyente(uid)
         return render(request, self.template_name, {
-            'historial':    historial,
-            'total':        len(historial),
-            'plan_activo':  plan_activo,
-            'planes':       planes,
+            'historial':   historial,
+            'total':       len(historial),
+            'plan_activo': svc.plan_activo_oyente(uid),
+            'planes':      svc.listar_planes(),
         })
 
     def post(self, request):
+        # Solo cambios a plan GRATUITO llegan aquí (los de paga pasan por la
+        # pantalla de pago simulado). La renovación llega como checkbox.
         uid = request.session.get('usuario_id')
         plan_id = request.POST.get('plan_id')
-
         if not plan_id:
             return redirect('pagos:historial')
-
-        # Renovación automática: viene del checkbox del modal ('S' / 'N').
-        # Se persiste en la columna Pagos.Suscripcion.renovacionAutomatica.
-        renovacion = 'S' if request.POST.get('auto_renovacion') else 'N'
-
-        try:
-            with connection.cursor() as cur:
-                # Obtener precio del plan
-                cur.execute(
-                    "SELECT precio FROM Pagos.TipoPlan WHERE idTipoPlan = %s",
-                    [plan_id]
-                )
-                row = cur.fetchone()
-                precio = row[0] if row else 0
-
-                # Inactivar suscripción activa
-                cur.execute(
-                    """
-                    UPDATE Pagos.Suscripcion
-                    SET estadoSuscripcion = 'inactiva'
-                    WHERE Usuario_idUsuario = %s AND estadoSuscripcion = 'activa'
-                    """,
-                    [uid]
-                )
-
-                # Crear nueva suscripción (guardando la renovación automática)
-                cur.execute(
-                    """
-                    INSERT INTO Pagos.Suscripcion
-                    (Usuario_idUsuario, TipoPlan_idTipoPlan, fechaInicio, fechaFin,
-                     estadoSuscripcion, renovacionAutomatica)
-                    VALUES (%s, %s, GETDATE(), DATEADD(month, 1, GETDATE()),
-                            'activa', %s)
-                    """,
-                    [uid, plan_id, renovacion]
-                )
-
-                # Obtener el ID de la suscripción recién creada
-                cur.execute(
-                    """
-                    SELECT TOP 1 idSuscripcion FROM Pagos.Suscripcion
-                    WHERE Usuario_idUsuario = %s AND estadoSuscripcion = 'activa'
-                    ORDER BY idSuscripcion DESC
-                    """,
-                    [uid]
-                )
-                id_suscripcion = cur.fetchone()[0]
-
-                # Registrar pago SOLO para planes de pago (precio > 0).
-                # El plan Free no genera transacción.
-                if precio and float(precio) > 0:
-                    cur.execute(
-                        """
-                        INSERT INTO Pagos.Pago
-                        (Suscripcion_idSuscripcion, monto, metodoPago, fechaPago, resultadoPago)
-                        VALUES (%s, %s, 'Tarjeta de credito', GETDATE(), 'Completado')
-                        """,
-                        [id_suscripcion, precio]
-                    )
+        renovacion = bool(request.POST.get('auto_renovacion'))
+        if svc.cambiar_plan_oyente(uid, plan_id, renovacion):
             messages.success(request, 'Tu plan se actualizó correctamente.')
-        except DatabaseError:
+        else:
             messages.error(request, 'No se pudo actualizar el plan. Inténtalo de nuevo.')
+        return redirect('pagos:historial')
 
+
+class PagoSuscripcionView(RequiereOyente, View):
+    """Pantalla de pago SIMULADO para planes de paga. Recoge método de pago
+    (Tarjeta de crédito / débito / Paypal) y datos de tarjeta (no se guardan),
+    y al confirmar realiza el cobro simulado y activa la suscripción."""
+    template_name = 'pagos/pago_simulado.html'
+
+    def get(self, request, plan_id):
+        plan = svc.admin_get_plan(plan_id)
+        if not plan or not plan.get('precio'):
+            # Plan inexistente o gratuito → no requiere pago.
+            return redirect('pagos:historial')
+        return render(request, self.template_name, {'plan': plan})
+
+    def post(self, request, plan_id):
+        plan = svc.admin_get_plan(plan_id)
+        if not plan or not plan.get('precio'):
+            return redirect('pagos:historial')
+        metodo = request.POST.get('metodo_pago', 'Tarjeta de credito')
+        renovacion = bool(request.POST.get('auto_renovacion'))
+        if svc.cambiar_plan_oyente(request.session.get('usuario_id'), plan_id, renovacion, metodo):
+            messages.success(
+                request,
+                f'¡Pago realizado con éxito! Ahora tienes el plan {plan["nombrePlan"]}.')
+        else:
+            messages.error(request, 'No se pudo procesar el pago. Inténtalo de nuevo.')
         return redirect('pagos:historial')

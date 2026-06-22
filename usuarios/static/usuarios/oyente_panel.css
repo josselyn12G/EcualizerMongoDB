@@ -1,6 +1,6 @@
 /* ══════════════════════════════════════════════════════
-   Ecualizer — Panel Oyente · Apple Music Dark Glass
-   Colores: negro + naranja · Sidebar plano + glass
+   Ecualizer — Panel Oyente · Dark Glass minimalista
+   Colores: azul marino + azul (baby/sky) · Sidebar plano + glass
    ══════════════════════════════════════════════════════ */
 
 :root {
@@ -9,9 +9,9 @@
   --sb-offset:    10px;
   --topbar-h:     56px;
 
-  --orange:       #f97316;
-  --orange-dim:   rgba(249,115,22,0.13);
-  --orange-glow:  rgba(249,115,22,0.35);
+  --orange:       #3b82f6;
+  --orange-dim:   rgba(59,130,246,0.13);
+  --orange-glow:  rgba(59,130,246,0.35);
   --green:        #22c55e;
   --green-bg:     rgba(34,197,94,0.10);
   --red:          #ef4444;
@@ -32,14 +32,14 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { height: 100%; background: #060608; }
+html { height: 100%; background: #0b1226; }
 
 body {
   height: 100%;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  background: #060608;
+  background: #0b1226;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
 }
@@ -62,21 +62,16 @@ a { text-decoration: none; color: inherit; }
 button { font-family: inherit; cursor: pointer; }
 
 /* ── Fondo borroso (FondoDashboard.png) ──────────── */
-.bg-image {
-  position: fixed; inset: 0; z-index: 0;
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  filter: blur(22px) brightness(0.45) saturate(1.4);
-  transform: scale(1.08);
-}
+/* La foto de fondo se oculta: usamos un degradado azul limpio (estilo Spotify). */
+.bg-image { display: none; }
 
-/* ── Overlay: naranja sutil + negro ─────────────── */
+/* ── Fondo azul marino / índigo en degradado ─────── */
 .bg-overlay {
   position: fixed; inset: 0; z-index: 1;
   background:
-    radial-gradient(ellipse 70% 55% at 90% 0%, rgba(249,115,22,0.10) 0%, transparent 58%),
-    rgba(0, 0, 0, 0.72);
+    radial-gradient(ellipse 90% 60% at 50% -15%, rgba(37,99,235,0.38) 0%, transparent 60%),
+    radial-gradient(ellipse 55% 45% at 100% 0%, rgba(59,130,246,0.20) 0%, transparent 55%),
+    linear-gradient(180deg, #16275f 0%, #0e1c41 42%, #0a1328 75%, #070d1f 100%);
   pointer-events: none;
 }
 
@@ -101,8 +96,8 @@ button { font-family: inherit; cursor: pointer; }
 ══════════════════════════════════════════════════════ */
 .sidebar {
   width: var(--sb-width);
-  /* Glass translúcido: deja ver el fondo borroso */
-  background: rgba(8, 10, 18, 0.58);
+  /* Glass azul translúcido (combina con el fondo índigo) */
+  background: rgba(11, 21, 50, 0.62);
   backdrop-filter: blur(40px) saturate(180%) brightness(0.9);
   -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(0.9);
   border-right: 1px solid rgba(255,255,255,0.07);
@@ -170,8 +165,8 @@ button { font-family: inherit; cursor: pointer; }
 .sb-search__input::placeholder { color: var(--text-muted); font-size: 0.80rem; }
 .sb-search__input:focus {
   background: rgba(255,255,255,0.10);
-  border-color: rgba(249,115,22,0.40);
-  box-shadow: 0 0 0 3px rgba(249,115,22,0.08);
+  border-color: rgba(59,130,246,0.40);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.08);
 }
 
 /* ── Nav — mismo estilo que el antiguo .sb-bottom ── */
@@ -193,6 +188,32 @@ button { font-family: inherit; cursor: pointer; }
   flex-shrink: 0;
   display: flex; flex-direction: column; gap: 3px;
   overflow: hidden;
+}
+
+/* ── Grupos de navegación (estilo Spotify) ────── */
+.sb-group {
+  display: flex; flex-direction: column; gap: 3px;
+  padding-bottom: 0.55rem; margin-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.sb-group:last-child { border-bottom: none; margin-bottom: 0; }
+.sb-group__title {
+  font-size: 0.66rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--text-light);
+  padding: 0.45rem 0.85rem 0.25rem;
+  white-space: nowrap; overflow: hidden;
+  transition: opacity 0.15s, max-height 0.18s;
+}
+/* En colapsado los títulos de grupo se ocultan */
+.sidebar--collapsed .sb-group__title {
+  opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; pointer-events: none;
+}
+/* Pero en móvil (panel desplegado) deben verse */
+@media (max-width: 768px) {
+  .sidebar.sidebar--collapsed .sb-group__title {
+    opacity: 1; max-height: 40px; padding: 0.45rem 0.85rem 0.25rem;
+  }
 }
 
 /* ── Divisor entre grupos ─────────────────────── */
@@ -243,7 +264,7 @@ button { font-family: inherit; cursor: pointer; }
 .sb-item__dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--orange); flex-shrink: 0;
-  box-shadow: 0 0 8px rgba(249,115,22,0.7);
+  box-shadow: 0 0 8px rgba(59,130,246,0.7);
   transition: opacity 0.18s;
 }
 
@@ -258,10 +279,10 @@ button { font-family: inherit; cursor: pointer; }
 
 .sb-item.active {
   margin: 0 1px;
-  background: rgba(249,115,22,0.15);
+  background: rgba(59,130,246,0.15);
   color: var(--orange);
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(249,115,22,0.18);
+  box-shadow: inset 0 0 0 1px rgba(59,130,246,0.18);
 }
 .sb-item.active .material-icons { opacity: 1; color: var(--orange); }
 
@@ -344,16 +365,16 @@ button { font-family: inherit; cursor: pointer; }
   opacity: 0.85;
 }
 .sidebar--collapsed .sb-item.active {
-  background: rgba(249,115,22,0.15);
+  background: rgba(59,130,246,0.15);
   margin: 0 4px;
 }
 /* Hover en colapsado: pastilla más ancha + leve scale para que se vea expandido */
 .sidebar--collapsed .sb-item:hover {
-  background: rgba(249,115,22,0.18);
+  background: rgba(59,130,246,0.18);
   margin: 0 2px;
   padding: 0.78rem 0.25rem;
   transform: scale(1.04);
-  box-shadow: inset 0 0 0 1px rgba(249,115,22,0.25);
+  box-shadow: inset 0 0 0 1px rgba(59,130,246,0.25);
 }
 .sidebar--collapsed .sb-item:hover .material-icons { color: var(--orange); }
 
@@ -391,7 +412,7 @@ button { font-family: inherit; cursor: pointer; }
 .topbar {
   height: var(--topbar-h);
   flex-shrink: 0;
-  background: rgba(6, 7, 10, 0.52);
+  background: rgba(10, 16, 34, 0.52);
   backdrop-filter: blur(30px) saturate(180%);
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   border-bottom: 1px solid rgba(255,255,255,0.07);
@@ -451,7 +472,7 @@ button { font-family: inherit; cursor: pointer; }
 .flash__icon { font-size: 0.95rem; }
 .flash--success { border-color: rgba(34,197,94,0.28);  color: var(--green); }
 .flash--error, .flash--danger { border-color: rgba(239,68,68,0.28); color: var(--red); }
-.flash--info    { border-color: rgba(249,115,22,0.28);  color: var(--orange); }
+.flash--info    { border-color: rgba(59,130,246,0.28);  color: var(--orange); }
 
 /* ── Main content ────────────────────────────────── */
 .main-content {
@@ -532,7 +553,7 @@ button { font-family: inherit; cursor: pointer; }
   content: '';
   position: absolute; right: -60px; top: -60px;
   width: 320px; height: 320px;
-  background: radial-gradient(circle, rgba(249,115,22,0.18) 0%, transparent 65%);
+  background: radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 65%);
   pointer-events: none;
 }
 .featured-hero__meta  { display: flex; align-items: flex-start; justify-content: space-between; position: relative; z-index: 1; }
@@ -550,9 +571,9 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--orange); color: #fff;
   font-weight: 700; font-size: 0.875rem;
   padding: 0.55rem 1.25rem; border-radius: 50px; border: none;
-  transition: var(--tr); box-shadow: 0 4px 18px rgba(249,115,22,0.40);
+  transition: var(--tr); box-shadow: 0 4px 18px rgba(59,130,246,0.40);
 }
-.btn-hero-play:hover { background: #e56510; transform: scale(1.02); }
+.btn-hero-play:hover { background: #2563eb; transform: scale(1.02); }
 .btn-hero-play .material-icons { font-size: 1.1rem; }
 
 .btn-hero-ghost {
@@ -615,7 +636,7 @@ button { font-family: inherit; cursor: pointer; }
 .track-title-wrap { display: flex; align-items: center; gap: 0.65rem; }
 .track-cover {
   width: 36px; height: 36px; flex-shrink: 0;
-  background: var(--orange-dim); border: 1px solid rgba(249,115,22,0.14);
+  background: var(--orange-dim); border: 1px solid rgba(59,130,246,0.14);
   border-radius: 6px; display: flex; align-items: center; justify-content: center;
   color: var(--orange);
 }
@@ -627,7 +648,7 @@ button { font-family: inherit; cursor: pointer; }
 .col-album  { color: var(--text-light) !important; font-size: 0.78rem !important; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .playlist-row--active .track-name  { color: var(--orange); }
-.playlist-row--active .col-artist  { color: rgba(249,115,22,0.60) !important; }
+.playlist-row--active .col-artist  { color: rgba(59,130,246,0.60) !important; }
 
 .playlist-empty { text-align: center; padding: 3rem 1rem !important; color: var(--text-muted) !important; }
 .playlist-empty .material-icons { font-size: 2rem; opacity: 0.28; display: block; margin-bottom: 0.5rem; }
@@ -655,7 +676,7 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 0.70rem; font-weight: 500; color: rgba(255,255,255,0.60);
   cursor: pointer; transition: var(--tr);
 }
-.genre-tag:hover { background: var(--orange-dim); border-color: rgba(249,115,22,0.25); color: var(--orange); }
+.genre-tag:hover { background: var(--orange-dim); border-color: rgba(59,130,246,0.25); color: var(--orange); }
 .genre-tag .material-icons { font-size: 0.68rem; }
 
 /* Accesos Rápidos */
@@ -668,7 +689,7 @@ button { font-family: inherit; cursor: pointer; }
 .played-item:hover { background: rgba(255,255,255,0.05); }
 .played-cover {
   width: 40px; height: 40px; flex-shrink: 0; border-radius: 7px;
-  background: var(--orange-dim); border: 1px solid rgba(249,115,22,0.13);
+  background: var(--orange-dim); border: 1px solid rgba(59,130,246,0.13);
   display: flex; align-items: center; justify-content: center; color: var(--orange);
 }
 .played-cover .material-icons { font-size: 1.05rem; }
@@ -681,13 +702,13 @@ button { font-family: inherit; cursor: pointer; }
 /* Promo card — glass */
 .promo-card {
   border-radius: var(--radius);
-  background: rgba(249,115,22,0.10);
+  background: rgba(59,130,246,0.10);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(249,115,22,0.15);
+  border: 1px solid rgba(59,130,246,0.15);
   padding: 1.25rem 1.1rem;
   display: flex; flex-direction: column; gap: 0.38rem;
-  box-shadow: 0 4px 20px rgba(249,115,22,0.08);
+  box-shadow: 0 4px 20px rgba(59,130,246,0.08);
 }
 .promo-card__icon  { font-size: 1.7rem; color: var(--orange); margin-bottom: 0.15rem; }
 .promo-card__title { font-size: 0.92rem; font-weight: 700; color: var(--text); }
@@ -708,12 +729,205 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--orange); color: #fff;
   font-weight: 700; font-size: 0.82rem;
   padding: 0.5rem 1rem; border-radius: 50px; border: none;
-  transition: var(--tr); box-shadow: 0 4px 14px rgba(249,115,22,0.28);
+  transition: var(--tr); box-shadow: 0 4px 14px rgba(59,130,246,0.28);
 }
-.btn-new:hover { background: #e56510; transform: translateY(-1px); }
+.btn-new:hover { background: #2563eb; transform: translateY(-1px); }
 .btn-new .material-icons { font-size: 0.9rem; }
 
 .badge { display: inline-flex; align-items: center; padding: 0.18rem 0.55rem; border-radius: 20px; font-size: 0.68rem; font-weight: 600; }
 .badge--activo    { background: var(--green-bg); color: var(--green); }
 .badge--inactivo  { background: rgba(255,255,255,0.05); color: var(--text-muted); }
 .badge--suspendido{ background: var(--red-bg); color: var(--red); }
+
+/* ══════════════════════════════════════════════════════
+   SPOTIFY-STYLE DASHBOARD · saludo + cuadrículas de tarjetas
+══════════════════════════════════════════════════════ */
+
+/* Deja aire al final para que el player flotante no tape contenido */
+.main-content { padding-bottom: 7rem; }
+
+/* ── Saludo contextual ("Buenas tardes, Alias") ───────── */
+.greeting { margin-bottom: 0.25rem; }
+.greeting__title {
+  font-size: 2.1rem; font-weight: 800; color: var(--text);
+  letter-spacing: -0.03em; line-height: 1.05;
+}
+.greeting__sub { font-size: 0.9rem; color: var(--text-muted); margin-top: 0.3rem; }
+
+/* ── Cuadrícula de accesos rápidos (tiles compactos) ──── */
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+.quick-tile {
+  display: flex; align-items: center; gap: 0.85rem;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+  overflow: hidden;
+  min-height: 64px;
+  position: relative;
+  transition: var(--tr);
+}
+.quick-tile:hover {
+  background: rgba(255,255,255,0.11);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  transform: translateY(-1px);
+}
+.quick-tile__art {
+  width: 64px; height: 64px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+}
+.quick-tile__art .material-icons { font-size: 1.7rem; }
+.quick-tile__art--a { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.quick-tile__art--b { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.quick-tile__art--c { background: linear-gradient(135deg, #2563eb, #0ea5e9); }
+.quick-tile__art--d { background: linear-gradient(135deg, #6366f1, #3b82f6); }
+.quick-tile__art--e { background: linear-gradient(135deg, #0ea5e9, #2563eb); }
+.quick-tile__art--f { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+.quick-tile__name {
+  font-size: 0.9rem; font-weight: 700; color: var(--text);
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.quick-tile__play {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--orange); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  margin-right: 0.85rem; flex-shrink: 0;
+  opacity: 0; transform: translateY(6px);
+  box-shadow: 0 6px 16px rgba(59,130,246,0.45);
+  transition: opacity 0.18s, transform 0.18s;
+}
+.quick-tile__play .material-icons { font-size: 1.25rem; }
+.quick-tile:hover .quick-tile__play { opacity: 1; transform: translateY(0); }
+
+/* ── Cuadrícula de tarjetas con portada (Made for you) ── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 0.9rem;
+}
+.m-card {
+  background: rgba(0,0,0,0.32);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius);
+  padding: 0.85rem;
+  transition: var(--tr);
+}
+.m-card:hover {
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.42);
+  transform: translateY(-2px);
+}
+.m-card__cover {
+  position: relative;
+  width: 100%; aspect-ratio: 1 / 1;
+  border-radius: 10px; overflow: hidden;
+  background: linear-gradient(135deg, rgba(59,130,246,0.22), rgba(37,99,235,0.10));
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 0.7rem;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.30);
+}
+.m-card__cover img { width: 100%; height: 100%; object-fit: cover; }
+.m-card__cover > .material-icons { font-size: 2.4rem; color: var(--orange); opacity: 0.85; }
+.m-card__play {
+  position: absolute; right: 10px; bottom: 10px;
+  width: 42px; height: 42px; border-radius: 50%;
+  background: var(--orange); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 20px rgba(59,130,246,0.5);
+  opacity: 0; transform: translateY(8px);
+  transition: opacity 0.18s, transform 0.18s;
+}
+.m-card__play .material-icons { font-size: 1.5rem; }
+.m-card:hover .m-card__play { opacity: 1; transform: translateY(0); }
+.m-card__title {
+  font-size: 0.88rem; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.m-card__sub {
+  font-size: 0.74rem; color: var(--text-muted); margin-top: 0.18rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── Banner de anuncio (plan Free) ────────────────────── */
+.ad-banner {
+  display: flex; align-items: center; gap: 1rem;
+  background: linear-gradient(90deg, rgba(11,18,38,0.9) 0%, rgba(37,99,235,0.18) 100%);
+  border: 1px solid rgba(59,130,246,0.30);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+}
+.ad-banner__icon {
+  width: 48px; height: 48px; flex-shrink: 0;
+  background: rgba(59,130,246,0.20); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.ad-banner__icon .material-icons { color: var(--orange); font-size: 1.5rem; }
+.ad-banner__body { flex: 1; min-width: 0; }
+.ad-banner__title { color: #fff; font-weight: 700; font-size: 0.95rem; }
+.ad-banner__sub { color: var(--text-muted); font-size: 0.78rem; margin-top: 0.2rem; }
+.ad-banner__btn {
+  background: var(--orange); color: #fff; border-radius: 50px;
+  padding: 0.5rem 1.25rem; font-size: 0.82rem; font-weight: 700;
+  white-space: nowrap; flex-shrink: 0; transition: var(--tr);
+}
+.ad-banner__btn:hover { background: #2563eb; }
+
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════════════════ */
+
+/* Tablet: el panel derecho se apila debajo de la columna principal */
+@media (max-width: 1100px) {
+  .d-grid { flex-direction: column; }
+  .d-right {
+    width: 100%; min-width: 0;
+    border-left: none;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    position: static; height: auto;
+    flex-direction: column;
+  }
+  .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Móvil: sidebar se oculta fuera de pantalla (deslizable con el toggle) */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.22s ease, width 0.22s ease;
+  }
+  /* En móvil reutilizamos la clase de colapso del toggle para MOSTRAR el panel */
+  .sidebar.sidebar--collapsed {
+    width: var(--sb-width);
+    transform: translateX(0);
+  }
+  .sidebar.sidebar--collapsed .sidebar-logo__text,
+  .sidebar.sidebar--collapsed .sidebar-user__info,
+  .sidebar.sidebar--collapsed .sidebar-logout span:last-child,
+  .sidebar.sidebar--collapsed .sb-item__label { opacity: 1; max-width: 160px; }
+  .sidebar.sidebar--collapsed .sb-search-wrap { max-height: 80px; opacity: 1; padding: 0.7rem 0.85rem 0.2rem; }
+  .sidebar.sidebar--collapsed .sb-item { justify-content: flex-start; gap: 0.75rem; padding: 0.82rem 0.75rem; }
+  .sidebar.sidebar--collapsed .sb-item .material-icons { font-size: 1.5rem; width: 28px; }
+
+  .main-wrapper,
+  .sidebar--collapsed ~ .main-wrapper {
+    margin-left: 0;
+    padding-right: 0;
+  }
+  .topbar { margin-left: 0; margin-right: 0; padding: 0 1rem; }
+  .flash-bar { padding: 0.75rem 1rem 0; }
+
+  .d-main { padding: 1rem 1rem 2rem; }
+  .greeting__title { font-size: 1.6rem; }
+  .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .topbar-user__name { display: none; }
+}
+
+/* Móvil pequeño: una sola columna de accesos rápidos */
+@media (max-width: 520px) {
+  .quick-grid { grid-template-columns: 1fr; }
+}

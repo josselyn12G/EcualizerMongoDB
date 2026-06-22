@@ -1,6 +1,6 @@
 """Context processors globales de la app usuarios."""
 
-from .notificaciones_service import obtener_notificaciones_oyente
+from usuarios.notificaciones_service import obtener_notificaciones_oyente
 
 
 def notificaciones_oyente(request):
@@ -14,6 +14,8 @@ def notificaciones_oyente(request):
         return {}
 
     uid = request.session.get('usuario_id')
+    if not isinstance(uid, int) and not (isinstance(uid, str) and uid.isdigit()):
+        return {}
     notifs = obtener_notificaciones_oyente(uid)
     return {
         'notificaciones': notifs,

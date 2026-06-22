@@ -3,10 +3,28 @@ from django.views import View
 from django.db import DatabaseError, connection
 from django.contrib import messages
 from django.contrib.auth.hashers import make_password
+from django.utils import timezone
 
-from ..models import Persona, Usuario
-from ..mixins import RequiereLogin, RequiereOyente, RequiereArtista
-from ..forms import PerfilPersonaForm, PerfilUsuarioForm, AdminEditArtistaForm
+
+def _saludo_por_hora():
+    """Saludo contextual según la hora local (estilo 'Good afternoon')."""
+    h = timezone.localtime().hour
+    if h < 12:
+        return 'Buenos días'
+    if h < 19:
+        return 'Buenas tardes'
+    return 'Buenas noches'
+
+from usuarios.models import Persona, Usuario
+from usuarios.mixins import RequiereLogin, RequiereOyente, RequiereArtista
+from usuarios.forms import (
+    PerfilPersonaForm, PerfilUsuarioForm, AdminEditArtistaForm,
+    MongoPerfilPersonaForm, MongoAdminOyenteForm, MongoAdminArtistaForm,
+)
+from usuarios.mongo_service import (
+    build_empty_dashboard_stats, build_user_namespace, find_user_by_identifier,
+    admin_get_user, admin_update_user,
+)
 from analitica.services.oyente_service import (
     sp_top_canciones_usuario,
     sp_tiempo_total_escucha,
@@ -16,10 +34,20 @@ from analitica.services.oyente_service import (
 from biblioteca.services import get_canciones_liked
 
 
+def _is_sql_uid(uid):
+    return isinstance(uid, int) or (isinstance(uid, str) and uid.isdigit())
+
+
 def _get_persona(request):
     uid = request.session.get('usuario_id')
     if not uid:
         return None
+    # Usuario de MongoDB: el id es un ObjectId (24 hex), no un entero.
+    # Se busca directo en Mongo para no tocar el ORM de SQL Server.
+    if not _is_sql_uid(uid):
+        mongo_doc = find_user_by_identifier(uid)
+        return build_user_namespace(mongo_doc) if mongo_doc else None
+    # Usuario heredado de SQL Server (id entero).
     try:
         return Persona.objects.get(pk=uid)
     except Persona.DoesNotExist:
@@ -33,7 +61,20 @@ class DashboardOyenteView(RequiereLogin, View):
             return _redirect_por_tipo(request.session.get('tipo_usuario', ''))
 
         persona = _get_persona(request)
-        uid = persona.id_usuario
+        uid = getattr(persona, 'id_usuario', None)
+
+        if not _is_sql_uid(uid):
+            ctx = build_empty_dashboard_stats('oyente')
+            # Refleja el plan activo real (módulo de pagos en Mongo).
+            from pagos.mongo_service import plan_activo_oyente
+            pa = plan_activo_oyente(uid)
+            ctx['plan_activo'] = pa['nombrePlan'] if pa else 'Free'
+            ctx.update({
+                'persona': persona,
+                'perfil': getattr(persona, 'usuario', None),
+                'saludo': _saludo_por_hora(),
+            })
+            return render(request, 'usuarios/oyente/dashboard.html', ctx)
 
         try:
             perfil = persona.usuario
@@ -68,8 +109,7 @@ class DashboardOyenteView(RequiereLogin, View):
             n_likes = 0
         
         try:
-            from django.db import connection as conn
-            with conn.cursor() as cur:
+            with connection.cursor() as cur:
                 cur.execute(
                     """
                     SELECT tp.nombrePlan FROM Pagos.Suscripcion s
@@ -135,6 +175,7 @@ class DashboardOyenteView(RequiereLogin, View):
             'generos':         generos,
             'historial':       historial,
             'plan_activo':     plan_activo,
+            'saludo':          _saludo_por_hora(),
             'stats': {
                 'canciones_favoritas': n_likes,
                 'playlists':           0,
@@ -152,6 +193,14 @@ class DashboardArtistaView(RequiereLogin, View):
             from .auth_views import _redirect_por_tipo
             return _redirect_por_tipo(request.session.get('tipo_usuario', ''))
 
+        persona = _get_persona(request)
+        uid = getattr(persona, 'id_usuario', None)
+
+        if not _is_sql_uid(uid):
+            ctx = build_empty_dashboard_stats('artista')
+            ctx.update({'persona': persona, 'perfil': getattr(persona, 'artista', None)})
+            return render(request, 'usuarios/artista/dashboard.html', ctx)
+
         from analitica.views.artista import DashboardArtistaView as _DashAnalitica
         return _DashAnalitica.as_view()(request)
 
@@ -159,44 +208,60 @@ class DashboardArtistaView(RequiereLogin, View):
 # ──────────────────────────────────────────────────────────
 # PERFIL DEL OYENTE — editar datos propios
 # ──────────────────────────────────────────────────────────
-class PerfilOyenteView(RequiereOyente, View):
-    template_name = 'usuarios/oyente/perfil.html'
+def _persona_initial_from(obj):
+    """Valores iniciales del form de datos personales a partir del namespace."""
+    p = obj.id_usuario
+    return {
+        'cedula_usuario': p.cedula_usuario,
+        'primer_nombre': p.primer_nombre,
+        'segundo_nombre': p.segundo_nombre,
+        'primer_apellido': p.primer_apellido,
+        'segundo_apellido': p.segundo_apellido,
+        'correo': p.correo,
+    }
 
-    def _ctx(self, request, p_form, u_form):
-        persona = _get_persona(request)
-        return {
-            'persona': persona,
-            'perfil':  getattr(persona, 'usuario', None),
-            'p_form':  p_form,
-            'u_form':  u_form,
-        }
+
+class PerfilOyenteView(RequiereOyente, View):
+    """Edición del propio perfil del oyente — datos en MongoDB."""
+    template_name = 'usuarios/oyente/perfil.html'
 
     def get(self, request):
         persona = _get_persona(request)
-        usuario = persona.usuario
-        return render(request, self.template_name, self._ctx(
-            request, PerfilPersonaForm(instance=persona),
-            PerfilUsuarioForm(instance=usuario)))
+        obj = admin_get_user(getattr(persona, 'id_usuario', None), 'oyente')
+        p_form = MongoPerfilPersonaForm(initial=_persona_initial_from(obj), pk=obj.pk)
+        u_form = MongoAdminOyenteForm(initial={
+            'alias': obj.alias,
+            'pais_usuario': obj.pais_usuario,
+            'fecha_nacimiento': obj.fecha_nacimiento,
+            'genero': obj.genero,
+        }, pk=obj.pk)
+        return render(request, self.template_name, {
+            'persona': persona, 'perfil': obj, 'p_form': p_form, 'u_form': u_form,
+        })
 
     def post(self, request):
         persona = _get_persona(request)
-        usuario = persona.usuario
-        p_form = PerfilPersonaForm(request.POST, instance=persona)
-        u_form = PerfilUsuarioForm(request.POST, instance=usuario)
+        obj = admin_get_user(getattr(persona, 'id_usuario', None), 'oyente')
+        # La cédula está deshabilitada → su valor se toma del initial.
+        p_form = MongoPerfilPersonaForm(
+            request.POST, initial={'cedula_usuario': obj.id_usuario.cedula_usuario}, pk=obj.pk)
+        u_form = MongoAdminOyenteForm(request.POST, pk=obj.pk)
 
         if p_form.is_valid() and u_form.is_valid():
-            per = p_form.save(commit=False)
-            nueva = request.POST.get('nueva_contrasena', '').strip()
-            if nueva:
-                per.contrasena = make_password(nueva)
-            per.save()
-            u_form.save()
-            request.session['usuario_nombre'] = per.primer_nombre
+            persona_data = dict(p_form.cleaned_data)
+            persona_data['estado'] = persona.estado  # el usuario no cambia su estado
+            admin_update_user(
+                obj.pk, persona_data, u_form.cleaned_data, 'oyente',
+                request.POST.get('nueva_contrasena', '').strip() or None,
+            )
+            request.session['usuario_nombre'] = persona_data['primer_nombre']
             messages.success(request, 'Tu perfil se actualizó correctamente.')
             return redirect('perfil_oyente')
 
         messages.error(request, 'Revisa los campos marcados e inténtalo de nuevo.')
-        return render(request, self.template_name, self._ctx(request, p_form, u_form))
+        return render(request, self.template_name, {
+            'persona': persona, 'perfil': obj, 'p_form': p_form, 'u_form': u_form,
+        })
 
 
 # ──────────────────────────────────────────────────────────
@@ -229,10 +294,18 @@ class ConfiguracionOyenteView(RequiereOyente, View):
     def get(self, request):
         persona = _get_persona(request)
         plan = None
-        try:
-            plan = self._plan_activo(persona.id_usuario)
-        except DatabaseError:
-            plan = None
+        uid = getattr(persona, 'id_usuario', None)
+        if _is_sql_uid(uid):
+            try:
+                plan = self._plan_activo(uid)
+            except DatabaseError:
+                plan = None
+        else:
+            # Plan activo desde MongoDB (módulo de pagos). Garantiza el plan
+            # Free por defecto si el oyente aún no tiene suscripción.
+            from pagos.mongo_service import asegurar_plan_free, plan_activo_oyente
+            asegurar_plan_free(uid)
+            plan = plan_activo_oyente(uid)
         return render(request, self.template_name, {
             'persona': persona,
             'perfil':  getattr(persona, 'usuario', None),
@@ -241,6 +314,12 @@ class ConfiguracionOyenteView(RequiereOyente, View):
 
     def post(self, request):
         uid = request.session.get('usuario_id')
+        if not _is_sql_uid(uid):
+            # Renovación automática sobre la suscripción de MongoDB.
+            from pagos.mongo_service import set_renovacion_oyente
+            set_renovacion_oyente(uid, bool(request.POST.get('auto_renovacion')))
+            messages.success(request, 'Tus preferencias se guardaron correctamente.')
+            return redirect('configuracion_oyente')
         renovacion = 'S' if request.POST.get('auto_renovacion') else 'N'
         try:
             with connection.cursor() as cur:
@@ -262,43 +341,43 @@ class ConfiguracionOyenteView(RequiereOyente, View):
 # PERFIL DEL ARTISTA — editar datos propios
 # ──────────────────────────────────────────────────────────
 class PerfilArtistaView(RequiereArtista, View):
+    """Edición del propio perfil del artista — datos en MongoDB."""
     template_name = 'usuarios/artista/perfil.html'
-
-    def _ctx(self, request, p_form, a_form):
-        persona = _get_persona(request)
-        return {
-            'persona': persona,
-            'perfil':  getattr(persona, 'artista', None),
-            'p_form':  p_form,
-            'a_form':  a_form,
-        }
 
     def get(self, request):
         persona = _get_persona(request)
-        artista = persona.artista
-        return render(request, self.template_name, self._ctx(
-            request, PerfilPersonaForm(instance=persona),
-            AdminEditArtistaForm(instance=artista)))
+        obj = admin_get_user(getattr(persona, 'id_usuario', None), 'artista')
+        p_form = MongoPerfilPersonaForm(initial=_persona_initial_from(obj), pk=obj.pk)
+        a_form = MongoAdminArtistaForm(initial={
+            'nombre_artistico': obj.nombre_artistico,
+            'biografia': obj.biografia,
+        }, pk=obj.pk)
+        return render(request, self.template_name, {
+            'persona': persona, 'perfil': obj, 'p_form': p_form, 'a_form': a_form,
+        })
 
     def post(self, request):
         persona = _get_persona(request)
-        artista = persona.artista
-        p_form = PerfilPersonaForm(request.POST, instance=persona)
-        a_form = AdminEditArtistaForm(request.POST, instance=artista)
+        obj = admin_get_user(getattr(persona, 'id_usuario', None), 'artista')
+        p_form = MongoPerfilPersonaForm(
+            request.POST, initial={'cedula_usuario': obj.id_usuario.cedula_usuario}, pk=obj.pk)
+        a_form = MongoAdminArtistaForm(request.POST, pk=obj.pk)
 
         if p_form.is_valid() and a_form.is_valid():
-            per = p_form.save(commit=False)
-            nueva = request.POST.get('nueva_contrasena', '').strip()
-            if nueva:
-                per.contrasena = make_password(nueva)
-            per.save()
-            a_form.save()
-            request.session['usuario_nombre'] = per.primer_nombre
+            persona_data = dict(p_form.cleaned_data)
+            persona_data['estado'] = persona.estado
+            admin_update_user(
+                obj.pk, persona_data, a_form.cleaned_data, 'artista',
+                request.POST.get('nueva_contrasena', '').strip() or None,
+            )
+            request.session['usuario_nombre'] = persona_data['primer_nombre']
             messages.success(request, 'Tu perfil se actualizó correctamente.')
             return redirect('perfil_artista')
 
         messages.error(request, 'Revisa los campos marcados e inténtalo de nuevo.')
-        return render(request, self.template_name, self._ctx(request, p_form, a_form))
+        return render(request, self.template_name, {
+            'persona': persona, 'perfil': obj, 'p_form': p_form, 'a_form': a_form,
+        })
 
 
 # ──────────────────────────────────────────────────────────

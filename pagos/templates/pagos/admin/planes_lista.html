@@ -14,6 +14,16 @@
     <h3 class="mb-0">Planes de Suscripción</h3>
     <small class="text-muted">{{ total }} plan{{ total|pluralize:"es" }} registrado{{ total|pluralize:"s" }}</small>
   </div>
+  <a href="{% url 'admin_plan_crear' %}" class="btn-new">
+    <span class="material-icons">add</span> Nuevo plan
+  </a>
+</div>
+
+<!-- Nota: precios y futuras compras -->
+<div class="flash flash--info" style="margin-bottom:1.25rem;">
+  <span class="material-icons flash__icon">info</span>
+  Los precios que actualices se aplicarán únicamente a las <strong>futuras compras</strong>;
+  las suscripciones ya contratadas conservan su precio original.
 </div>
 
 <div class="panel-card" style="overflow-x: auto;">
@@ -25,6 +35,7 @@
         <th>Precio</th>
         <th>Duración</th>
         <th>Descripción</th>
+        <th class="text-end">Acciones</th>
       </tr>
     </thead>
     <tbody>
@@ -35,10 +46,13 @@
         <td>${{ p.precio }}</td>
         <td>{{ p.duracion }}</td>
         <td>{{ p.descripcionPlan }}</td>
+        <td class="text-end">
+          <a href="{% url 'admin_plan_editar' p.idTipoPlan %}" class="btn-action btn-action--editar">Editar</a>
+        </td>
       </tr>
       {% empty %}
       <tr>
-        <td colspan="5" class="empty-state">
+        <td colspan="6" class="empty-state">
           <div class="empty-icon">&#128179;</div>
           <p>No se encontraron planes.</p>
         </td>

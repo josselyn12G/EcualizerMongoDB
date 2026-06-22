@@ -5,10 +5,8 @@ from django.views import View
 from django.contrib import messages
 
 # Formularios de autenticación
-from ..forms import LoginForm, AdminLoginForm
-
-# Modelos de usuario
-from ..models import Persona, Usuario, Artista, Administrador
+from usuarios.forms import LoginForm, AdminLoginForm
+from usuarios.mongo_service import session_payload
 
 
 logger = logging.getLogger('ecualizer.auth')
@@ -41,29 +39,13 @@ def _errores_a_popups(request, form):
 # Detecta qué tipo de cuenta tiene la persona
 # ----------------------------------------------------
 def _detectar_tipo(persona):
-
-    # Revisar si es usuario/oyente
-    try:
-        persona.usuario
-        return 'oyente'
-    except Usuario.DoesNotExist:
-        pass
-
-    # Revisar si es artista
-    try:
-        persona.artista
+    tipo = getattr(persona, 'tipo_usuario', '')
+    if tipo == 'admin':
+        return 'admin'
+    if tipo == 'artista':
         return 'artista'
-    except Artista.DoesNotExist:
-        pass
-
-    # Revisar si es administrador
-    try:
-        persona.administrador
-        return 'administrador'
-    except Administrador.DoesNotExist:
-        pass
-
-    # Si no coincide con ningún tipo
+    if tipo == 'oyente':
+        return 'oyente'
     return 'desconocido'
 
 
@@ -75,6 +57,7 @@ def _redirect_por_tipo(tipo):
     mapa = {
         'oyente': 'dashboard_oyente',
         'artista': 'dashboard_artista',
+        'admin': 'admin_dashboard',
         'administrador': 'admin_dashboard',
     }
 
@@ -115,9 +98,7 @@ class LoginView(View):
 
             print("SESION YA EXISTENTE")
 
-            return _redirect_por_tipo(
-                request.session.get('tipo_usuario', '')
-            )
+            return _redirect_por_tipo(request.session.get('tipo_usuario', ''))
 
         # Mostrar formulario vacío
         return render(
@@ -146,15 +127,13 @@ class LoginView(View):
             persona = form.get_persona()
             tipo = _detectar_tipo(persona)
 
-            logger.info('LOGIN persona=%s tipo=%s', persona.correo, tipo)
+            logger.info('LOGIN persona=%s tipo=%s', getattr(persona, 'correo', ''), tipo)
 
-            request.session['usuario_id'] = persona.id_usuario
-            request.session['usuario_nombre'] = persona.primer_nombre
-            request.session['tipo_usuario'] = tipo
+            request.session.update(session_payload(persona))
 
             messages.success(
                 request,
-                f'¡Hola {persona.primer_nombre}! Sesión iniciada.'
+                f'¡Hola {getattr(persona, "primer_nombre", "") }! Sesión iniciada.'
             )
             return _redirect_por_tipo(tipo)
 
@@ -214,7 +193,7 @@ class AdminLoginView(View):
         print("GET ADMIN LOGIN")
 
         # Si ya está logueado como admin
-        if request.session.get('tipo_usuario') == 'administrador':
+        if request.session.get('tipo_usuario') in ('admin', 'administrador'):
 
             print("ADMIN YA AUTENTICADO")
 
@@ -238,9 +217,8 @@ class AdminLoginView(View):
         if form.is_valid():
             logger.info('ADMIN LOGIN form válido')
             persona = form.get_persona()
-            request.session['usuario_id'] = persona.id_usuario
-            request.session['usuario_nombre'] = persona.primer_nombre
-            request.session['tipo_usuario'] = 'administrador'
+            request.session.update(session_payload(persona))
+            request.session['tipo_usuario'] = 'admin'
             messages.success(request, 'Sesión de administrador iniciada.')
             return redirect('admin_dashboard')
 
