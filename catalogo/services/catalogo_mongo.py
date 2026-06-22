@@ -192,3 +192,96 @@ def eliminar_album(pk, artista_id=None):
     _col('Cancion').delete_many({'albumId': _album_join_id(doc)})
     _col('Albums').delete_one({'_id': doc['_id']})
     return doc.get('tituloAlbum')
+
+
+# ══════════════════════════════════════════════════════════════════════
+# GÉNEROS EMBEBIDOS (admin)
+# ══════════════════════════════════════════════════════════════════════
+def listar_generos_mongo(busqueda=None):
+    """Lista todos los géneros distintos con conteo de canciones."""
+    pipeline = [
+        {'$unwind': '$generos'},
+        {'$group': {
+            '_id': '$generos.nombreGenero',
+            'total_canciones': {'$sum': 1},
+        }},
+        {'$sort': {'_id': 1}},
+    ]
+    items = list(_col('Cancion').aggregate(pipeline))
+    if busqueda:
+        q = busqueda.lower()
+        items = [i for i in items if q in (i['_id'] or '').lower()]
+    return [{
+        'idGeneroMusical': i['_id'],
+        'nombreGenero':    i['_id'],
+        'totalCanciones':  i['total_canciones'],
+    } for i in items]
+
+
+def renombrar_genero_mongo(nombre_actual, nombre_nuevo):
+    """Renombra un género en todos los documentos Cancion."""
+    nombre_nuevo = (nombre_nuevo or '').strip()
+    if not nombre_nuevo:
+        return False
+    _col('Cancion').update_many(
+        {'generos.nombreGenero': nombre_actual},
+        {'$set': {'generos.$[g].nombreGenero': nombre_nuevo}},
+        array_filters=[{'g.nombreGenero': nombre_actual}],
+    )
+    return True
+
+
+def eliminar_genero_mongo(nombre):
+    """Elimina un género de todos los documentos Cancion."""
+    _col('Cancion').update_many(
+        {'generos.nombreGenero': nombre},
+        {'$pull': {'generos': {'nombreGenero': nombre}}},
+    )
+    return True
+
+
+# ══════════════════════════════════════════════════════════════════════
+# TIPOS DE ÁLBUM EMBEBIDOS (admin)
+# ══════════════════════════════════════════════════════════════════════
+def listar_tipos_album_mongo(busqueda=None):
+    """Lista todos los tipos de álbum distintos con conteo."""
+    pipeline = [
+        {'$group': {
+            '_id': '$tipoAlbum.nombreTipo',
+            'descripcion': {'$first': '$tipoAlbum.descripcionTipo'},
+            'total_albumes': {'$sum': 1},
+        }},
+        {'$sort': {'_id': 1}},
+    ]
+    items = list(_col('Albums').aggregate(pipeline))
+    if busqueda:
+        q = busqueda.lower()
+        items = [i for i in items if q in (i['_id'] or '').lower()]
+    return [{
+        'idTipoAlbum':   i['_id'],
+        'nombreTipo':    i['_id'],
+        'descripcionTipo': i.get('descripcion') or '',
+        'totalAlbumes':  i['total_albumes'],
+    } for i in items]
+
+
+def renombrar_tipo_album_mongo(nombre_actual, nombre_nuevo):
+    """Renombra un tipo de álbum en todos los documentos Albums."""
+    nombre_nuevo = (nombre_nuevo or '').strip()
+    if not nombre_nuevo:
+        return False
+    _col('Albums').update_many(
+        {'tipoAlbum.nombreTipo': nombre_actual},
+        {'$set': {'tipoAlbum.nombreTipo': nombre_nuevo}},
+    )
+    return True
+
+
+def agregar_tipo_album_mongo(nombre, descripcion=''):
+    """Crea un nuevo tipo de álbum (se usará al crear/editar álbumes)."""
+    # En MongoDB los tipos son strings embebidos; solo validamos que no exista.
+    existentes = _col('Albums').distinct('tipoAlbum.nombreTipo')
+    nombre = (nombre or '').strip()
+    if not nombre or nombre in existentes:
+        return False
+    return True  # El tipo se usará al siguiente álbum que se cree con ese nombre

@@ -1,4 +1,4 @@
-{% extends "usuarios/artista/base_artista.html" %}
+﻿{% extends "usuarios/artista/base_artista.html" %}
 {% load static %}
 
 {% block title %}Mis Canciones — Ecualizer{% endblock %}
@@ -42,8 +42,8 @@
   .field-select:focus,
   .field-textarea:focus {
     background: rgba(255,255,255,0.10);
-    border-color: rgba(249,115,22,0.45);
-    box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+    border-color: rgba(59,130,246,0.45);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
   }
   .field-textarea { min-height: 90px; resize: vertical; }
 
@@ -289,19 +289,19 @@
       user-select: none;
     }
     .genre-chip:hover {
-      background: rgba(249,115,22,0.12);
-      border-color: rgba(249,115,22,0.30);
+      background: rgba(59,130,246,0.12);
+      border-color: rgba(59,130,246,0.30);
       color: var(--accent);
     }
     .genre-chip .material-icons { font-size: 0.85rem; }
     .genre-chip--active {
-      background: linear-gradient(135deg, #f97316, #ea580c);
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
       border-color: transparent;
       color: #fff;
-      box-shadow: 0 4px 12px rgba(249,115,22,0.30);
+      box-shadow: 0 4px 12px rgba(59,130,246,0.30);
     }
     .genre-chip--active:hover {
-      background: linear-gradient(135deg, #fb923c, #ea580c);
+      background: linear-gradient(135deg, #60a5fa, #2563eb);
       color: #fff;
     }
     .genre-chip__remove {

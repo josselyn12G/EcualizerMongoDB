@@ -1,31 +1,36 @@
 """
-Vistas de Cancion para el ARTISTA.
-
-SPs usados:
-  - Catalogo.SP_ListarCanciones                   → ArtistaCancionListView
-  - Analitica.sp_ReporteReproduccionesPorCancion  → ArtistaCancionListView (KPI)
-  - Catalogo.SP_CrearCancion                      → ArtistaCancionCreateView
-  - Catalogo.SP_EditarCancion                     → ArtistaCancionUpdateView
-  - Catalogo.SP_DesactivarCancion                 → ArtistaCancionDeactivateView
+Vistas de Cancion para el ARTISTA (migradas a MongoDB).
 """
 
+from types import SimpleNamespace
+
 from django.views.generic import View
-from django.views.generic.edit import FormView
-from django.shortcuts import redirect, get_object_or_404, render
-from django.urls import reverse_lazy
+from django.shortcuts import redirect, render
 from django.contrib import messages
-from django.db import DatabaseError
 
 from usuarios.mixins import RequiereArtista
-from ...models import Cancion, Album, GeneroMusical
-from ...forms import CancionCreateForm, CancionUpdateForm
-from ...services import (
-    sp_crear_cancion,
-    sp_editar_cancion,
-    sp_listar_canciones,
-    sp_desactivar_cancion,
-    sp_reporte_reproducciones_por_cancion,
+from ...services.cancion_mongo import (
+    listar_canciones,
+    listar_generos_disponibles,
+    get_cancion_ns,
+    crear_cancion,
+    actualizar_cancion,
+    desactivar_cancion,
 )
+from ...services.catalogo_mongo import listar_albumes
+from ...forms.mongo_forms import MongoCancionForm
+
+
+def _album_choices(artista_id):
+    albumes = listar_albumes(artista_id=artista_id, estado='activo')
+    return [('', '-- Selecciona un álbum --')] + [
+        (a['idAlbum'], a['tituloAlbum']) for a in albumes
+    ]
+
+
+def _generos_actuales(cancion_ns):
+    """Devuelve set de nombres de género de un namespace de canción."""
+    return {g.nombre_genero for g in (getattr(cancion_ns, 'generos', None) or [])}
 
 
 # ──────────────────────────────────────────────────────────
@@ -40,46 +45,32 @@ class ArtistaCancionListView(RequiereArtista, View):
         album_id = request.GET.get('album') or None
         estado = request.GET.get('estado') or None
 
-        # SP: SP_ListarCanciones (defensivo: si el SP no existe aún o
-        # devuelve error, no rompemos la pantalla)
         try:
-            canciones = sp_listar_canciones(
+            canciones = listar_canciones(
                 artista_id=artista_id,
                 album_id=album_id,
                 estado=estado,
                 busqueda=busqueda,
             )
-        except DatabaseError as e:
+        except Exception as e:
             messages.error(request, f'No se pudo cargar el listado de canciones: {e}')
             canciones = []
 
-        # SP existente: sp_ReporteReproduccionesPorCancion (KPI)
-        try:
-            reproducciones = sp_reporte_reproducciones_por_cancion(
-                id_artista=artista_id,
-                id_album=album_id,
-                periodo='mes',
-            )
-        except DatabaseError:
-            reproducciones = []
-
-        # Álbumes del artista para el filtro
-        try:
-            albumes_del_artista = list(Album.objects.filter(
-                artista_id=artista_id,
-                estado_album='activo',
-            ))
-        except DatabaseError:
-            albumes_del_artista = []
+        albumes_raw = listar_albumes(artista_id=artista_id)
+        albumes = [
+            SimpleNamespace(pk=a['idAlbum'], titulo_album=a['tituloAlbum'])
+            for a in albumes_raw
+        ]
 
         return render(request, self.template_name, {
             'canciones': canciones,
-            'reproducciones_mes': reproducciones,
-            'albumes': albumes_del_artista,
+            'reproducciones_mes': [],
+            'albumes': albumes,
             'busqueda': busqueda or '',
-            'album_id': int(album_id) if album_id else '',
+            'album_id': album_id or '',
             'estado_actual': estado or '',
-            'estados': Cancion.ESTADO_CHOICES,
+            'estados': [('activa', 'Activa'), ('inactiva', 'Inactiva'),
+                        ('bloqueada', 'Bloqueada')],
             'modo': 'list',
         })
 
@@ -92,46 +83,49 @@ class ArtistaCancionCreateView(RequiereArtista, View):
 
     def get(self, request):
         artista_id = request.session['usuario_id']
-        form = CancionCreateForm(artista_id=artista_id)
+        form = MongoCancionForm(album_choices=_album_choices(artista_id))
         return render(request, self.template_name, {
             'form': form,
             'modo': 'create',
-            'all_generos': list(GeneroMusical.objects.all()),
+            'all_generos': listar_generos_disponibles(),
             'generos_actuales_ids': set(),
         })
 
     def post(self, request):
         artista_id = request.session['usuario_id']
-        form = CancionCreateForm(request.POST, artista_id=artista_id)
-        # IDs que vinieron del front (chips activos) — para repintar si falla
-        seleccionados = set(int(x) for x in request.POST.getlist('generos') if x.isdigit())
+        choices = _album_choices(artista_id)
+        form = MongoCancionForm(request.POST, album_choices=choices)
+        generos_sel = request.POST.getlist('generos') or []
         if not form.is_valid():
             return render(request, self.template_name, {
                 'form': form, 'modo': 'create',
-                'all_generos': list(GeneroMusical.objects.all()),
-                'generos_actuales_ids': seleccionados,
+                'all_generos': listar_generos_disponibles(),
+                'generos_actuales_ids': set(generos_sel),
             })
 
         data = form.cleaned_data
+        genero_str = data.get('genero', '').strip()
+        generos = list({g for g in generos_sel if g}) or ([genero_str] if genero_str else [])
+
         try:
-            # SP: SP_CrearCancion
-            sp_crear_cancion(
-                nombre=data['nombre_cancion'],
+            crear_cancion(
+                artista_id=artista_id,
+                album_id=data['album_id'],
+                nombre=data['titulo'],
                 duracion=data['duracion'],
-                fecha_lanzamiento=data['fecha_lanzamiento'],
-                calidad_kbps=data['calidad_kbps'],
-                letra=data.get('letra_cancion') or '',
-                album_id=data['album'].pk,
+                fecha=data.get('fecha_lanzamiento'),
+                calidad=data['calidad'],
                 numero_pista=data['numero_pista'],
-                generos_ids=[g.pk for g in data.get('generos', [])],
+                letra=data.get('letra') or '',
+                generos=generos,
             )
             messages.success(request, 'Canción creada correctamente.')
-        except DatabaseError as e:
+        except Exception as e:
             messages.error(request, f'Error al crear canción: {e}')
             return render(request, self.template_name, {
                 'form': form, 'modo': 'create',
-                'all_generos': list(GeneroMusical.objects.all()),
-                'generos_actuales_ids': seleccionados,
+                'all_generos': listar_generos_disponibles(),
+                'generos_actuales_ids': set(generos_sel),
             })
         return redirect('catalogo:artista_cancion_list')
 
@@ -143,56 +137,92 @@ class ArtistaCancionUpdateView(RequiereArtista, View):
     template_name = 'catalogo/artista/artista_cancion.html'
 
     def _get_cancion(self, pk, artista_id):
-        cancion = get_object_or_404(Cancion, pk=pk)
-        if cancion.album.artista_id != artista_id:
-            from django.http import Http404
-            raise Http404('No tienes acceso a esta canción.')
-        return cancion
+        ns = get_cancion_ns(pk)
+        if not ns:
+            return None
+        artistas_ids = [
+            str(a.get('artistaId', ''))
+            for a in (getattr(ns, '_artistas_raw', None) or [])
+        ]
+        return ns
+
+    def _load_cancion(self, pk, artista_id):
+        """Devuelve SimpleNamespace o None si no pertenece al artista."""
+        from ...services.cancion_mongo import _find_cancion, _oid
+        raw = _find_cancion(pk)
+        if not raw:
+            return None
+        artista_oid = _oid(artista_id)
+        artistas = raw.get('artistas') or []
+        if not any(a.get('artistaId') == artista_oid for a in artistas):
+            return None
+        return get_cancion_ns(pk)
 
     def get(self, request, pk):
         artista_id = request.session['usuario_id']
-        cancion = self._get_cancion(pk, artista_id)
-        form = CancionUpdateForm(instance=cancion, artista_id=artista_id)
-        actuales = set(cancion.generos.values_list('pk', flat=True))
+        cancion = self._load_cancion(pk, artista_id)
+        if not cancion:
+            messages.error(request, 'Canción no encontrada o sin acceso.')
+            return redirect('catalogo:artista_cancion_list')
+
+        choices = _album_choices(artista_id)
+        initial = {
+            'titulo': cancion.nombre_cancion,
+            'album_id': cancion.album.pk,
+            'duracion': cancion.duracion,
+            'numero_pista': cancion.numero_pista,
+            'calidad': cancion.calidad_kbps,
+            'letra': cancion.letra_cancion or '',
+        }
+        form = MongoCancionForm(initial=initial, album_choices=choices)
         return render(request, self.template_name, {
-            'form': form, 'cancion': cancion, 'modo': 'update',
-            'all_generos': list(GeneroMusical.objects.all()),
-            'generos_actuales_ids': actuales,
+            'form': form,
+            'cancion': cancion,
+            'modo': 'update',
+            'all_generos': listar_generos_disponibles(),
+            'generos_actuales_ids': _generos_actuales(cancion),
         })
 
     def post(self, request, pk):
         artista_id = request.session['usuario_id']
-        cancion = self._get_cancion(pk, artista_id)
-        form = CancionUpdateForm(request.POST, instance=cancion, artista_id=artista_id)
-        seleccionados = set(int(x) for x in request.POST.getlist('generos') if x.isdigit())
+        cancion = self._load_cancion(pk, artista_id)
+        if not cancion:
+            messages.error(request, 'Canción no encontrada o sin acceso.')
+            return redirect('catalogo:artista_cancion_list')
+
+        choices = _album_choices(artista_id)
+        form = MongoCancionForm(request.POST, album_choices=choices)
+        generos_sel = request.POST.getlist('generos') or []
         if not form.is_valid():
             return render(request, self.template_name, {
                 'form': form, 'cancion': cancion, 'modo': 'update',
-                'all_generos': list(GeneroMusical.objects.all()),
-                'generos_actuales_ids': seleccionados,
+                'all_generos': listar_generos_disponibles(),
+                'generos_actuales_ids': set(generos_sel),
             })
+
         data = form.cleaned_data
+        genero_str = data.get('genero', '').strip()
+        generos = list({g for g in generos_sel if g}) or ([genero_str] if genero_str else None)
+
         try:
-            # SP: SP_EditarCancion (artista_id → valida ownership)
-            sp_editar_cancion(
-                id_cancion=cancion.pk,
-                nombre=data['nombre_cancion'],
+            actualizar_cancion(
+                pk=pk,
+                nombre=data['titulo'],
                 duracion=data['duracion'],
-                fecha_lanzamiento=data['fecha_lanzamiento'],
-                calidad_kbps=data['calidad_kbps'],
-                letra=data.get('letra_cancion') or '',
+                fecha=data.get('fecha_lanzamiento'),
+                calidad=data['calidad'],
                 numero_pista=data['numero_pista'],
-                estado=None,
-                generos_ids=[g.pk for g in data.get('generos', [])],
+                letra=data.get('letra') or '',
+                generos=generos,
                 artista_id=artista_id,
             )
             messages.success(request, 'Canción actualizada.')
-        except DatabaseError as e:
+        except Exception as e:
             messages.error(request, f'Error al editar: {e}')
             return render(request, self.template_name, {
                 'form': form, 'cancion': cancion, 'modo': 'update',
-                'all_generos': list(GeneroMusical.objects.all()),
-                'generos_actuales_ids': seleccionados,
+                'all_generos': listar_generos_disponibles(),
+                'generos_actuales_ids': set(generos_sel),
             })
         return redirect('catalogo:artista_cancion_list')
 
@@ -203,13 +233,9 @@ class ArtistaCancionUpdateView(RequiereArtista, View):
 class ArtistaCancionDeactivateView(RequiereArtista, View):
     def post(self, request, pk):
         artista_id = request.session['usuario_id']
-        cancion = get_object_or_404(Cancion, pk=pk)
-        if cancion.album.artista_id != artista_id:
-            messages.error(request, 'No puedes desactivar canciones de otros artistas.')
-            return redirect('catalogo:artista_cancion_list')
-        try:
-            sp_desactivar_cancion(id_cancion=cancion.pk, ejecutor_id=artista_id)
-            messages.success(request, f'Canción "{cancion.nombre_cancion}" desactivada.')
-        except DatabaseError as e:
-            messages.error(request, f'Error: {e}')
+        nombre = desactivar_cancion(pk, artista_id=artista_id)
+        if nombre:
+            messages.success(request, f'Canción "{nombre}" desactivada.')
+        else:
+            messages.error(request, 'No puedes desactivar esta canción.')
         return redirect('catalogo:artista_cancion_list')

@@ -1,4 +1,4 @@
-{% extends "usuarios/admin/base_admin.html" %}
+﻿{% extends "usuarios/admin/base_admin.html" %}
 {% block title %}Personas &mdash; Ecualizer Admin{% endblock %}
 {% block topbar_title %}Personas{% endblock %}
 {% block nav_personas %}active{% endblock %}
@@ -85,7 +85,7 @@
           <td>{{ p.correo }}</td>
           <td>
             {% for t in p.tipos %}
-              <span class="badge" style="background: var(--orange-bg); color: var(--orange); border:1px solid rgba(249,115,22,0.25); margin-right:0.2rem;">
+              <span class="badge" style="background: var(--orange-bg); color: var(--orange); border:1px solid rgba(59,130,246,0.25); margin-right:0.2rem;">
                 {{ t|capfirst }}
               </span>
             {% empty %}

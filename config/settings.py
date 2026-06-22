@@ -199,19 +199,23 @@ SPOTIFY_CLIENT_ID = '7a24e29fb30b4cf5a46861df271d7784'
 SPOTIFY_CLIENT_SECRET = '28c0a8ed5c6242538c2c273da17b6f6f'
 
 # ─────────────────────────────────────────────
-# Caché (acelera las secciones del oyente: Para Ti, Explorar,
-# Tendencias y Novedades, que consultan la API de Spotify).
-# Caché en memoria del proceso; tras la primera carga, las
-# siguientes son instantáneas hasta que expira el TTL.
+# Caché en archivo — persiste entre reinicios del servidor.
+# Las secciones del oyente (Para Ti, Tendencias, Novedades, Explorar)
+# no vuelven a llamar a Spotify hasta que expire el TTL, incluso
+# si el servidor se reinicia.
 # ─────────────────────────────────────────────
+import os as _os
+_CACHE_DIR = _os.path.join(BASE_DIR, '.django_cache')
+_os.makedirs(_CACHE_DIR, exist_ok=True)
+
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'ecualizer-cache',
-        'TIMEOUT': 60 * 60,            # 1 hora por defecto
-        'OPTIONS': {'MAX_ENTRIES': 500},
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': _CACHE_DIR,
+        'TIMEOUT': 60 * 60 * 6,        # 6 horas — Spotify no cambia tan rápido
+        'OPTIONS': {'MAX_ENTRIES': 300},
     }
 }
 
 # Segundos que se cachean los resultados de las secciones del oyente.
-SPOTIFY_CACHE_TTL = 60 * 60  # 1 hora
+SPOTIFY_CACHE_TTL = 60 * 60 * 6  # 6 horas

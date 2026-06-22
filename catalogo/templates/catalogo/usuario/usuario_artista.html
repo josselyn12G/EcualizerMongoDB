@@ -1,4 +1,4 @@
-{% extends "usuarios/oyente/base_oyente.html" %}
+﻿{% extends "usuarios/oyente/base_oyente.html" %}
 {% load static %}
 
 {% block title %}Artistas — Ecualizer{% endblock %}
@@ -39,7 +39,7 @@
     color: #fff;
     background:
       linear-gradient(110deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.25) 60%, transparent 100%),
-      linear-gradient(135deg, #f97316 0%, #ea580c 45%, #7c2d12 100%);
+      linear-gradient(135deg, #3b82f6 0%, #2563eb 45%, #1e3a8a 100%);
     margin-bottom: 1.5rem;
   }
   .curated-hero__photo {
@@ -75,14 +75,14 @@
   .curated-hero__actions { display: flex; gap: 0.55rem; }
   .btn-play {
     display: inline-flex; align-items: center; gap: 0.45rem;
-    background: #f97316; color: #fff;
+    background: #3b82f6; color: #fff;
     font-weight: 700; font-size: 0.85rem;
     padding: 0.6rem 1.5rem; border-radius: 50px; border: none;
-    box-shadow: 0 8px 22px rgba(249,115,22,0.40);
+    box-shadow: 0 8px 22px rgba(59,130,246,0.40);
     transition: all 0.18s ease;
     cursor: pointer;
   }
-  .btn-play:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(249,115,22,0.55); }
+  .btn-play:hover { transform: translateY(-1px); box-shadow: 0 12px 30px rgba(59,130,246,0.55); }
   .btn-play .material-icons { font-size: 1.05rem; }
   .btn-ghost-pill {
     display: inline-flex; align-items: center; gap: 0.4rem;
@@ -126,7 +126,7 @@
   }
   .artist-card:hover { transform: translateY(-3px); }
   .artist-card:hover .artist-card__photo {
-    box-shadow: 0 14px 32px rgba(249,115,22,0.35);
+    box-shadow: 0 14px 32px rgba(59,130,246,0.35);
   }
   .artist-card__photo {
     aspect-ratio: 1;
@@ -156,7 +156,7 @@
     color: #fff;
     background:
       linear-gradient(115deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.20) 60%, transparent 100%),
-      linear-gradient(135deg, #f97316 0%, #ea580c 50%, #7c2d12 100%);
+      linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1e3a8a 100%);
     display: grid;
     grid-template-columns: 220px 1fr;
     gap: 1.5rem;
@@ -216,12 +216,12 @@
   }
   .album-tile:hover {
     transform: translateY(-3px);
-    border-color: rgba(249,115,22,0.30);
-    box-shadow: 0 12px 28px rgba(249,115,22,0.18);
+    border-color: rgba(59,130,246,0.30);
+    box-shadow: 0 12px 28px rgba(59,130,246,0.18);
   }
   .album-tile__cover {
     aspect-ratio: 1;
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     background-size: cover; background-position: center;
   }
   .album-tile__body { padding: 0.7rem 0.85rem 0.85rem; }
@@ -325,7 +325,7 @@
       <span class="artist-hero__tag"><span class="material-icons">verified</span> Verified Artist</span>
       <h1 class="artist-hero__name">{{ artista.nombre_artistico }}</h1>
       <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem; color:rgba(255,255,255,0.88);">
-        <span class="material-icons" style="font-size:1rem; color:#f97316;">album</span>
+        <span class="material-icons" style="font-size:1rem; color:#3b82f6;">album</span>
         {{ total_albumes }} álbum{{ total_albumes|pluralize:"es" }} en Ecualizer
       </div>
       {% if artista.biografia %}

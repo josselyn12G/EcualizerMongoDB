@@ -1,4 +1,4 @@
-{% extends "usuarios/oyente/base_oyente.html" %}
+﻿{% extends "usuarios/oyente/base_oyente.html" %}
 {% load static %}
 
 {% block title %}{{ playlist.nombrePlaylist }} — Ecualizer{% endblock %}
@@ -15,7 +15,7 @@
     padding: 1.75rem 1.75rem 1.5rem;
     min-height: 200px;
     margin-bottom: 1.25rem;
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 40%, #7c2d12 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 40%, #1e3a8a 100%);
     color: #fff;
     display: flex; flex-direction: column; justify-content: flex-end;
   }
@@ -46,14 +46,14 @@
   .pop-row__cover { width:42px; height:42px; border-radius:8px; background:#1a1a1a; display:flex; align-items:center; justify-content:center; }
   .pop-row__cover .material-icons { font-size:1.2rem; color:rgba(255,255,255,0.3); }
   .pop-row__cover--play { cursor:pointer; transition:background 0.15s; }
-  .pop-row__cover--play:hover { background:#f97316; }
+  .pop-row__cover--play:hover { background:#3b82f6; }
   .pop-row__cover--play:hover .material-icons { color:#fff; }
   .btn-play-all {
     display:inline-flex; align-items:center; gap:0.4rem;
-    background:#f97316; color:#fff; border:none; border-radius:50px;
+    background:#3b82f6; color:#fff; border:none; border-radius:50px;
     padding:0.6rem 1.6rem; font-size:0.92rem; font-weight:700; cursor:pointer;
   }
-  .btn-play-all:hover { background:#ea580c; }
+  .btn-play-all:hover { background:#2563eb; }
   .btn-play-all .material-icons { font-size:1.2rem; }
   .pop-row__title { color:#fff; font-weight:600; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .pop-row__sub   { font-size:0.74rem; color:var(--text-muted); }
@@ -79,11 +79,11 @@
   }
   .add-cancion-form select option { background:#1a1a2e; }
   .btn-add {
-    background:#f97316; color:#fff; border:none;
+    background:#3b82f6; color:#fff; border:none;
     border-radius:10px; padding:0.6rem 1.25rem;
     font-size:0.88rem; font-weight:600; cursor:pointer;
   }
-  .btn-add:hover { background:#ea580c; }
+  .btn-add:hover { background:#2563eb; }
 
   /* ── Buscador para agregar canciones ── */
   .add-search {
@@ -107,12 +107,12 @@
   .add-song-name   { color:#fff; font-size:0.88rem; font-weight:600; }
   .add-song-artist { color:rgba(255,255,255,0.5); font-size:0.76rem; }
   .btn-add-mini {
-    background:rgba(249,115,22,0.15); color:#f97316;
-    border:1px solid rgba(249,115,22,0.4); border-radius:50%;
+    background:rgba(59,130,246,0.15); color:#3b82f6;
+    border:1px solid rgba(59,130,246,0.4); border-radius:50%;
     width:32px; height:32px; cursor:pointer;
     display:inline-flex; align-items:center; justify-content:center; flex-shrink:0;
   }
-  .btn-add-mini:hover { background:#f97316; color:#fff; }
+  .btn-add-mini:hover { background:#3b82f6; color:#fff; }
   .btn-add-mini .material-icons { font-size:1.05rem; }
   .add-song-empty { color:rgba(255,255,255,0.4); font-size:0.85rem; text-align:center; padding:1rem; }
 </style>

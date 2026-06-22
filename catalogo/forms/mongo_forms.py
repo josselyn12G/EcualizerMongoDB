@@ -51,6 +51,9 @@ class MongoCancionForm(forms.Form):
                                   widget=forms.NumberInput(attrs=_INPUT))
     numero_pista = forms.IntegerField(label='Número de pista', min_value=1,
                                       widget=forms.NumberInput(attrs=_INPUT))
+    fecha_lanzamiento = forms.DateField(
+        label='Fecha de lanzamiento', required=False,
+        widget=forms.DateInput(attrs={**_INPUT, 'type': 'date'}))
     calidad = forms.ChoiceField(label='Calidad', choices=CALIDAD_CHOICES,
                                 widget=forms.Select(attrs=_SELECT))
     genero = forms.CharField(label='Género principal', required=False,
@@ -67,3 +70,24 @@ class MongoCancionForm(forms.Form):
 class MongoCancionAdminForm(MongoCancionForm):
     estado = forms.ChoiceField(label='Estado', choices=ESTADO_CANCION_CHOICES,
                                widget=forms.Select(attrs=_SELECT))
+
+
+class MongoCancionAdminEditForm(forms.Form):
+    """Editar canción desde panel admin (sin cambio de álbum, géneros manejados aparte)."""
+    titulo = forms.CharField(label='Título', max_length=80,
+                             widget=forms.TextInput(attrs=_INPUT))
+    duracion = forms.IntegerField(label='Duración (segundos)', min_value=1,
+                                  widget=forms.NumberInput(attrs=_INPUT))
+    numero_pista = forms.IntegerField(label='Número de pista', min_value=1,
+                                      widget=forms.NumberInput(attrs=_INPUT))
+    fecha_lanzamiento = forms.DateField(
+        label='Fecha de lanzamiento', required=False,
+        widget=forms.DateInput(attrs={**_INPUT, 'type': 'date'}))
+    calidad = forms.ChoiceField(label='Calidad', choices=CALIDAD_CHOICES,
+                                widget=forms.Select(attrs=_SELECT))
+    estado = forms.ChoiceField(label='Estado', choices=ESTADO_CANCION_CHOICES,
+                               widget=forms.Select(attrs=_SELECT))
+    letra = forms.CharField(label='Letra (opcional)', required=False,
+                            widget=forms.Textarea(attrs=_AREA))
+    genero_nuevo = forms.CharField(label='Agregar género', required=False,
+                                   widget=forms.TextInput(attrs={**_INPUT, 'placeholder': 'Ej: Rock Alternativo'}))

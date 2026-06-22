@@ -1,29 +1,24 @@
 """
-Vistas de Album para el ADMINISTRADOR.
-
-SPs usados:
-  - Catalogo.SP_ListarAlbumes      → AdminAlbumListView (sin filtro de artista)
-  - Catalogo.SP_EditarAlbum        → AdminAlbumUpdateView (cambia estado)
-  - Catalogo.SP_DesactivarAlbum    → AdminAlbumUpdateView (acción "desactivar")
+Vistas de Album para el ADMINISTRADOR — migradas a MongoDB.
 """
 
 from django.views.generic import View
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.db import DatabaseError
 
 from usuarios.mixins import RequiereAdmin
-from ...models import Album, Cancion
-from ...forms import AlbumAdminUpdateForm, AlbumReportForm
-from ...services import (
-    sp_listar_albumes,
-    sp_editar_album,
-    sp_desactivar_album,
+from ...forms.mongo_forms import MongoAlbumAdminForm, AlbumReporteForm
+from ...services.catalogo_mongo import (
+    listar_albumes,
+    get_album_ns,
+    get_album_detalle,
+    actualizar_album,
+    desactivar_album,
 )
 
 
 # ──────────────────────────────────────────────────────────
-# LIST · ve todos los álbumes (todos los estados)
+# LIST
 # ──────────────────────────────────────────────────────────
 class AdminAlbumListView(RequiereAdmin, View):
     template_name = 'catalogo/administrador/admin_album.html'
@@ -31,116 +26,105 @@ class AdminAlbumListView(RequiereAdmin, View):
     def get(self, request):
         busqueda = request.GET.get('q') or None
         estado = request.GET.get('estado') or None
-        # SP: SP_ListarAlbumes (sin filtro de artista → admin ve todos)
-        albumes = sp_listar_albumes(
-            artista_id=None,
-            estado=estado,
-            busqueda=busqueda,
-        )
+        albumes = listar_albumes(artista_id=None, estado=estado, busqueda=busqueda)
         return render(request, self.template_name, {
             'albumes': albumes,
             'busqueda': busqueda or '',
             'estado_actual': estado or '',
-            'estados': Album.ESTADO_CHOICES,
+            'estados': [('activo', 'Activo'), ('inactivo', 'Inactivo'), ('eliminado', 'Eliminado')],
             'modo': 'list',
         })
 
 
 # ──────────────────────────────────────────────────────────
-# UPDATE (admin)
-# ──────────────────────────────────────────────────────────
-class AdminAlbumUpdateView(RequiereAdmin, View):
-    template_name = 'catalogo/administrador/admin_album.html'
-
-    def get(self, request, pk):
-        album = get_object_or_404(Album, pk=pk)
-        form = AlbumAdminUpdateForm(instance=album)
-        return render(request, self.template_name, {
-            'form': form, 'album': album, 'modo': 'update',
-        })
-
-    def post(self, request, pk):
-        album = get_object_or_404(Album, pk=pk)
-        form = AlbumAdminUpdateForm(request.POST, instance=album)
-        if not form.is_valid():
-            return render(request, self.template_name, {
-                'form': form, 'album': album, 'modo': 'update',
-            })
-        data = form.cleaned_data
-        try:
-            # SP: SP_EditarAlbum (sin artista_id → admin pasa NULL)
-            sp_editar_album(
-                id_album=album.pk,
-                titulo=data['titulo_album'],
-                fecha_lanzamiento=data['fecha_lanzamiento_album'],
-                descripcion=data.get('descripcion_album') or '',
-                tipo_album_id=data['tipo_album'].pk,
-                estado=data['estado_album'],
-                artista_id=None,
-            )
-            messages.success(request, 'Álbum actualizado por el admin.')
-        except DatabaseError as e:
-            messages.error(request, f'Error: {e}')
-            return render(request, self.template_name, {
-                'form': form, 'album': album, 'modo': 'update',
-            })
-        return redirect('catalogo:admin_album_list')
-
-
-# ──────────────────────────────────────────────────────────
-# DETAIL · Ver detalle del álbum (incluye canciones)
+# DETAIL
 # ──────────────────────────────────────────────────────────
 class AdminAlbumDetailView(RequiereAdmin, View):
     template_name = 'catalogo/administrador/admin_album.html'
 
     def get(self, request, pk):
-        album = get_object_or_404(
-            Album.objects.select_related('artista', 'tipo_album'),
-            pk=pk,
-        )
-        canciones = Cancion.objects.filter(album=album).order_by('numero_pista')
+        result = get_album_detalle(pk)
+        if not result:
+            messages.error(request, 'Álbum no encontrado.')
+            return redirect('catalogo:admin_album_list')
+        album, canciones = result
         return render(request, self.template_name, {
             'album': album, 'canciones': canciones, 'modo': 'detail',
         })
 
 
 # ──────────────────────────────────────────────────────────
-# REPORT / DEACTIVATE
+# UPDATE
 # ──────────────────────────────────────────────────────────
-class AdminAlbumReportView(RequiereAdmin, View):
-    """
-    El admin "reporta" un álbum: lo desactiva y envía comentario.
-    Aquí reusamos SP_DesactivarAlbum y guardamos el reporte
-    como un mensaje al artista.
-    """
+class AdminAlbumUpdateView(RequiereAdmin, View):
     template_name = 'catalogo/administrador/admin_album.html'
 
     def get(self, request, pk):
-        album = get_object_or_404(Album, pk=pk)
-        form = AlbumReportForm()
+        album = get_album_ns(pk)
+        if not album:
+            messages.error(request, 'Álbum no encontrado.')
+            return redirect('catalogo:admin_album_list')
+        form = MongoAlbumAdminForm(initial={
+            'titulo': album.titulo_album,
+            'fecha_lanzamiento': album.fecha_lanzamiento_album,
+            'tipo': getattr(album.tipo_album, 'nombre_tipo', 'Album'),
+            'descripcion': album.descripcion_album or '',
+            'estado': album.estado_album,
+        })
+        return render(request, self.template_name, {
+            'form': form, 'album': album, 'modo': 'update',
+        })
+
+    def post(self, request, pk):
+        album = get_album_ns(pk)
+        if not album:
+            messages.error(request, 'Álbum no encontrado.')
+            return redirect('catalogo:admin_album_list')
+        form = MongoAlbumAdminForm(request.POST)
+        if not form.is_valid():
+            return render(request, self.template_name, {
+                'form': form, 'album': album, 'modo': 'update',
+            })
+        d = form.cleaned_data
+        actualizar_album(
+            pk=pk,
+            titulo=d['titulo'],
+            fecha=d['fecha_lanzamiento'],
+            descripcion=d.get('descripcion') or '',
+            tipo=d['tipo'],
+            estado=d.get('estado'),
+        )
+        messages.success(request, 'Álbum actualizado por el admin.')
+        return redirect('catalogo:admin_album_list')
+
+
+# ──────────────────────────────────────────────────────────
+# REPORT / DEACTIVATE
+# ──────────────────────────────────────────────────────────
+class AdminAlbumReportView(RequiereAdmin, View):
+    template_name = 'catalogo/administrador/admin_album.html'
+
+    def get(self, request, pk):
+        album = get_album_ns(pk)
+        if not album:
+            return redirect('catalogo:admin_album_list')
+        form = AlbumReporteForm()
         return render(request, self.template_name, {
             'form': form, 'album': album, 'modo': 'report',
         })
 
     def post(self, request, pk):
-        album = get_object_or_404(Album, pk=pk)
-        form = AlbumReportForm(request.POST)
+        album = get_album_ns(pk)
+        if not album:
+            return redirect('catalogo:admin_album_list')
+        form = AlbumReporteForm(request.POST)
         if not form.is_valid():
             return render(request, self.template_name, {
                 'form': form, 'album': album, 'modo': 'report',
             })
-        admin_id = request.session['usuario_id']
-        try:
-            sp_desactivar_album(id_album=album.pk, ejecutor_id=admin_id)
-            # NOTA: el comentario se guarda en messages framework por ahora.
-            # Cuando exista la tabla Catalogo.ReporteAlbum, llamar a un SP.
-            messages.success(
-                request,
-                f'Álbum reportado y desactivado. Motivo: {form.cleaned_data["motivo"]}'
-            )
-        except DatabaseError as e:
-            messages.error(request, f'Error: {e}')
-            return render(request, self.template_name, {
-                'form': form, 'album': album, 'modo': 'report',
-            })
+        titulo = desactivar_album(pk)
+        messages.success(
+            request,
+            f'Álbum "{titulo}" reportado y desactivado. Motivo: {form.cleaned_data["motivo"]}'
+        )
         return redirect('catalogo:admin_album_list')

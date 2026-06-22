@@ -1,50 +1,47 @@
 """
-Vistas de Album para el USUARIO (oyente).
-
-El oyente solo lee — nunca modifica.
-
-SPs usados:
-  - Catalogo.SP_ListarAlbumes  → UsuarioAlbumListView · solo activos
+Vistas de Album para el USUARIO (oyente) — migradas a MongoDB.
 """
 
 from django.views.generic import View
-from django.shortcuts import render, get_object_or_404
-from django.db import DatabaseError
+from django.shortcuts import render, redirect
 
 from usuarios.mixins import RequiereOyente
-from ...models import Album
 from ...services import (
-    sp_listar_albumes,
     deezer_enrich_albumes,
     deezer_get_album_image,
     deezer_get_artist_image,
 )
-from biblioteca.services import (
-    get_albumes_guardados_ids,
-    is_album_guardado,
-    get_canciones_liked_ids,
-)
+from ...services.catalogo_mongo import listar_albumes, get_album_detalle
+from biblioteca.mongo_service import get_canciones_liked_ids
 
 
-def _enriquecer_canciones_modelo(canciones_qs, cover_url):
-    """Convierte canciones-modelo a dicts simples y agrega la portada heredada del álbum."""
+def _canciones_a_dicts(canciones_ns, cover_url):
+    """Convierte la lista de SimpleNamespace de canciones a dicts para el template."""
     out = []
-    for c in canciones_qs:
+    for c in canciones_ns:
         out.append({
-            'pk': c.pk,
-            'numero_pista': c.numero_pista,
-            'nombre_cancion': c.nombre_cancion,
-            'duracion': c.duracion,
-            'duracion_formateada': c.duracion_formateada,
-            'calidad_kbps': c.calidad_kbps,
-            'total_reproducciones': c.total_reproducciones,
+            'pk': getattr(c, 'pk', None) or getattr(c, 'idCancion', ''),
+            'numero_pista': getattr(c, 'numero_pista', None),
+            'nombre_cancion': getattr(c, 'nombre_cancion', ''),
+            'duracion': getattr(c, 'duracion', 0) or 0,
+            'duracion_formateada': _fmt_duracion(getattr(c, 'duracion', 0) or 0),
+            'calidad_kbps': getattr(c, 'calidad_kbps', None),
+            'total_reproducciones': getattr(c, 'total_reproducciones', 0) or 0,
             'coverUrl': cover_url,
         })
     return out
 
 
+def _fmt_duracion(segundos):
+    try:
+        s = int(segundos)
+        return f'{s // 60}:{s % 60:02d}'
+    except (TypeError, ValueError):
+        return '0:00'
+
+
 # ──────────────────────────────────────────────────────────
-# LIST · álbumes activos
+# LIST
 # ──────────────────────────────────────────────────────────
 class UsuarioAlbumListView(RequiereOyente, View):
     template_name = 'catalogo/usuario/usuario_album.html'
@@ -52,64 +49,49 @@ class UsuarioAlbumListView(RequiereOyente, View):
     def get(self, request):
         busqueda = request.GET.get('q') or None
         try:
-            albumes = sp_listar_albumes(
-                artista_id=None, estado='activo', busqueda=busqueda,
-            )
-        except DatabaseError:
+            albumes = listar_albumes(estado='activo', busqueda=busqueda)
+        except Exception:
             albumes = []
         deezer_enrich_albumes(albumes)
-
-        saved_ids = set()
-        try:
-            saved_ids = get_albumes_guardados_ids(request.session['usuario_id'])
-        except DatabaseError:
-            pass
 
         return render(request, self.template_name, {
             'albumes': albumes,
             'busqueda': busqueda or '',
             'modo': 'list',
-            'saved_ids': saved_ids,
+            'saved_ids': set(),
         })
 
 
 # ──────────────────────────────────────────────────────────
-# DETAIL · vista inline (NO abre ventana nueva)
+# DETAIL
 # ──────────────────────────────────────────────────────────
 class UsuarioAlbumDetailView(RequiereOyente, View):
     template_name = 'catalogo/usuario/usuario_album.html'
 
     def get(self, request, pk):
-        album = get_object_or_404(
-            Album.objects.select_related('artista', 'tipo_album'),
-            pk=pk,
-            estado_album='activo',
-        )
+        result = get_album_detalle(pk)
+        if not result:
+            return redirect('catalogo:usuario_album_list')
+        album, canciones_ns = result
+
+        if getattr(album, 'estado_album', '') != 'activo':
+            return redirect('catalogo:usuario_album_list')
 
         cover_url = deezer_get_album_image(
-            album.titulo_album,
-            album.artista.nombre_artistico,
+            album.titulo_album or '',
+            album.artista.nombre_artistico or '',
         )
-        artist_image = deezer_get_artist_image(album.artista.nombre_artistico)
+        artist_image = deezer_get_artist_image(album.artista.nombre_artistico or '')
 
-        canciones_qs = (
-            album.canciones
-            .filter(estado_cancion='activa')
-            .order_by('numero_pista')
-        )
-        canciones = _enriquecer_canciones_modelo(canciones_qs, cover_url)
+        canciones = _canciones_a_dicts(canciones_ns, cover_url)
 
-        # Duración total aproximada en minutos
         total_seg = sum(c['duracion'] for c in canciones)
         total_min = round(total_seg / 60)
 
-        uid = request.session['usuario_id']
-        saved = False
         liked_ids = set()
         try:
-            saved = is_album_guardado(uid, album.pk)
-            liked_ids = get_canciones_liked_ids(uid)
-        except DatabaseError:
+            liked_ids = get_canciones_liked_ids(request.session.get('usuario_id'))
+        except Exception:
             pass
 
         return render(request, self.template_name, {
@@ -120,7 +102,7 @@ class UsuarioAlbumDetailView(RequiereOyente, View):
             'total_canciones': len(canciones),
             'duracion_total_min': total_min,
             'modo': 'detail',
-            'album_guardado': saved,
+            'album_guardado': False,
             'liked_ids': liked_ids,
         })
 
@@ -134,11 +116,8 @@ class UsuarioAlbumSearchView(RequiereOyente, View):
     def get(self, request):
         q = request.GET.get('q', '').strip()
         try:
-            resultados = sp_listar_albumes(
-                artista_id=None, estado='activo',
-                busqueda=q if q else None,
-            )
-        except DatabaseError:
+            resultados = listar_albumes(estado='activo', busqueda=q if q else None)
+        except Exception:
             resultados = []
         deezer_enrich_albumes(resultados)
 

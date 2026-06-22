@@ -143,16 +143,26 @@ def verify_password(raw_password, stored_password):
     if isinstance(stored_password, bytes):
         stored_password = stored_password.decode('utf-8', errors='ignore')
 
+    # Django hash (PBKDF2, argon2, scrypt)
     if stored_password.startswith('pbkdf2_') or stored_password.startswith('argon2$') or stored_password.startswith('scrypt$'):
         return check_password(raw_password, stored_password)
 
+    # bcrypt
     if stored_password.startswith('$2'):
         try:
             return bcrypt.checkpw(raw_password.encode('utf-8'), stored_password.encode('utf-8'))
-        except ValueError:
+        except (ValueError, Exception):
             return False
 
-    return check_password(raw_password, stored_password)
+    # Texto plano (usuarios creados directamente en MongoDB / Compass)
+    if raw_password == stored_password:
+        return True
+
+    # Último intento: Django hash genérico
+    try:
+        return check_password(raw_password, stored_password)
+    except Exception:
+        return False
 
 
 def authenticate_user(identifier, password, expected_tipo=None):

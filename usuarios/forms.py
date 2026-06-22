@@ -74,13 +74,12 @@ class AdminLoginForm(forms.Form):
         contrasena = cleaned_data.get('contrasena')
 
         if correo and contrasena:
-            persona, error = authenticate_user(
-                correo,
-                contrasena,
-                expected_tipo='admin',
-            )
+            # Acepta tanto 'admin' como 'administrador' en la colección Mongo
+            persona, error = authenticate_user(correo, contrasena)
             if error:
                 raise forms.ValidationError(error)
+            if persona and getattr(persona, 'tipo_usuario', '') not in ('admin', 'administrador'):
+                raise forms.ValidationError('Esta cuenta no tiene acceso al panel de administración.')
             self._persona = persona
         return cleaned_data
 

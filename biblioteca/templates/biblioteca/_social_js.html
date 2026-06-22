@@ -1,4 +1,4 @@
-{% comment %}
+﻿{% comment %}
   Helper JS global: window.Social.toggle(kind, id, btnElement)
   - kind: 'like' | 'follow' | 'save'
   - id: id de canción / artista / álbum
@@ -107,13 +107,13 @@
 
   /* Estado ACTIVO — naranja sólido */
   .social-btn.is-on {
-    background: linear-gradient(135deg, #f97316, #ea580c);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
     border-color: transparent;
     color: #fff;
-    box-shadow: 0 6px 18px rgba(249,115,22,0.35);
+    box-shadow: 0 6px 18px rgba(59,130,246,0.35);
   }
   .social-btn.is-on:hover {
-    box-shadow: 0 8px 22px rgba(249,115,22,0.50);
+    box-shadow: 0 8px 22px rgba(59,130,246,0.50);
   }
 
   /* Variante ícono-only (corazoncito de fila) */
@@ -129,10 +129,10 @@
   }
   .social-icon-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
   .social-icon-btn.is-on {
-    color: #f97316;
-    background: rgba(249,115,22,0.12);
+    color: #3b82f6;
+    background: rgba(59,130,246,0.12);
   }
-  .social-icon-btn.is-on:hover { color: #fb923c; background: rgba(249,115,22,0.18); }
+  .social-icon-btn.is-on:hover { color: #60a5fa; background: rgba(59,130,246,0.18); }
   .social-icon-btn .material-icons { font-size: 1.15rem; }
   .social-icon-btn:disabled { opacity: 0.6; cursor: wait; }
 </style>

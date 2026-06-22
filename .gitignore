@@ -1,0 +1,29 @@
+# Python compiled files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Django
+*.log
+db.sqlite3
+media/
+
+# Caché de archivo (Django FileBasedCache)
+.django_cache/
+
+# Credenciales y secretos — NUNCA subir al repositorio
+config/credenciales.json
+.env
+*.env
+
+# Entornos virtuales
+venv/
+env/
+.venv/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo

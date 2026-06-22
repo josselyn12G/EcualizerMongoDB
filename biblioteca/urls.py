@@ -23,7 +23,7 @@ app_name = 'biblioteca'
 
 urlpatterns = [
     # ── Toggles (POST → JSON) ──────────────────────────
-    path('like/cancion/<int:pk>/',
+    path('like/cancion/<str:pk>/',
          ToggleLikeCancionView.as_view(),
          name='toggle_like_cancion'),
     path('seguir/artista/<int:pk>/',
@@ -43,27 +43,27 @@ urlpatterns = [
     path('mis-albumes/',
          MisAlbumesGuardadosView.as_view(),
          name='mis_albumes'),
-    
-    # Playlists
+
+    # ── Playlists (MongoDB) ──────────────────────────
     path('mis-playlists/',
          MisPlaylistsView.as_view(),
          name='mis_playlists'),
     path('mis-playlists/crear/',
          CrearPlaylistView.as_view(),
          name='crear_playlist'),
-    path('mis-playlists/<int:pk>/',
+    path('mis-playlists/<str:pk>/',
          DetallePlaylistView.as_view(),
          name='detalle_playlist'),
-    path('mis-playlists/<int:pk>/editar/',
+    path('mis-playlists/<str:pk>/editar/',
          EditarPlaylistView.as_view(),
          name='editar_playlist'),
-    path('mis-playlists/<int:pk>/eliminar/',
+    path('mis-playlists/<str:pk>/eliminar/',
          EliminarPlaylistView.as_view(),
          name='eliminar_playlist'),
-    path('mis-playlists/<int:pk>/agregar-cancion/',
+    path('mis-playlists/<str:pk>/agregar-cancion/',
          AgregarCancionPlaylistView.as_view(),
          name='agregar_cancion_playlist'),
-    path('mis-playlists/<int:pk>/eliminar-cancion/<int:cancion_pk>/',
+    path('mis-playlists/<str:pk>/eliminar-cancion/<str:cancion_pk>/',
          EliminarCancionPlaylistView.as_view(),
          name='eliminar_cancion_playlist'),
 ]

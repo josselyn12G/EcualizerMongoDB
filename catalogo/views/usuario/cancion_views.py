@@ -1,23 +1,15 @@
 """
 Vistas de Cancion para el USUARIO (oyente).
 
-SPs usados:
-  - Catalogo.SP_ListarCanciones            → UsuarioCancionListView
-  - Catalogo.SP_FiltrarCancionesGenero     → UsuarioCancionFilterView
-  - Analitica.SP_RegistrarReproduccion     → UsuarioCancionDetailView (al reproducir)
+Migradas a MongoDB: listar, filtrar por género, detalle, preview.
 """
 
 from django.views.generic import View
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponseBadRequest
-from django.db import DatabaseError
 
 from usuarios.mixins import RequiereOyente
-from ...models import Cancion, GeneroMusical
 from ...services import (
-    sp_listar_canciones,
-    sp_filtrar_canciones_genero,
-    sp_registrar_reproduccion,
     deezer_enrich_canciones,
     deezer_get_artist_image,
     deezer_get_album_image,
@@ -25,10 +17,14 @@ from ...services import (
     deezer_get_track_preview,
     obtener_letra,
 )
-from biblioteca.services import (
-    get_canciones_liked_ids,
-    is_cancion_liked,
+from ...services.cancion_mongo import (
+    listar_canciones,
+    filtrar_canciones_genero,
+    listar_generos_disponibles,
+    get_cancion_ns,
+    registrar_reproduccion,
 )
+from biblioteca.mongo_service import get_canciones_liked_ids, is_cancion_liked
 
 
 # ──────────────────────────────────────────────────────────
@@ -41,17 +37,12 @@ class UsuarioCancionListView(RequiereOyente, View):
         busqueda = request.GET.get('q') or None
 
         try:
-            canciones = sp_listar_canciones(
-                artista_id=None, album_id=None,
-                estado='activa', busqueda=busqueda,
-            )
-        except DatabaseError:
+            canciones = listar_canciones(estado='activa', busqueda=busqueda)
+        except Exception:
             canciones = []
 
-        # Enriquecemos con portada de Deezer
         deezer_enrich_canciones(canciones)
 
-        # Artista destacado (el de la primera canción) para el hero
         featured_artist = None
         featured_image = None
         if canciones:
@@ -60,13 +51,13 @@ class UsuarioCancionListView(RequiereOyente, View):
 
         liked_ids = set()
         try:
-            liked_ids = get_canciones_liked_ids(request.session['usuario_id'])
-        except DatabaseError:
+            liked_ids = get_canciones_liked_ids(request.session.get('usuario_id'))
+        except Exception:
             pass
 
         return render(request, self.template_name, {
             'canciones': canciones,
-            'generos': GeneroMusical.objects.all(),
+            'generos': listar_generos_disponibles(),
             'busqueda': busqueda or '',
             'genero_actual': '',
             'modo': 'list',
@@ -77,37 +68,36 @@ class UsuarioCancionListView(RequiereOyente, View):
 
 
 # ──────────────────────────────────────────────────────────
-# FILTER · por género musical
+# FILTER · por género musical (nombre de género como str)
 # ──────────────────────────────────────────────────────────
 class UsuarioCancionFilterView(RequiereOyente, View):
     template_name = 'catalogo/usuario/usuario_cancion.html'
 
-    def get(self, request, genero_id):
+    def get(self, request, nombre_genero):
         try:
-            canciones = sp_filtrar_canciones_genero(genero_id=genero_id)
-        except DatabaseError:
+            canciones = filtrar_canciones_genero(nombre_genero)
+        except Exception:
             canciones = []
         deezer_enrich_canciones(canciones)
 
-        genero = get_object_or_404(GeneroMusical, pk=genero_id)
+        featured_artist = nombre_genero
         featured_image = None
-        featured_artist = genero.nombre_genero
         if canciones:
-            featured_artist = canciones[0].get('nombreArtistico') or genero.nombre_genero
+            featured_artist = canciones[0].get('nombreArtistico') or nombre_genero
             featured_image = deezer_get_artist_image(featured_artist)
 
         liked_ids = set()
         try:
-            liked_ids = get_canciones_liked_ids(request.session['usuario_id'])
-        except DatabaseError:
+            liked_ids = get_canciones_liked_ids(request.session.get('usuario_id'))
+        except Exception:
             pass
 
         return render(request, self.template_name, {
             'canciones': canciones,
-            'generos': GeneroMusical.objects.all(),
+            'generos': listar_generos_disponibles(),
             'busqueda': '',
-            'genero_actual': genero_id,
-            'genero_nombre': genero.nombre_genero,
+            'genero_actual': nombre_genero,
+            'genero_nombre': nombre_genero,
             'featured_artist': featured_artist,
             'featured_image': featured_image,
             'modo': 'filter',
@@ -116,39 +106,35 @@ class UsuarioCancionFilterView(RequiereOyente, View):
 
 
 # ──────────────────────────────────────────────────────────
-# DETAIL · ficha + (al hacer "play") registra reproducción
+# DETAIL · ficha + registra reproducción al hacer "play"
 # ──────────────────────────────────────────────────────────
 class UsuarioCancionDetailView(RequiereOyente, View):
     template_name = 'catalogo/usuario/usuario_cancion.html'
 
     def get(self, request, pk):
-        cancion = get_object_or_404(
-            Cancion.objects.select_related('album', 'album__artista'),
-            pk=pk,
-            estado_cancion='activa',
-        )
+        cancion = get_cancion_ns(pk)
+        if not cancion or getattr(cancion, 'estado_cancion', None) != 'activa':
+            return redirect('catalogo:usuario_cancion_list')
+
         cover = deezer_get_album_image(
-            cancion.album.titulo_album,
-            cancion.album.artista.nombre_artistico,
+            cancion.album.titulo_album or '',
+            cancion.album.artista.nombre_artistico or '',
         )
         artist_image = deezer_get_artist_image(
-            cancion.album.artista.nombre_artistico,
+            cancion.album.artista.nombre_artistico or '',
         )
 
-        # Letra: traemos AMBAS (api.lyrics.ovh + BD) para mostrarlas por
-        # separado en el detalle. Mantenemos `letra`/`letra_origen` por
-        # compatibilidad con el template antiguo.
         letra_api = obtener_letra(
-            cancion.album.artista.nombre_artistico,
-            cancion.nombre_cancion,
+            cancion.album.artista.nombre_artistico or '',
+            cancion.nombre_cancion or '',
         )
         letra_db = (cancion.letra_cancion or '').strip()
         letra = letra_api or letra_db or ''
 
         liked = False
         try:
-            liked = is_cancion_liked(request.session['usuario_id'], cancion.pk)
-        except DatabaseError:
+            liked = is_cancion_liked(request.session.get('usuario_id'), pk)
+        except Exception:
             pass
 
         return render(request, self.template_name, {
@@ -158,31 +144,34 @@ class UsuarioCancionDetailView(RequiereOyente, View):
             'letra': letra,
             'letra_origen': 'api' if letra_api else ('db' if letra_db else None),
             'letra_api': letra_api or '',
-            'letra_db':  letra_db,
-            'generos': GeneroMusical.objects.all(),
+            'letra_db': letra_db,
+            'generos': listar_generos_disponibles(),
             'modo': 'detail',
             'cancion_liked': liked,
         })
 
     def post(self, request, pk):
-        cancion = get_object_or_404(Cancion, pk=pk, estado_cancion='activa')
-        usuario_id = request.session['usuario_id']
+        cancion = get_cancion_ns(pk)
+        if not cancion or getattr(cancion, 'estado_cancion', None) != 'activa':
+            return JsonResponse({'ok': False, 'error': 'canción no encontrada'}, status=404)
+
+        usuario_id = request.session.get('usuario_id')
         pais = request.POST.get('pais', 'Ecuador')
         try:
-            duracion = int(request.POST.get('duracion_escuchada', cancion.duracion))
-        except ValueError:
+            duracion = int(request.POST.get('duracion_escuchada', cancion.duracion or 0))
+        except (ValueError, TypeError):
             return HttpResponseBadRequest('duracion_escuchada inválido')
         fue_saltada = request.POST.get('fue_saltada', 'N')
 
         try:
-            resultado = sp_registrar_reproduccion(
+            resultado = registrar_reproduccion(
                 usuario_id=usuario_id,
-                cancion_id=cancion.pk,
+                cancion_id=pk,
                 pais=pais,
                 duracion_escuchada=duracion,
                 fue_saltada=fue_saltada,
             )
-        except DatabaseError as e:
+        except Exception as e:
             return JsonResponse({'ok': False, 'error': str(e)}, status=400)
 
         return JsonResponse({'ok': True, 'data': resultado})
@@ -195,21 +184,18 @@ class UsuarioCancionPreviewView(RequiereOyente, View):
     """GET /catalogo/canciones/<pk>/preview/ → {ok, preview, cover, title, artist}"""
 
     def get(self, request, pk):
-        cancion = get_object_or_404(
-            Cancion.objects.select_related('album', 'album__artista'),
-            pk=pk, estado_cancion='activa',
-        )
+        cancion = get_cancion_ns(pk)
+        if not cancion or getattr(cancion, 'estado_cancion', None) != 'activa':
+            return JsonResponse({'ok': False, 'error': 'no encontrada'}, status=404)
+
         preview = deezer_get_track_preview(
-            cancion.nombre_cancion,
-            cancion.album.artista.nombre_artistico,
+            cancion.nombre_cancion or '',
+            cancion.album.artista.nombre_artistico or '',
         )
-        # Misma función que usa el listado (`deezer_enrich_canciones` →
-        # `deezer_get_track_image`) para que la portada del player coincida
-        # exactamente con la que se ve en la fila de "Popular".
         cover = deezer_get_track_image(
-            cancion.nombre_cancion,
-            cancion.album.artista.nombre_artistico,
-            cancion.album.titulo_album,
+            cancion.nombre_cancion or '',
+            cancion.album.artista.nombre_artistico or '',
+            cancion.album.titulo_album or '',
         )
         return JsonResponse({
             'ok': bool(preview),
