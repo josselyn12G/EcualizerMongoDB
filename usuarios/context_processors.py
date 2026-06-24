@@ -14,7 +14,7 @@ def notificaciones_oyente(request):
         return {}
 
     uid = request.session.get('usuario_id')
-    if not isinstance(uid, int) and not (isinstance(uid, str) and uid.isdigit()):
+    if not uid:
         return {}
     notifs = obtener_notificaciones_oyente(uid)
     return {

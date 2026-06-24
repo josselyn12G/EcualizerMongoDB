@@ -22,7 +22,10 @@ from ...forms.mongo_forms import MongoCancionForm
 
 
 def _album_choices(artista_id):
-    albumes = listar_albumes(artista_id=artista_id, estado='activo')
+    # Todos los álbumes del artista (no sólo activos) para que al EDITAR una
+    # canción su álbum actual siempre esté entre las opciones del select.
+    albumes = listar_albumes(artista_id=artista_id)
+    albumes = [a for a in albumes if a.get('estadoAlbum') != 'eliminado']
     return [('', '-- Selecciona un álbum --')] + [
         (a['idAlbum'], a['tituloAlbum']) for a in albumes
     ]

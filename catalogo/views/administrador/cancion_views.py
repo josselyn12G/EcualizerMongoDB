@@ -10,13 +10,14 @@ from usuarios.mixins import RequiereAdmin
 from ...forms.mongo_forms import MongoCancionAdminEditForm
 from ...services.cancion_mongo import (
     listar_canciones,
-    top_canciones,
+    ranking_canciones_mes,
     get_cancion_ns,
     actualizar_cancion,
     desactivar_cancion,
     agregar_genero_cancion,
     quitar_genero_cancion,
 )
+from ...services.catalogo_mongo import catalogo_generos
 
 
 # ──────────────────────────────────────────────────────────
@@ -30,7 +31,7 @@ class AdminCancionListView(RequiereAdmin, View):
         estado = request.GET.get('estado') or None
         canciones = listar_canciones(estado=estado, busqueda=busqueda)
         try:
-            ranking = top_canciones(20)
+            ranking = ranking_canciones_mes(20)
         except Exception:
             ranking = []
         return render(request, self.template_name, {
@@ -47,6 +48,18 @@ class AdminCancionListView(RequiereAdmin, View):
 # ──────────────────────────────────────────────────────────
 # DETAIL
 # ──────────────────────────────────────────────────────────
+def _generos_ctx(cancion):
+    """Géneros asignados (dicts con nombreGenero/idGeneroMusical) y disponibles."""
+    asignados_nombres = [g.nombre_genero for g in (getattr(cancion, 'generos', None) or [])]
+    asignados = [{'nombreGenero': n, 'idGeneroMusical': n} for n in asignados_nombres]
+    from types import SimpleNamespace
+    disponibles = [
+        SimpleNamespace(pk=n, nombre_genero=n)
+        for n in catalogo_generos() if n not in asignados_nombres
+    ]
+    return asignados, disponibles
+
+
 class AdminCancionDetailView(RequiereAdmin, View):
     template_name = 'catalogo/administrador/admin_cancion.html'
 
@@ -55,10 +68,10 @@ class AdminCancionDetailView(RequiereAdmin, View):
         if not cancion:
             messages.error(request, 'Canción no encontrada.')
             return redirect('catalogo:admin_cancion_list')
-        generos = getattr(cancion, 'generos', []) or []
+        asignados, _ = _generos_ctx(cancion)
         return render(request, self.template_name, {
             'cancion': cancion,
-            'generos_asignados': generos,
+            'generos_asignados': asignados,
             'modo': 'detail',
         })
 
@@ -70,11 +83,12 @@ class AdminCancionUpdateView(RequiereAdmin, View):
     template_name = 'catalogo/administrador/admin_cancion.html'
 
     def _ctx(self, cancion, form):
-        generos = getattr(cancion, 'generos', []) or []
+        asignados, disponibles = _generos_ctx(cancion)
         return {
             'form': form,
             'cancion': cancion,
-            'generos_asignados': generos,
+            'generos_asignados': asignados,
+            'generos_disponibles': disponibles,
             'modo': 'update',
         }
 
@@ -95,7 +109,7 @@ class AdminCancionUpdateView(RequiereAdmin, View):
             'fecha_lanzamiento': fecha_val,
             'calidad': cancion.calidad_kbps,
             'estado': cancion.estado_cancion,
-            'letra': getattr(cancion, 'letra', '') or '',
+            'letra': getattr(cancion, 'letra_cancion', '') or '',
         })
         return render(request, self.template_name, self._ctx(cancion, form))
 
@@ -132,7 +146,8 @@ class AdminCancionUpdateView(RequiereAdmin, View):
 # ──────────────────────────────────────────────────────────
 class AdminCancionGeneroAddView(RequiereAdmin, View):
     def post(self, request, pk):
-        nombre = (request.POST.get('nombre_genero') or '').strip()
+        nombre = (request.POST.get('genero_id')
+                  or request.POST.get('nombre_genero') or '').strip()
         if not nombre:
             messages.error(request, 'Escribe el nombre del género.')
         elif agregar_genero_cancion(pk, nombre):

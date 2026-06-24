@@ -410,11 +410,11 @@
     (function(){
       const ALL_GENRES = [
         {% for g in all_generos %}
-          { id: {{ g.pk }}, name: "{{ g.nombre_genero|escapejs }}" }{% if not forloop.last %},{% endif %}
+          { id: "{{ g.pk|escapejs }}", name: "{{ g.nombre_genero|escapejs }}" }{% if not forloop.last %},{% endif %}
         {% endfor %}
       ];
       const initialIds = [
-        {% for gid in generos_actuales_ids %}{{ gid }}{% if not forloop.last %},{% endif %}{% endfor %}
+        {% for gid in generos_actuales_ids %}"{{ gid|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}
       ];
 
       const selectedBox  = document.getElementById('genSelected');
@@ -447,7 +447,7 @@
 
         // Oculta los disponibles que ya están seleccionados
         availableBox.querySelectorAll('.genre-chip').forEach(el => {
-          const gid = parseInt(el.dataset.id, 10);
+          const gid = el.dataset.id;
           el.hidden = selected.has(gid);
         });
 
@@ -476,7 +476,7 @@
       // Bind clicks en disponibles
       availableBox.querySelectorAll('.genre-chip').forEach(el => {
         el.addEventListener('click', () => {
-          const gid = parseInt(el.dataset.id, 10);
+          const gid = el.dataset.id;
           addGenre(gid);
         });
       });

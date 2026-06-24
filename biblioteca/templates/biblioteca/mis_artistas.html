@@ -61,7 +61,7 @@
     <div class="artist-card__role">Siguiendo desde {{ a.fechaSeguimiento|date:"d/m/Y" }}</div>
     <button class="social-btn is-on" data-state="on"
             style="padding:0.3rem 0.85rem; font-size:0.74rem;"
-            onclick="event.stopPropagation(); Social.toggle('follow', {{ a.idArtista }}, this, { onChange: (active) => { if(!active) this.closest('.artist-card').remove(); } });">
+            onclick="event.stopPropagation(); Social.toggle('follow', '{{ a.idArtista }}', this, { onChange: (active) => { if(!active) this.closest('.artist-card').remove(); } });">
       <span class="material-icons">check_circle</span>
       <span class="social-btn__label">Dejar de seguir</span>
     </button>

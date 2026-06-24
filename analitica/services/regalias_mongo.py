@@ -69,6 +69,7 @@ _PIPE_REPROS = [
         'cancion': '$_c.tituloCancion',
         'pais': 1,
         'fechaHora': 1,
+        'liquidada': {'$ifNull': ['$liquidada', False]},
     }},
 ]
 
@@ -179,7 +180,8 @@ def pendiente_regalias(artista_id, desde=None, hasta=None, tarifa=0.004):
     h = _fecha(hasta, datetime(2100, 1, 1)).replace(hour=23, minute=59, second=59)
 
     query = [
-        {'$match': {'artistaId': aid, 'fechaHora': {'$gte': d, '$lte': h}}},
+        {'$match': {'artistaId': aid, 'fechaHora': {'$gte': d, '$lte': h},
+                    'liquidada': {'$ne': True}}},
         {'$group': {'_id': {'cancion': '$cancion', 'pais': '$pais'},
                     'reproducciones': {'$sum': 1}}},
         {'$sort': {'reproducciones': -1}},

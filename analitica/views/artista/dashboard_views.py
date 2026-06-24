@@ -9,8 +9,8 @@ from django.shortcuts import render
 from django.views import View
 
 from usuarios.mixins import RequiereArtista
-from usuarios.models import Persona, Artista
-from catalogo.models import Album
+from usuarios.mongo_service import find_user_by_identifier, build_user_namespace
+from catalogo.services.catalogo_mongo import listar_albumes
 
 from ...services import artista_service
 
@@ -19,28 +19,22 @@ PERIODOS_FULL = ('semana', 'mes', 'año', 'todo')
 
 
 # ──────────────────────────────────────────────────────────
-# Helpers
+# Helpers (MongoDB)
 # ──────────────────────────────────────────────────────────
 def _get_persona_y_artista(request):
     uid = request.session.get('usuario_id')
-    persona = Persona.objects.filter(pk=uid).first() if uid else None
-    perfil = None
-    if persona:
-        try:
-            perfil = persona.artista
-        except (Artista.DoesNotExist, AttributeError):
-            perfil = None
+    doc = find_user_by_identifier(uid) if uid else None
+    persona = build_user_namespace(doc) if doc else None
+    perfil = getattr(persona, 'artista', None) if persona else None
     return persona, perfil
 
 
 def _albumes_del_artista(id_artista):
-    return list(
-        Album.objects
-        .filter(artista_id=id_artista)
-        .exclude(estado_album='eliminado')
-        .values('id_album', 'titulo_album')
-        .order_by('titulo_album')
-    )
+    rows = listar_albumes(artista_id=id_artista)
+    return [
+        {'id_album': r['idAlbum'], 'titulo_album': r['tituloAlbum']}
+        for r in rows if r.get('estadoAlbum') != 'eliminado'
+    ]
 
 
 def _primer_y_ultimo_dia(mes: int, anio: int) -> tuple[date, date]:
@@ -128,7 +122,7 @@ class AnalyticsArtistaView(RequiereArtista, View):
 
         # Reproducciones por canción
         f_rep_periodo = _periodo(g.get('rep_periodo'), 'mes')
-        f_rep_album   = _int(g.get('rep_album'))
+        f_rep_album   = g.get('rep_album') or None   # ObjectId (str) del álbum
 
         # Oyentes mes/año
         f_oy_mes  = _int(g.get('oy_mes'),  hoy.month)

@@ -41,13 +41,9 @@ class UsuarioCancionListView(RequiereOyente, View):
         except Exception:
             canciones = []
 
-        deezer_enrich_canciones(canciones)
-
-        featured_artist = None
-        featured_image = None
-        if canciones:
-            featured_artist = canciones[0].get('nombreArtistico') or 'Ecualizer'
-            featured_image = deezer_get_artist_image(featured_artist)
+        # Las carátulas se cargan en el cliente (lazy) para no bloquear el
+        # render con llamadas a la API de imágenes.
+        featured_artist = canciones[0].get('nombreArtistico') if canciones else None
 
         liked_ids = set()
         try:
@@ -62,7 +58,6 @@ class UsuarioCancionListView(RequiereOyente, View):
             'genero_actual': '',
             'modo': 'list',
             'featured_artist': featured_artist,
-            'featured_image': featured_image,
             'liked_ids': liked_ids,
         })
 
@@ -78,13 +73,10 @@ class UsuarioCancionFilterView(RequiereOyente, View):
             canciones = filtrar_canciones_genero(nombre_genero)
         except Exception:
             canciones = []
-        deezer_enrich_canciones(canciones)
 
         featured_artist = nombre_genero
-        featured_image = None
         if canciones:
             featured_artist = canciones[0].get('nombreArtistico') or nombre_genero
-            featured_image = deezer_get_artist_image(featured_artist)
 
         liked_ids = set()
         try:
@@ -99,7 +91,6 @@ class UsuarioCancionFilterView(RequiereOyente, View):
             'genero_actual': nombre_genero,
             'genero_nombre': nombre_genero,
             'featured_artist': featured_artist,
-            'featured_image': featured_image,
             'modo': 'filter',
             'liked_ids': liked_ids,
         })
@@ -116,18 +107,19 @@ class UsuarioCancionDetailView(RequiereOyente, View):
         if not cancion or getattr(cancion, 'estado_cancion', None) != 'activa':
             return redirect('catalogo:usuario_cancion_list')
 
-        cover = deezer_get_album_image(
-            cancion.album.titulo_album or '',
-            cancion.album.artista.nombre_artistico or '',
-        )
-        artist_image = deezer_get_artist_image(
-            cancion.album.artista.nombre_artistico or '',
-        )
-
-        letra_api = obtener_letra(
-            cancion.album.artista.nombre_artistico or '',
-            cancion.nombre_cancion or '',
-        )
+        # Las 3 llamadas a APIs externas (2 imágenes + letra) son independientes:
+        # se ejecutan en paralelo para que el detalle cargue más rápido.
+        from concurrent.futures import ThreadPoolExecutor
+        artista_nom = cancion.album.artista.nombre_artistico or ''
+        album_tit = cancion.album.titulo_album or ''
+        cancion_nom = cancion.nombre_cancion or ''
+        with ThreadPoolExecutor(max_workers=3) as _pool:
+            f_cover = _pool.submit(deezer_get_album_image, album_tit, artista_nom)
+            f_artist = _pool.submit(deezer_get_artist_image, artista_nom)
+            f_letra = _pool.submit(obtener_letra, artista_nom, cancion_nom)
+            cover = f_cover.result()
+            artist_image = f_artist.result()
+            letra_api = f_letra.result()
         letra_db = (cancion.letra_cancion or '').strip()
         letra = letra_api or letra_db or ''
 

@@ -280,10 +280,11 @@
               data-state="{% if a.idAlbum in saved_ids %}on{% else %}off{% endif %}"
               style="position:absolute; top:0.55rem; right:0.55rem; background:rgba(0,0,0,0.55); backdrop-filter:blur(8px); z-index:2;"
               title="Guardar"
-              onclick="event.stopPropagation(); Social.toggle('save', {{ a.idAlbum }}, this);">
+              onclick="event.stopPropagation(); Social.toggle('save', '{{ a.idAlbum }}', this);">
         <span class="material-icons">{% if a.idAlbum in saved_ids %}bookmark{% else %}bookmark_border{% endif %}</span>
       </button>
       <div class="album-tile__cover"
+           data-ez-cover="album" data-title="{{ a.tituloAlbum }}" data-artist="{{ a.nombreArtistico|default:'' }}"
            {% if a.coverUrl %}style="background-image:url('{{ a.coverUrl }}');"{% endif %}></div>
       <div class="album-tile__body">
         <div class="album-tile__title">{{ a.tituloAlbum }}</div>
@@ -335,14 +336,14 @@
   <!-- Toolbar (play / shuffle / add / download) -->
   <div class="album-toolbar">
     <button class="play-fab" title="Reproducir álbum"
-            onclick="{% if canciones %}reproducir({{ canciones.0.pk }}, this){% endif %}">
+            onclick="{% if canciones %}reproducir('{{ canciones.0.pk }}', this){% endif %}">
       <span class="material-icons">play_arrow</span>
     </button>
     <div class="album-hero__cover" style="width:40px; height:40px; border-radius:6px; box-shadow:none;
                 {% if cover_url %}background-image:url('{{ cover_url }}');{% endif %}"></div>
     <button class="social-btn {% if album_guardado %}is-on{% else %}is-off{% endif %}"
             data-state="{% if album_guardado %}on{% else %}off{% endif %}"
-            onclick="Social.toggle('save', {{ album.pk }}, this);">
+            onclick="Social.toggle('save', '{{ album.pk }}', this);">
       <span class="material-icons">{% if album_guardado %}bookmark{% else %}bookmark_border{% endif %}</span>
       <span class="social-btn__label">{% if album_guardado %}Quitar de guardados{% else %}Guardar{% endif %}</span>
     </button>
@@ -366,7 +367,7 @@
     </div>
 
     {% for c in canciones %}
-    <div class="track-row" onclick="window.EzPlayer && EzPlayer.play({{ c.pk }})">
+    <div class="track-row" onclick="window.EzPlayer && EzPlayer.play('{{ c.pk }}')">
       <div class="track-row__num">{{ c.numero_pista }}</div>
       <div class="track-row__cover"
            {% if c.coverUrl %}style="background-image:url('{{ c.coverUrl }}');"{% endif %}></div>
@@ -381,7 +382,7 @@
       <button class="social-icon-btn {% if c.pk in liked_ids %}is-on{% else %}is-off{% endif %}"
               data-state="{% if c.pk in liked_ids %}on{% else %}off{% endif %}"
               title="Me gusta"
-              onclick="event.stopPropagation(); Social.toggle('like', {{ c.pk }}, this);">
+              onclick="event.stopPropagation(); Social.toggle('like', '{{ c.pk }}', this);">
         <span class="material-icons">{% if c.pk in liked_ids %}favorite{% else %}favorite_border{% endif %}</span>
       </button>
       <div class="track-row__time">{{ c.duracion_formateada }}</div>
@@ -397,6 +398,7 @@
 
 {% include "catalogo/usuario/_player.html" %}
 {% include "biblioteca/_social_js.html" %}
+{% include "catalogo/usuario/_lazy_covers.html" %}
 
 <form style="display:none;">{% csrf_token %}</form>
 

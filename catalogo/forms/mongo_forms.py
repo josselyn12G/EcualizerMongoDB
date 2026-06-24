@@ -24,11 +24,20 @@ class MongoAlbumForm(forms.Form):
     descripcion = forms.CharField(label='Descripción', required=False,
                                   widget=forms.Textarea(attrs=_AREA))
 
+    def __init__(self, *args, tipo_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if tipo_choices:
+            self.fields['tipo'].choices = [(t, t) for t in tipo_choices]
+
     def clean_titulo(self):
         t = self.cleaned_data.get('titulo', '').strip()
         if len(t) < 2:
             raise forms.ValidationError('El título debe tener al menos 2 caracteres.')
         return t
+
+    def clean_tipo(self):
+        # Acepta cualquier tipo del catálogo dinámico (no solo el choices estático).
+        return (self.cleaned_data.get('tipo') or '').strip() or 'Album'
 
 
 class MongoAlbumAdminForm(MongoAlbumForm):

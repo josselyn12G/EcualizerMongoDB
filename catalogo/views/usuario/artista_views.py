@@ -10,8 +10,12 @@ from usuarios.mongo_service import admin_list_users, admin_get_user
 from ...services import (
     deezer_get_artist_image,
     deezer_enrich_albumes,
+    deezer_enrich_artistas,
 )
 from ...services.catalogo_mongo import listar_albumes
+from biblioteca.mongo_service import (
+    get_artistas_seguidos_ids, is_artista_seguido, get_albumes_guardados_ids,
+)
 
 
 class UsuarioArtistaListView(RequiereOyente, View):
@@ -32,17 +36,22 @@ class UsuarioArtistaListView(RequiereOyente, View):
                 'pk': getattr(a, 'pk', ''),
                 'nombre': nombre,
                 'biografia': getattr(a, 'biografia', '') or '',
-                'foto': deezer_get_artist_image(nombre),
             })
+        # Las fotos se cargan en el cliente (lazy) para no bloquear el render.
 
         destacado = artistas[0] if artistas else None
+
+        try:
+            followed_ids = get_artistas_seguidos_ids(request.session.get('usuario_id'))
+        except Exception:
+            followed_ids = set()
 
         return render(request, self.template_name, {
             'artistas': artistas,
             'destacado': destacado,
             'busqueda': busqueda,
             'modo': 'list',
-            'followed_ids': set(),
+            'followed_ids': followed_ids,
         })
 
 
@@ -55,20 +64,28 @@ class UsuarioArtistaDetailView(RequiereOyente, View):
             return redirect('catalogo:usuario_artista_list')
 
         nombre = getattr(artista, 'nombre_artistico', '') or ''
-        foto = deezer_get_artist_image(nombre)
 
         try:
             albumes = listar_albumes(artista_id=pk, estado='activo')
         except Exception:
             albumes = []
-        deezer_enrich_albumes(albumes)
+        # Foto del artista y carátulas de álbumes → lazy-load en el cliente.
+
+        uid = request.session.get('usuario_id')
+        try:
+            artista_seguido = is_artista_seguido(uid, pk)
+        except Exception:
+            artista_seguido = False
+        try:
+            saved_ids = get_albumes_guardados_ids(uid)
+        except Exception:
+            saved_ids = set()
 
         return render(request, self.template_name, {
             'artista': artista,
-            'foto': foto,
             'albumes': albumes,
             'total_albumes': len(albumes),
             'modo': 'detail',
-            'artista_seguido': False,
-            'saved_ids': set(),
+            'artista_seguido': artista_seguido,
+            'saved_ids': saved_ids,
         })

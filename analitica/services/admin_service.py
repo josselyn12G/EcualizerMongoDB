@@ -138,7 +138,7 @@ def reproducciones_por_hora() -> list[dict]:
 def reproducciones_por_pais(top: int = 10) -> list[dict]:
     def _q():
         pipeline = [
-            {'$group': {'_id': '$paisUsuario', 'Total': {'$sum': 1}}},
+            {'$group': {'_id': '$pais', 'Total': {'$sum': 1}}},
             {'$sort': {'Total': -1}},
             {'$limit': top},
             {'$project': {'_id': 0, 'Pais': {'$ifNull': ['$_id', 'Desconocido']}, 'Total': 1}},
@@ -353,7 +353,7 @@ def actividad_reciente(top: int = 20) -> list[dict]:
                 'Tipo':   'reproduccion',
                 'Quien':  str(r.get('usuarioId', ''))[:8] + '…',
                 'Que':    'Reproducción',
-                'Detalle': r.get('paisUsuario', ''),
+                'Detalle': r.get('pais', ''),
                 'Fecha':  r.get('fechaHora'),
             })
 

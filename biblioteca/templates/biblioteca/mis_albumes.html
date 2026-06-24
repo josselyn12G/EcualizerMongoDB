@@ -65,7 +65,7 @@
     <button class="social-icon-btn is-on" data-state="on"
             style="position:absolute; top:0.55rem; right:0.55rem; background:rgba(0,0,0,0.55); backdrop-filter:blur(8px); z-index:2;"
             title="Quitar de guardados"
-            onclick="event.stopPropagation(); Social.toggle('save', {{ a.idAlbum }}, this, { onChange: (active) => { if(!active) this.closest('.album-tile').remove(); } });">
+            onclick="event.stopPropagation(); Social.toggle('save', '{{ a.idAlbum }}', this, { onChange: (active) => { if(!active) this.closest('.album-tile').remove(); } });">
       <span class="material-icons">bookmark</span>
     </button>
     <div class="album-tile__cover"

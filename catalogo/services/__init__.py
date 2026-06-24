@@ -51,6 +51,7 @@ from .deezer_service import (
     deezer_get_track_preview,
     deezer_enrich_canciones,
     deezer_enrich_albumes,
+    deezer_enrich_artistas,
 )
 from .lyrics_service import obtener_letra
 
@@ -74,7 +75,7 @@ __all__ = [
     # Deezer (imágenes + preview MP3, sin auth)
     'deezer_get_artist_image', 'deezer_get_album_image', 'deezer_get_track_image',
     'deezer_get_track_preview',
-    'deezer_enrich_canciones', 'deezer_enrich_albumes',
+    'deezer_enrich_canciones', 'deezer_enrich_albumes', 'deezer_enrich_artistas',
     # Letras (api.lyrics.ovh)
     'obtener_letra',
 ]

@@ -159,7 +159,7 @@ def distribucion_geografica(id_artista, periodo: str = 'todo') -> list[dict]:
             match['fechaHora'] = {'$gte': co}
         pipeline = [
             {'$match': match},
-            {'$group': {'_id': '$paisUsuario', 'Total': {'$sum': 1}}},
+            {'$group': {'_id': '$pais', 'Total': {'$sum': 1}}},
             {'$sort': {'Total': -1}},
             {'$limit': 20},
             {'$project': {'_id': 0, 'Pais': {'$ifNull': ['$_id', 'Desconocido']}, 'Total': 1}},

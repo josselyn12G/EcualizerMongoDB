@@ -320,3 +320,164 @@ def get_canciones_liked(usuario_id):
         }},
     ]
     return list(_col('Likes').aggregate(pipeline))
+
+
+# ══════════════════════════════════════════════════════════════════════
+# SEGUIR ARTISTAS  (embebido en Usuarios.perfilOyente.artistasSeguidos)
+# ══════════════════════════════════════════════════════════════════════
+def _usuario_doc(usuario_id):
+    oid = _oid(usuario_id)
+    if not oid:
+        return None
+    return _col('Usuarios').find_one({'$or': [{'_id': oid}, {'usuarioId': oid}]})
+
+
+def _seguidos(u):
+    return (u.get('perfilOyente') or {}).get('artistasSeguidos') or []
+
+
+def is_artista_seguido(usuario_id, artista_id):
+    u = _usuario_doc(usuario_id)
+    aoid = _oid(artista_id)
+    if not u or not aoid:
+        return False
+    return any(_oid(s.get('artistaId')) == aoid for s in _seguidos(u))
+
+
+def toggle_seguir_artista(usuario_id, artista_id):
+    """Alterna el seguimiento. True si quedó SIGUIENDO, False si dejó de seguir."""
+    uoid = _oid(usuario_id)
+    aoid = _oid(artista_id)
+    if not uoid or not aoid:
+        return False
+    col = _col('Usuarios')
+    u = col.find_one({'$or': [{'_id': uoid}, {'usuarioId': uoid}]})
+    if not u:
+        return False
+    if any(_oid(s.get('artistaId')) == aoid for s in _seguidos(u)):
+        col.update_one({'_id': u['_id']},
+                       {'$pull': {'perfilOyente.artistasSeguidos': {'artistaId': aoid}}})
+        return False
+    art = col.find_one({'$or': [{'_id': aoid}, {'usuarioId': aoid}]},
+                       {'perfilArtista.nombreArtistico': 1})
+    nombre = ((art or {}).get('perfilArtista') or {}).get('nombreArtistico') or ''
+    col.update_one({'_id': u['_id']}, {'$push': {'perfilOyente.artistasSeguidos': {
+        'artistaId': aoid,
+        'fechaSeguimiento': datetime.now(timezone.utc).isoformat(),
+        'notificacionesActivas': 'A',
+        'nombreArtistico': nombre,
+    }}})
+    return True
+
+
+def get_artistas_seguidos_ids(usuario_id):
+    u = _usuario_doc(usuario_id)
+    if not u:
+        return set()
+    return {str(_oid(s.get('artistaId'))) for s in _seguidos(u) if s.get('artistaId')}
+
+
+def get_artistas_seguidos(usuario_id):
+    """Lista de artistas seguidos (claves compatibles con mis_artistas.html)."""
+    u = _usuario_doc(usuario_id)
+    if not u:
+        return []
+    seguidos = _seguidos(u)
+    if not seguidos:
+        return []
+    ids = [_oid(s.get('artistaId')) for s in seguidos if s.get('artistaId')]
+    ids = [i for i in ids if i]
+    bios = {}
+    for d in _col('Usuarios').find(
+            {'$or': [{'_id': {'$in': ids}}, {'usuarioId': {'$in': ids}}]},
+            {'usuarioId': 1, 'perfilArtista': 1}):
+        nombre = (d.get('perfilArtista') or {}).get('nombreArtistico')
+        bio = (d.get('perfilArtista') or {}).get('biografia')
+        bios[d['_id']] = (nombre, bio)
+        if d.get('usuarioId') is not None:
+            bios[d['usuarioId']] = (nombre, bio)
+    salida = []
+    for s in seguidos:
+        aoid = _oid(s.get('artistaId'))
+        nombre, bio = bios.get(aoid, (s.get('nombreArtistico'), None))
+        salida.append({
+            'idArtista': str(aoid) if aoid else '',
+            'nombreArtistico': nombre or s.get('nombreArtistico') or '—',
+            'biografia': bio or '',
+            'fechaSeguimiento': s.get('fechaSeguimiento'),
+        })
+    salida.sort(key=lambda x: x.get('fechaSeguimiento') or '', reverse=True)
+    return salida
+
+
+# ══════════════════════════════════════════════════════════════════════
+# GUARDAR ÁLBUMES  (colección usuario_album_guardado)
+# ══════════════════════════════════════════════════════════════════════
+def _guardados_col():
+    return _col('usuario_album_guardado')
+
+
+def is_album_guardado(usuario_id, album_id):
+    uoid = _oid(usuario_id)
+    aoid = _oid(album_id)
+    if not uoid or not aoid:
+        return False
+    return _guardados_col().count_documents(
+        {'usuarioId': uoid, 'albumId': aoid}, limit=1) > 0
+
+
+def toggle_guardar_album(usuario_id, album_id):
+    """Alterna el guardado. True si quedó GUARDADO, False si se quitó."""
+    uoid = _oid(usuario_id)
+    aoid = _oid(album_id)
+    if not uoid or not aoid:
+        return False
+    col = _guardados_col()
+    if col.count_documents({'usuarioId': uoid, 'albumId': aoid}, limit=1) > 0:
+        col.delete_one({'usuarioId': uoid, 'albumId': aoid})
+        return False
+    album = _col('Albums').find_one(
+        {'$or': [{'albumId': aoid}, {'_id': aoid}]},
+        {'tituloAlbum': 1, 'nombreArtistico': 1})
+    col.insert_one({
+        'albumGuardadoId': ObjectId(),
+        'usuarioId': uoid,
+        'albumId': aoid,
+        'tituloAlbum': (album or {}).get('tituloAlbum') or '',
+        'artistaNombre': (album or {}).get('nombreArtistico') or '',
+        'fechaGuardado': datetime.now(timezone.utc),
+    })
+    return True
+
+
+def get_albumes_guardados_ids(usuario_id):
+    oid = _oid(usuario_id)
+    if not oid:
+        return set()
+    cur = _guardados_col().find({'usuarioId': oid}, {'albumId': 1})
+    return {str(d['albumId']) for d in cur if d.get('albumId')}
+
+
+def get_albumes_guardados(usuario_id):
+    """Álbumes guardados (claves compatibles con mis_albumes.html)."""
+    oid = _oid(usuario_id)
+    if not oid:
+        return []
+    pipeline = [
+        {'$match': {'usuarioId': oid}},
+        {'$sort': {'fechaGuardado': -1}},
+        {'$lookup': {'from': 'Albums', 'localField': 'albumId',
+                     'foreignField': 'albumId', 'as': '_a'}},
+        {'$set': {'_a': {'$arrayElemAt': ['$_a', 0]}}},
+        {'$project': {
+            '_id': 0,
+            'idAlbum': {'$toString': '$albumId'},
+            'tituloAlbum': {'$ifNull': ['$_a.tituloAlbum', '$tituloAlbum']},
+            'nombreArtistico': {'$ifNull': ['$_a.nombreArtistico', '$artistaNombre']},
+            'fechaLanzamientoAlbum': '$_a.fechaLanzamiento',
+            'estadoAlbum': {'$ifNull': ['$_a.estadoAlbum', 'activo']},
+            'fechaGuardado': 1,
+        }},
+    ]
+    rows = list(_guardados_col().aggregate(pipeline))
+    return [r for r in rows if r.get('estadoAlbum') != 'inactivo']

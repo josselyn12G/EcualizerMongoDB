@@ -20,6 +20,12 @@ import time
 import urllib.parse
 import urllib.request
 import urllib.error
+from concurrent.futures import ThreadPoolExecutor
+
+try:
+    from django.core.cache import cache as _django_cache
+except Exception:  # pragma: no cover - Django no inicializado
+    _django_cache = None
 
 
 # ───────────────────────────────────────────────────────────
@@ -38,21 +44,40 @@ _cache: dict[tuple, tuple[str, float]] = {}
 _cache_lock = threading.Lock()
 
 
+def _dj_key(key: tuple) -> str:
+    return 'deezer:' + ':'.join(str(k) for k in key)
+
+
 def _cache_get(key: tuple) -> str | None:
+    # L1: memoria del proceso (rapidísimo).
     with _cache_lock:
         entry = _cache.get(key)
-        if not entry:
-            return None
-        url, exp = entry
-        if time.time() > exp:
+        if entry:
+            url, exp = entry
+            if time.time() <= exp:
+                return url
             _cache.pop(key, None)
-            return None
-        return url
+    # L2: caché persistente de Django (sobrevive reinicios y procesos).
+    if _django_cache is not None:
+        try:
+            val = _django_cache.get(_dj_key(key))
+        except Exception:
+            val = None
+        if val is not None:
+            with _cache_lock:
+                _cache[key] = (val, time.time() + _CACHE_TTL_SECONDS)
+            return val
+    return None
 
 
 def _cache_put(key: tuple, url: str) -> None:
     with _cache_lock:
         _cache[key] = (url, time.time() + _CACHE_TTL_SECONDS)
+    if _django_cache is not None:
+        try:
+            _django_cache.set(_dj_key(key), url, _CACHE_TTL_SECONDS)
+        except Exception:
+            pass
 
 
 # ───────────────────────────────────────────────────────────
@@ -246,36 +271,73 @@ def deezer_get_track_image(track_name: str,
 # ───────────────────────────────────────────────────────────
 # Helpers para enriquecer listas que vienen de SPs
 # ───────────────────────────────────────────────────────────
+_MAX_WORKERS = 8
+
+
+def _parallel(tasks):
+    """Ejecuta callables en paralelo (I/O de red). `tasks` = lista de funciones
+    sin argumentos. Mantiene el orden no es necesario (cada tarea escribe su dict)."""
+    tasks = list(tasks)
+    if not tasks:
+        return
+    workers = min(_MAX_WORKERS, len(tasks))
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        list(pool.map(lambda fn: fn(), tasks))
+
+
 def deezer_enrich_canciones(canciones: list[dict],
                              with_preview: bool = False) -> list[dict]:
-    """Añade `coverUrl` a cada dict-canción (filas SP_ListarCanciones).
+    """Añade `coverUrl` a cada dict-canción EN PARALELO (las imágenes vienen de
+    una API externa; secuencial sería muy lento para listas grandes).
 
     Si `with_preview=True` también agrega `previewUrl` (MP3 ~30s de Deezer).
-    Lo dejamos opt-in porque el preview duplica las llamadas a la API.
     """
-    for c in canciones or []:
-        if not isinstance(c, dict):
-            continue
-        c['coverUrl'] = deezer_get_track_image(
-            c.get('nombreCancion') or '',
-            c.get('nombreArtistico') or '',
-            c.get('tituloAlbum') or '',
-        )
-        if with_preview:
-            c['previewUrl'] = deezer_get_track_preview(
+    items = [c for c in (canciones or []) if isinstance(c, dict)]
+
+    def _make(c):
+        def _run():
+            c['coverUrl'] = deezer_get_track_image(
                 c.get('nombreCancion') or '',
                 c.get('nombreArtistico') or '',
-            ) or ''
+                c.get('tituloAlbum') or '',
+            )
+            if with_preview:
+                c['previewUrl'] = deezer_get_track_preview(
+                    c.get('nombreCancion') or '',
+                    c.get('nombreArtistico') or '',
+                ) or ''
+        return _run
+
+    _parallel(_make(c) for c in items)
     return canciones
 
 
 def deezer_enrich_albumes(albumes: list[dict]) -> list[dict]:
-    """Añade `coverUrl` a cada dict-álbum (filas SP_ListarAlbumes)."""
-    for a in albumes or []:
-        if not isinstance(a, dict):
-            continue
-        a['coverUrl'] = deezer_get_album_image(
-            a.get('tituloAlbum') or '',
-            a.get('nombreArtistico') or '',
-        )
+    """Añade `coverUrl` a cada dict-álbum EN PARALELO (filas SP_ListarAlbumes)."""
+    items = [a for a in (albumes or []) if isinstance(a, dict)]
+
+    def _make(a):
+        def _run():
+            a['coverUrl'] = deezer_get_album_image(
+                a.get('tituloAlbum') or '',
+                a.get('nombreArtistico') or '',
+            )
+        return _run
+
+    _parallel(_make(a) for a in items)
     return albumes
+
+
+def deezer_enrich_artistas(artistas: list[dict],
+                           name_key: str = 'nombre',
+                           image_key: str = 'foto') -> list[dict]:
+    """Añade la foto de cada artista EN PARALELO (lista de dicts)."""
+    items = [a for a in (artistas or []) if isinstance(a, dict)]
+
+    def _make(a):
+        def _run():
+            a[image_key] = deezer_get_artist_image(a.get(name_key) or '')
+        return _run
+
+    _parallel(_make(a) for a in items)
+    return artistas

@@ -1,0 +1,58 @@
+{% comment %}
+  Lazy-load de carátulas Deezer.
+  Cualquier elemento con  data-ez-cover="track|album|artist"
+  y  data-title / data-artist / data-album  recibirá su imagen de fondo
+  cuando el endpoint /catalogo/covers/ la resuelva (en paralelo + caché).
+  Pon dentro un  <span class="ez-cover-ph">  como placeholder (se oculta solo).
+{% endcomment %}
+<script>
+(function () {
+  function csrf() {
+    var m = document.cookie.match(/csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+  }
+  function chunk(arr, n) {
+    var out = [];
+    for (var i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+    return out;
+  }
+  function apply(el, url) {
+    if (url) {
+      el.style.backgroundImage = "url('" + url + "')";
+      var ph = el.querySelector('.ez-cover-ph');
+      if (ph) ph.style.display = 'none';
+    }
+    el.dataset.ezDone = '1';
+  }
+  function run() {
+    var els = Array.prototype.slice.call(document.querySelectorAll('[data-ez-cover]'))
+                .filter(function (el) { return !el.dataset.ezDone; });
+    if (!els.length) return;
+    chunk(els, 40).forEach(function (group) {
+      var items = group.map(function (el) {
+        return {
+          k: el.dataset.ezCover || 'track',
+          t: el.dataset.title || '',
+          a: el.dataset.artist || '',
+          b: el.dataset.album || ''
+        };
+      });
+      fetch('/catalogo/covers/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrf() },
+        body: JSON.stringify({ items: items })
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        (d.covers || []).forEach(function (url, i) { apply(group[i], url); });
+      })
+      .catch(function () {});
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+})();
+</script>

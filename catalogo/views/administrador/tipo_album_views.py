@@ -83,10 +83,16 @@ class AdminTipoAlbumDetailView(RequiereAdmin, View):
     template_name = 'catalogo/administrador/admin_tipo_album.html'
 
     def get(self, request, pk):
+        from types import SimpleNamespace
         albumes = listar_albumes()
-        albumes_filtrados = [a for a in albumes if a.get('nombreTipo') == pk]
+        albumes_filtrados = [SimpleNamespace(
+            pk=a.get('idAlbum'),
+            titulo_album=a.get('tituloAlbum'),
+            artista=SimpleNamespace(nombre_artistico=a.get('nombreArtistico') or '—'),
+            estado_album=a.get('estadoAlbum') or 'activo',
+        ) for a in albumes if a.get('nombreTipo') == pk]
         return render(request, self.template_name, {
-            'tipo': {'nombre_tipo': pk},
+            'tipo': {'nombre_tipo': pk, 'pk': pk, 'descripcion_tipo': ''},
             'albumes': albumes_filtrados[:50],
             'modo': 'detail',
         })

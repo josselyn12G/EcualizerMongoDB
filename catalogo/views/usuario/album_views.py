@@ -12,7 +12,9 @@ from ...services import (
     deezer_get_artist_image,
 )
 from ...services.catalogo_mongo import listar_albumes, get_album_detalle
-from biblioteca.mongo_service import get_canciones_liked_ids
+from biblioteca.mongo_service import (
+    get_canciones_liked_ids, get_albumes_guardados_ids, is_album_guardado,
+)
 
 
 def _canciones_a_dicts(canciones_ns, cover_url):
@@ -52,13 +54,18 @@ class UsuarioAlbumListView(RequiereOyente, View):
             albumes = listar_albumes(estado='activo', busqueda=busqueda)
         except Exception:
             albumes = []
-        deezer_enrich_albumes(albumes)
+        # Carátulas en lazy-load (cliente) para no bloquear el render.
+
+        try:
+            saved_ids = get_albumes_guardados_ids(request.session.get('usuario_id'))
+        except Exception:
+            saved_ids = set()
 
         return render(request, self.template_name, {
             'albumes': albumes,
             'busqueda': busqueda or '',
             'modo': 'list',
-            'saved_ids': set(),
+            'saved_ids': saved_ids,
         })
 
 
@@ -88,11 +95,16 @@ class UsuarioAlbumDetailView(RequiereOyente, View):
         total_seg = sum(c['duracion'] for c in canciones)
         total_min = round(total_seg / 60)
 
+        uid = request.session.get('usuario_id')
         liked_ids = set()
         try:
-            liked_ids = get_canciones_liked_ids(request.session.get('usuario_id'))
+            liked_ids = get_canciones_liked_ids(uid)
         except Exception:
             pass
+        try:
+            album_guardado = is_album_guardado(uid, pk)
+        except Exception:
+            album_guardado = False
 
         return render(request, self.template_name, {
             'album': album,
@@ -102,7 +114,7 @@ class UsuarioAlbumDetailView(RequiereOyente, View):
             'total_canciones': len(canciones),
             'duracion_total_min': total_min,
             'modo': 'detail',
-            'album_guardado': False,
+            'album_guardado': album_guardado,
             'liked_ids': liked_ids,
         })
 
@@ -119,7 +131,6 @@ class UsuarioAlbumSearchView(RequiereOyente, View):
             resultados = listar_albumes(estado='activo', busqueda=q if q else None)
         except Exception:
             resultados = []
-        deezer_enrich_albumes(resultados)
 
         return render(request, self.template_name, {
             'albumes': resultados,

@@ -26,10 +26,10 @@ urlpatterns = [
     path('like/cancion/<str:pk>/',
          ToggleLikeCancionView.as_view(),
          name='toggle_like_cancion'),
-    path('seguir/artista/<int:pk>/',
+    path('seguir/artista/<str:pk>/',
          ToggleSeguirArtistaView.as_view(),
          name='toggle_seguir_artista'),
-    path('guardar/album/<int:pk>/',
+    path('guardar/album/<str:pk>/',
          ToggleGuardarAlbumView.as_view(),
          name='toggle_guardar_album'),
 

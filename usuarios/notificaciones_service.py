@@ -83,43 +83,74 @@ def _recordatorios_renovacion(usuario_id):
 
 
 # ──────────────────────────────────────────────────────────
-# 2) Notificaciones de lanzamiento  (regla del SP de Biblioteca)
-#    El SP usa "lanzados hoy"; aquí mostramos los lanzamientos de
-#    los últimos 14 días de los artistas seguidos con avisos activos.
+# 2) Notificaciones de lanzamiento  (MongoDB)
+#    Avisa de los álbumes recientes (últimos 30 días) publicados por los
+#    artistas que el oyente sigue con notificaciones activas. Los follows
+#    están embebidos en Usuarios.perfilOyente.artistasSeguidos.
 # ──────────────────────────────────────────────────────────
 def _notificaciones_lanzamiento(usuario_id):
-    sql = """
-        SELECT TOP 20
-            a.idAlbum,
-            a.tituloAlbum,
-            ar.nombreArtistico,
-            a.fechaLanzamientoAlbum,
-            u.alias
-        FROM Catalogo.Album a
-        JOIN Usuario.Artista ar          ON ar.idUsuario = a.Artista_idUsuario
-        JOIN Biblioteca.UsuarioSigueArtista usa ON usa.Artista_idUsuario = ar.idUsuario
-        JOIN Usuario.Usuario u           ON u.idUsuario = usa.Usuario_idUsuario
-        WHERE usa.Usuario_idUsuario      = %s
-          AND usa.notificacionesActivas  = 'A'
-          AND a.estadoAlbum              = 'activo'
-          AND a.fechaLanzamientoAlbum >= DATEADD(DAY, -14, CAST(GETDATE() AS DATE))
-          AND a.fechaLanzamientoAlbum <= CAST(GETDATE() AS DATE)
-        ORDER BY a.fechaLanzamientoAlbum DESC, a.idAlbum DESC;
-    """
+    from datetime import datetime, timedelta, timezone
+    from bson import ObjectId
+    from usuarios.mongo_service import get_database
+
+    oid = ObjectId(str(usuario_id)) if ObjectId.is_valid(str(usuario_id)) else None
+    if not oid:
+        return []
+    db = get_database()
+    user = db['Usuarios'].find_one(
+        {'$or': [{'_id': oid}, {'usuarioId': oid}]},
+        {'perfilOyente': 1, 'primerNombre': 1})
+    if not user:
+        return []
+
+    oyente = user.get('perfilOyente') or {}
+    seguidos = oyente.get('artistasSeguidos') or []
+    art_ids = [s.get('artistaId') for s in seguidos
+               if s.get('artistaId') and s.get('notificacionesActivas', 'A') != 'D']
+    if not art_ids:
+        return []
+
+    # Un artista puede estar referenciado por su `_id` o por su `usuarioId`,
+    # y los álbumes pueden guardar cualquiera de los dos. Expandimos el set de
+    # ids del artista para que el match con Albums.artistaId sea robusto.
+    ids_expandidos = set(art_ids)
+    for u in db['Usuarios'].find(
+            {'$or': [{'_id': {'$in': art_ids}}, {'usuarioId': {'$in': art_ids}}]},
+            {'_id': 1, 'usuarioId': 1}):
+        ids_expandidos.add(u['_id'])
+        if u.get('usuarioId') is not None:
+            ids_expandidos.add(u['usuarioId'])
+
+    alias = oyente.get('alias') or user.get('primerNombre') or 'oyente'
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
     notifs = []
-    for r in _rows(sql, [usuario_id]):
+    cursor = db['Albums'].find({
+        'artistaId': {'$in': list(ids_expandidos)},
+        'estadoAlbum': 'activo',
+    }).sort('fechaCreacion', -1).limit(40)
+    for a in cursor:
+        # Un álbum es "novedad" si se creó (o se lanzó) en los últimos 30 días.
+        fecha_ref = a.get('fechaCreacion') or a.get('fechaLanzamiento')
+        if isinstance(fecha_ref, datetime):
+            ref = fecha_ref if fecha_ref.tzinfo else fecha_ref.replace(tzinfo=timezone.utc)
+            if ref < cutoff:
+                continue
+        nombre_art = a.get('nombreArtistico') or 'Un artista'
+        titulo = a.get('tituloAlbum') or 'nuevo álbum'
+        fecha_show = a.get('fechaLanzamiento') or a.get('fechaCreacion')
         notifs.append({
             'tipo':   'lanzamiento',
             'icono':  'album',
-            'titulo': f'Nuevo álbum de {r["nombreArtistico"]}',
+            'titulo': f'Nuevo álbum de {nombre_art}',
             'mensaje': (
-                f'¡Hola {r["alias"]}! {r["nombreArtistico"]} acaba de lanzar su '
-                f'nuevo álbum "{r["tituloAlbum"]}" el {_fmt(r["fechaLanzamientoAlbum"])}. '
-                f'¡Escúchalo ahora en Ecualizer!'
+                f'¡Hola {alias}! {nombre_art} acaba de publicar su nuevo álbum '
+                f'"{titulo}". ¡Escúchalo ahora en Ecualizer!'
             ),
-            'fecha':     r['fechaLanzamientoAlbum'],
-            'fecha_str': _fmt(r['fechaLanzamientoAlbum']),
+            'fecha':     fecha_show,
+            'fecha_str': _fmt(fecha_show),
         })
+        if len(notifs) >= 20:
+            break
     return notifs
 
 
@@ -131,12 +162,23 @@ def obtener_notificaciones_oyente(usuario_id):
     primero). Cada elemento: {tipo, icono, titulo, mensaje, fecha, fecha_str}."""
     if not usuario_id:
         return []
+    notifs = []
+    # Lanzamientos de álbumes (MongoDB) — defensivo e independiente.
     try:
-        notifs = _notificaciones_lanzamiento(usuario_id) + _recordatorios_renovacion(usuario_id)
-    except DatabaseError as e:
-        logger.error('Notificaciones oyente · error BD · %s', e)
-        return []
+        notifs += _notificaciones_lanzamiento(usuario_id)
+    except Exception as e:
+        logger.error('Notificaciones lanzamiento · error · %s', e)
+    # Recordatorios de renovación (SQL legacy) — solo si sigue disponible.
+    try:
+        notifs += _recordatorios_renovacion(usuario_id)
+    except Exception as e:  # noqa: BLE001  (BD SQL legacy puede no existir)
+        logger.warning('Notificaciones renovación no disponibles · %s', e)
 
-    # Orden global por fecha descendente (los lanzamientos recientes arriba).
-    notifs.sort(key=lambda n: n.get('fecha') or '', reverse=True)
+    def _key(n):
+        f = n.get('fecha')
+        try:
+            return f.isoformat()
+        except AttributeError:
+            return str(f or '')
+    notifs.sort(key=_key, reverse=True)
     return notifs

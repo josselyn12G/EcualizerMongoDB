@@ -338,8 +338,10 @@
       <div class="pop-row" onclick="window.EzPlayer && EzPlayer.play('{{ c.idCancion }}')">
         <div class="pop-row__rank">{{ forloop.counter }}</div>
         <div class="pop-row__cover"
+             data-ez-cover="track" data-title="{{ c.nombreCancion }}"
+             data-artist="{{ c.nombreArtistico|default:'' }}" data-album="{{ c.tituloAlbum|default:'' }}"
              {% if c.coverUrl %}style="background-image:url('{{ c.coverUrl }}');"{% endif %}>
-          {% if not c.coverUrl %}<span class="material-icons">music_note</span>{% endif %}
+          <span class="material-icons ez-cover-ph">music_note</span>
         </div>
         <div>
           <div class="pop-row__title">{{ c.nombreCancion }}</div>
@@ -383,6 +385,8 @@
       {% for c in canciones|slice:":12" %}
       <div class="release-card" onclick="window.location='{% url 'catalogo:usuario_cancion_detail' c.idCancion %}'">
         <div class="release-card__cover"
+             data-ez-cover="track" data-title="{{ c.nombreCancion }}"
+             data-artist="{{ c.nombreArtistico|default:'' }}" data-album="{{ c.tituloAlbum|default:'' }}"
              {% if c.coverUrl %}style="background-image:url('{{ c.coverUrl }}');"{% endif %}></div>
         <div class="release-card__title">{{ c.tituloAlbum|default:c.nombreCancion }}</div>
         <div class="release-card__artist">{{ c.nombreArtistico|default:"" }}</div>
@@ -397,14 +401,14 @@
   <div class="right-col">
 
     <!-- Fans Also Like -->
-    {% if featured_image %}
+    {% if featured_artist %}
     <div class="right-card">
       <div class="right-card__head">
         <div class="right-card__title">Fans Also Like</div>
         <a href="#" class="right-card__link">See All</a>
       </div>
       <div class="fan-card">
-        <div class="fan-card__img" style="background-image: url('{{ featured_image }}');"></div>
+        <div class="fan-card__img" data-ez-cover="artist" data-artist="{{ featured_artist }}"></div>
         <div class="fan-card__name">{{ featured_artist }}</div>
         <div class="fan-card__role">Artist</div>
       </div>
@@ -420,6 +424,8 @@
       {% for c in canciones|slice:":6" %}
       <div class="recent-row" onclick="window.location='{% url 'catalogo:usuario_cancion_detail' c.idCancion %}'">
         <div class="recent-row__cover"
+             data-ez-cover="track" data-title="{{ c.nombreCancion }}"
+             data-artist="{{ c.nombreArtistico|default:'' }}" data-album="{{ c.tituloAlbum|default:'' }}"
              {% if c.coverUrl %}style="background-image:url('{{ c.coverUrl }}');"{% endif %}></div>
         <div style="min-width:0;">
           <div class="recent-row__title">{{ c.nombreCancion }}</div>
@@ -650,12 +656,12 @@
 
     <!-- Toolbar -->
     <div class="song-toolbar">
-      <button class="play-fab" onclick="reproducir({{ cancion.pk }}, this);" title="Reproducir">
+      <button class="play-fab" onclick="reproducir('{{ cancion.pk }}', this);" title="Reproducir">
         <span class="material-icons">play_arrow</span>
       </button>
       <button class="social-btn {% if cancion_liked %}is-on{% else %}is-off{% endif %}"
               data-state="{% if cancion_liked %}on{% else %}off{% endif %}"
-              onclick="Social.toggle('like', {{ cancion.pk }}, this);">
+              onclick="Social.toggle('like', '{{ cancion.pk }}', this);">
         <span class="material-icons">{% if cancion_liked %}favorite{% else %}favorite_border{% endif %}</span>
         <span class="social-btn__label">{% if cancion_liked %}Quitar like{% else %}Like{% endif %}</span>
       </button>
@@ -704,6 +710,7 @@
 
 {% include "catalogo/usuario/_player.html" %}
 {% include "biblioteca/_social_js.html" %}
+{% include "catalogo/usuario/_lazy_covers.html" %}
 
 <form style="display:none;">{% csrf_token %}</form>
 

@@ -10,6 +10,7 @@ from django.contrib import messages
 from usuarios.mixins import RequiereAdmin
 from ...services.catalogo_mongo import (
     listar_generos_mongo,
+    crear_genero_mongo,
     renombrar_genero_mongo,
     eliminar_genero_mongo,
 )
@@ -47,10 +48,10 @@ class AdminGeneroCreateView(RequiereAdmin, View):
         if not form.is_valid():
             return render(request, self.template_name, {'form': form, 'modo': 'create'})
         nombre = form.cleaned_data['nombre_genero'].strip()
-        messages.success(
-            request,
-            f'Género "{nombre}" registrado. Aparecerá en el listado cuando se asigne a una canción.'
-        )
+        if crear_genero_mongo(nombre):
+            messages.success(request, f'Género "{nombre}" registrado en el catálogo.')
+        else:
+            messages.warning(request, f'El género "{nombre}" ya existe.')
         return redirect('catalogo:admin_genero_list')
 
 
@@ -80,15 +81,20 @@ class AdminGeneroDetailView(RequiereAdmin, View):
     template_name = 'catalogo/administrador/admin_genero.html'
 
     def get(self, request, pk):
-        from ...services.cancion_mongo import listar_canciones
-        canciones = listar_canciones(estado=None, busqueda=None)
-        canciones_filtradas = [
-            c for c in canciones
-            if pk in (c.get('generosCSV') or c.get('nombreGenero') or '')
-        ]
+        from types import SimpleNamespace
+        from ...services.cancion_mongo import filtrar_canciones_genero
+        filas = filtrar_canciones_genero(pk)
+        canciones = [SimpleNamespace(
+            pk=f.get('idCancion'),
+            nombre_cancion=f.get('nombreCancion'),
+            album=SimpleNamespace(
+                titulo_album=f.get('tituloAlbum') or '—',
+                artista=SimpleNamespace(nombre_artistico=f.get('nombreArtistico') or '—'),
+            ),
+        ) for f in filas]
         return render(request, self.template_name, {
-            'genero': {'nombre': pk},
-            'canciones': canciones_filtradas[:50],
+            'genero': {'nombre': pk, 'pk': pk, 'nombre_genero': pk},
+            'canciones': canciones[:50],
             'modo': 'detail',
         })
 

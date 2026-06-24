@@ -261,9 +261,7 @@
   <!-- Hero curado (artista destacado) -->
   {% if destacado %}
   <div class="curated-hero">
-    {% if destacado.foto %}
-    <div class="curated-hero__photo" style="background-image: url('{{ destacado.foto }}');"></div>
-    {% endif %}
+    <div class="curated-hero__photo" data-ez-cover="artist" data-artist="{{ destacado.nombre }}"></div>
     <div class="curated-hero__content">
       <span class="curated-hero__tag">Artista destacado</span>
       <div class="curated-hero__title">{{ destacado.nombre }}</div>
@@ -290,13 +288,13 @@
   <div class="artists-grid">
     {% for a in artistas %}
     <div class="artist-card" onclick="window.location='{% url 'catalogo:usuario_artista_detail' a.pk %}'">
-      <div class="artist-card__photo" style="background-image: url('{{ a.foto }}');"></div>
+      <div class="artist-card__photo" data-ez-cover="artist" data-artist="{{ a.nombre }}"></div>
       <div class="artist-card__name">{{ a.nombre }}</div>
       <div class="artist-card__role">Artista</div>
       <button class="social-btn {% if a.pk in followed_ids %}is-on{% else %}is-off{% endif %}"
               data-state="{% if a.pk in followed_ids %}on{% else %}off{% endif %}"
               style="margin-top:0.5rem; padding:0.3rem 0.85rem; font-size:0.74rem;"
-              onclick="event.stopPropagation(); Social.toggle('follow', {{ a.pk }}, this);">
+              onclick="event.stopPropagation(); Social.toggle('follow', '{{ a.pk }}', this);">
         <span class="material-icons">{% if a.pk in followed_ids %}check_circle{% else %}add_circle_outline{% endif %}</span>
         <span class="social-btn__label">{% if a.pk in followed_ids %}Dejar de seguir{% else %}Seguir{% endif %}</span>
       </button>
@@ -317,10 +315,8 @@
 
   <!-- HERO del artista -->
   <div class="artist-hero">
-    {% if foto %}
-    <div class="artist-hero__bg" style="background-image:url('{{ foto }}');"></div>
-    {% endif %}
-    <div class="artist-hero__photo" style="background-image:url('{{ foto }}');"></div>
+    <div class="artist-hero__bg" data-ez-cover="artist" data-artist="{{ artista.nombre_artistico }}"></div>
+    <div class="artist-hero__photo" data-ez-cover="artist" data-artist="{{ artista.nombre_artistico }}"></div>
     <div class="artist-hero__info">
       <span class="artist-hero__tag"><span class="material-icons">verified</span> Verified Artist</span>
       <h1 class="artist-hero__name">{{ artista.nombre_artistico }}</h1>
@@ -335,7 +331,7 @@
       <div style="margin-top:1rem;">
         <button class="social-btn {% if artista_seguido %}is-on{% else %}is-off{% endif %}"
                 data-state="{% if artista_seguido %}on{% else %}off{% endif %}"
-                onclick="Social.toggle('follow', {{ artista.pk }}, this);">
+                onclick="Social.toggle('follow', '{{ artista.pk }}', this);">
           <span class="material-icons">{% if artista_seguido %}check_circle{% else %}add_circle_outline{% endif %}</span>
           <span class="social-btn__label">{% if artista_seguido %}Dejar de seguir{% else %}Seguir{% endif %}</span>
         </button>
@@ -354,10 +350,11 @@
               data-state="{% if a.idAlbum in saved_ids %}on{% else %}off{% endif %}"
               style="position:absolute; top:0.55rem; right:0.55rem; background:rgba(0,0,0,0.55); backdrop-filter:blur(8px); z-index:2;"
               title="Guardar"
-              onclick="event.stopPropagation(); Social.toggle('save', {{ a.idAlbum }}, this);">
+              onclick="event.stopPropagation(); Social.toggle('save', '{{ a.idAlbum }}', this);">
         <span class="material-icons">{% if a.idAlbum in saved_ids %}bookmark{% else %}bookmark_border{% endif %}</span>
       </button>
       <div class="album-tile__cover"
+           data-ez-cover="album" data-title="{{ a.tituloAlbum }}" data-artist="{{ artista.nombre_artistico }}"
            {% if a.coverUrl %}style="background-image:url('{{ a.coverUrl }}');"{% endif %}></div>
       <div class="album-tile__body">
         <div class="album-tile__title">{{ a.tituloAlbum }}</div>
@@ -376,5 +373,6 @@
 
 {% include "catalogo/usuario/_player.html" %}
 {% include "biblioteca/_social_js.html" %}
+{% include "catalogo/usuario/_lazy_covers.html" %}
 
 {% endblock %}

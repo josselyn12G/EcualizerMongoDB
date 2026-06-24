@@ -32,6 +32,7 @@ from .views.usuario.cancion_views import (
 from .views.usuario.artista_views import (
     UsuarioArtistaListView, UsuarioArtistaDetailView,
 )
+from .views.usuario.covers_views import CoversBatchView
 from .views.administrador.album_views import (
     AdminAlbumListView, AdminAlbumUpdateView,
     AdminAlbumDetailView, AdminAlbumReportView,
@@ -105,6 +106,11 @@ urlpatterns = [
     path('albumes/<str:pk>/',
          UsuarioAlbumDetailView.as_view(),
          name='usuario_album_detail'),
+
+    # ═════════════════════════════════════════════════════
+    # Carátulas en lote (lazy-load de imágenes Deezer)
+    # ═════════════════════════════════════════════════════
+    path('covers/', CoversBatchView.as_view(), name='covers_batch'),
 
     # ═════════════════════════════════════════════════════
     # USUARIO (oyente) · Cancion

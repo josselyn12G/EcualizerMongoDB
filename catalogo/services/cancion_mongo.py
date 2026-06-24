@@ -127,12 +127,12 @@ def filtrar_canciones_genero(nombre_genero):
 
 
 def listar_generos_disponibles():
-    """Devuelve lista de SimpleNamespace(pk, nombre_genero) desde Cancion.generos."""
-    nombres = _col('Cancion').distinct('generos.nombreGenero')
-    return [
-        SimpleNamespace(pk=n, nombre_genero=n)
-        for n in sorted(nombres) if n
-    ]
+    """Catálogo de géneros (canónicos + usados) como SimpleNamespace(pk, nombre_genero).
+
+    Fuente única compartida con el admin y el oyente para mantener coherencia.
+    """
+    from .catalogo_mongo import catalogo_generos
+    return [SimpleNamespace(pk=n, nombre_genero=n) for n in catalogo_generos()]
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -245,9 +245,28 @@ def actualizar_cancion(pk, nombre=None, duracion=None, fecha=None,
     if estado is not None:
         update['estadoCancion'] = estado
     if generos is not None:
-        update['generos'] = [{'nombreGenero': g} for g in generos]
+        nuevos = [{'nombreGenero': g} for g in generos if g]
+        # El esquema exige al menos 1 género (minItems:1); si quedó vacío,
+        # conservamos los géneros que ya tenía la canción.
+        update['generos'] = nuevos or (doc.get('generos') or [{'nombreGenero': 'General'}])
 
-    _col('Cancion').update_one({'_id': doc['_id']}, {'$set': update})
+    if not update:
+        return True
+
+    from pymongo.errors import WriteError, DuplicateKeyError
+    try:
+        _col('Cancion').update_one({'_id': doc['_id']}, {'$set': update})
+    except DuplicateKeyError as exc:
+        # Índice único en tituloCancion: otro tema usa ese título.
+        raise ValueError('Ya existe otra canción con ese título. Usa uno distinto.') from exc
+    except WriteError as exc:
+        # El doc (p. ej. migrado) podría no tener géneros (minItems:1): lo
+        # completamos para que la edición se pueda guardar igualmente.
+        if not (doc.get('generos') or update.get('generos')):
+            update['generos'] = [{'nombreGenero': 'General'}]
+            _col('Cancion').update_one({'_id': doc['_id']}, {'$set': update})
+        else:
+            raise ValueError(f'No se pudo guardar la canción: {exc}') from exc
     return True
 
 
@@ -324,6 +343,52 @@ def historial_reproduccion(usuario_id, limit=50):
         }},
     ]
     return list(_col('Reproduccion').aggregate(pipeline))
+
+
+def ranking_canciones_mes(limit=20):
+    """Top N canciones del último mes (por reproducciones reales en Reproduccion).
+
+    Claves compatibles con la tabla de ranking del admin: Cancion, Artista,
+    TotalReproduccionesGlobales, OyentesUnicos. Si no hay reproducciones en el
+    último mes, cae al ranking acumulado para que SIEMPRE aparezcan datos.
+    """
+    from datetime import datetime, timedelta, timezone
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    pipe = [
+        {'$match': {'fechaHora': {'$gte': cutoff}}},
+        {'$group': {'_id': '$cancionId',
+                    'plays': {'$sum': 1},
+                    'oyentes': {'$addToSet': '$usuarioId'}}},
+        {'$sort': {'plays': -1}},
+        {'$limit': limit},
+        {'$lookup': {'from': 'Cancion', 'localField': '_id',
+                     'foreignField': 'cancionId', 'as': '_c'}},
+        {'$set': {'_c': {'$arrayElemAt': ['$_c', 0]}}},
+        {'$project': {
+            '_id': 0,
+            'Cancion': {'$ifNull': ['$_c.tituloCancion', '—']},
+            'Artista': {'$ifNull': [{'$arrayElemAt': ['$_c.artistas.nombreArtistico', 0]}, '—']},
+            'TotalReproduccionesGlobales': '$plays',
+            'OyentesUnicos': {'$size': '$oyentes'},
+        }},
+    ]
+    rows = list(_col('Reproduccion').aggregate(pipe))
+    if rows:
+        return rows
+    # Fallback: ranking acumulado (totalReproducciones) para no mostrar vacío.
+    pipe2 = [
+        {'$match': {'estadoCancion': 'activa'}},
+        {'$sort': {'totalReproducciones': -1}},
+        {'$limit': limit},
+        {'$project': {
+            '_id': 0,
+            'Cancion': '$tituloCancion',
+            'Artista': {'$arrayElemAt': ['$artistas.nombreArtistico', 0]},
+            'TotalReproduccionesGlobales': {'$ifNull': ['$totalReproducciones', 0]},
+            'OyentesUnicos': {'$ifNull': ['$totalReproducciones', 0]},
+        }},
+    ]
+    return list(_col('Cancion').aggregate(pipe2))
 
 
 def top_canciones(limit=10):

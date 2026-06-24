@@ -78,7 +78,7 @@
 {% if canciones %}
 <div class="pop-list">
   {% for c in canciones %}
-  <div class="pop-row" onclick="window.EzPlayer && EzPlayer.play({{ c.idCancion }})">
+  <div class="pop-row" onclick="window.EzPlayer && EzPlayer.play('{{ c.idCancion }}')">
     <div class="pop-row__rank">{{ forloop.counter }}</div>
     <div class="pop-row__cover"
          {% if c.coverUrl %}style="background-image:url('{{ c.coverUrl }}');"{% endif %}></div>
@@ -92,7 +92,7 @@
     <div class="pop-row__time">{{ c.duracion }}s</div>
     <button class="social-icon-btn is-on" data-state="on"
             title="Quitar like"
-            onclick="event.stopPropagation(); Social.toggle('like', {{ c.idCancion }}, this, { onChange: (active) => { if(!active) this.closest('.pop-row').remove(); } });">
+            onclick="event.stopPropagation(); Social.toggle('like', '{{ c.idCancion }}', this, { onChange: (active) => { if(!active) this.closest('.pop-row').remove(); } });">
       <span class="material-icons">favorite</span>
     </button>
     <button class="social-icon-btn" onclick="event.stopPropagation(); window.location='/catalogo/canciones/{{ c.idCancion }}/'" title="Abrir">

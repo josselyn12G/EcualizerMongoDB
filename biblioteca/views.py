@@ -17,10 +17,10 @@ from catalogo.services import (
     deezer_get_artist_image,
     deezer_get_track_image,
     deezer_enrich_albumes,
+    deezer_enrich_artistas,
 )
 
 from . import mongo_service as ms
-from . import services as sql_services  # solo para artistas/álbumes (SQL legacy no roto)
 
 logger = logging.getLogger('ecualizer.biblioteca')
 
@@ -62,9 +62,9 @@ class ToggleSeguirArtistaView(RequiereOyente, View):
     def post(self, request, pk):
         usuario_id = _uid(request)
         try:
-            active = sql_services.toggle_seguir_artista(usuario_id, int(pk))
+            active = ms.toggle_seguir_artista(usuario_id, pk)
             logger.info('FOLLOW artista=%s usuario=%s → %s', pk, usuario_id, active)
-            return _ajax_ok(active, kind='seguir_artista', target_id=int(pk))
+            return _ajax_ok(active, kind='seguir_artista', target_id=pk)
         except Exception as e:
             logger.error('Error toggle_seguir_artista: %s', e)
             return _ajax_err(str(e))
@@ -77,9 +77,9 @@ class ToggleGuardarAlbumView(RequiereOyente, View):
     def post(self, request, pk):
         usuario_id = _uid(request)
         try:
-            active = sql_services.toggle_guardar_album(usuario_id, int(pk))
+            active = ms.toggle_guardar_album(usuario_id, pk)
             logger.info('SAVE album=%s usuario=%s → %s', pk, usuario_id, active)
-            return _ajax_ok(active, kind='guardar_album', target_id=int(pk))
+            return _ajax_ok(active, kind='guardar_album', target_id=pk)
         except Exception as e:
             logger.error('Error toggle_guardar_album: %s', e)
             return _ajax_err(str(e))
@@ -121,13 +121,12 @@ class MisArtistasSeguidosView(RequiereOyente, View):
     def get(self, request):
         usuario_id = _uid(request)
         try:
-            artistas = sql_services.get_artistas_seguidos(usuario_id)
+            artistas = ms.get_artistas_seguidos(usuario_id)
         except Exception as e:
             logger.error('Error cargando artistas seguidos: %s', e)
             artistas = []
 
-        for a in artistas:
-            a['foto'] = deezer_get_artist_image(a.get('nombreArtistico') or '')
+        deezer_enrich_artistas(artistas, name_key='nombreArtistico', image_key='foto')
 
         return render(request, self.template_name, {
             'artistas': artistas,
@@ -141,7 +140,7 @@ class MisAlbumesGuardadosView(RequiereOyente, View):
     def get(self, request):
         usuario_id = _uid(request)
         try:
-            albumes = sql_services.get_albumes_guardados(usuario_id)
+            albumes = ms.get_albumes_guardados(usuario_id)
         except Exception as e:
             logger.error('Error cargando albumes guardados: %s', e)
             albumes = []
