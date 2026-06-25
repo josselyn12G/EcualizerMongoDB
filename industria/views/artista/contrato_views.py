@@ -1,25 +1,19 @@
-"""Vista del artista para visualizar sus contratos discográficos."""
-
-from datetime import date
+"""Vista del artista para visualizar sus contratos discográficos — MongoDB."""
 
 from django.shortcuts import render
 from django.views import View
 
 from usuarios.mixins import RequiereArtista
-from usuarios.models import Persona, Artista
+from usuarios.mongo_service import find_user_by_identifier, build_user_namespace
 
-from ...models import ContratoDiscografica
+from ... import mongo_service as ms
 
 
 def _get_persona_y_artista(request):
     uid = request.session.get('usuario_id')
-    persona = Persona.objects.filter(pk=uid).first() if uid else None
-    perfil = None
-    if persona:
-        try:
-            perfil = persona.artista
-        except (Artista.DoesNotExist, AttributeError):
-            perfil = None
+    doc = find_user_by_identifier(uid) if uid else None
+    persona = build_user_namespace(doc) if doc else None
+    perfil = getattr(persona, 'artista', None) if persona else None
     return persona, perfil
 
 
@@ -31,30 +25,12 @@ class ContratosArtistaView(RequiereArtista, View):
         persona, perfil = _get_persona_y_artista(request)
         id_artista = request.session.get('usuario_id')
 
-        contratos = list(
-            ContratoDiscografica.objects
-            .filter(artista_id=id_artista)
-            .select_related('discografica')
-            .order_by('-fecha_inicio')
-        )
-
-        hoy = date.today()
-        activos = sum(1 for c in contratos
-                      if c.estado_contrato == 'Activo'
-                      and (c.fecha_fin is None or c.fecha_fin >= hoy))
-        finalizados = sum(1 for c in contratos
-                          if c.estado_contrato == 'Finalizado')
-        cancelados  = sum(1 for c in contratos
-                          if c.estado_contrato == 'Cancelado')
+        contratos = ms.listar_contratos(artista_id=id_artista)
+        kpis = ms.contratos_kpis(artista_id=id_artista)
 
         return render(request, self.template_name, {
             'persona':   persona,
             'perfil':    perfil,
             'contratos': contratos,
-            'kpis': {
-                'total':       len(contratos),
-                'activos':     activos,
-                'finalizados': finalizados,
-                'cancelados':  cancelados,
-            },
+            'kpis':      kpis,
         })

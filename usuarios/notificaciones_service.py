@@ -21,63 +21,77 @@ panel siempre se renderice.
 from __future__ import annotations
 
 import logging
-from django.db import connection, DatabaseError
+from datetime import datetime, date, timedelta
 
 logger = logging.getLogger('ecualizer.notificaciones')
 
 
-def _rows(sql, params):
-    with connection.cursor() as cur:
-        cur.execute(sql, params)
-        cols = [c[0] for c in cur.description]
-        return [dict(zip(cols, r)) for r in cur.fetchall()]
-
-
 def _fmt(fecha):
-    """Formatea una fecha a dd/mm/aaaa (igual que CONVERT(..,103) del SP)."""
+    """Formatea una fecha a dd/mm/aaaa."""
     try:
         return fecha.strftime('%d/%m/%Y')
     except (AttributeError, ValueError):
         return str(fecha or '')
 
 
+def _a_date(value):
+    """datetime / date / 'YYYY-MM-DD' / None → date | None."""
+    if value is None or value == '':
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        try:
+            return datetime.strptime(value[:10], '%Y-%m-%d').date()
+        except ValueError:
+            return None
+    return None
+
+
 # ──────────────────────────────────────────────────────────
-# 1) Recordatorios de renovación  (regla del SP de Pagos)
-#    El SP usa exactamente "vence en 3 días"; aquí ampliamos a
-#    los próximos 7 días para que el aviso sea útil cualquier día.
+# 1) Recordatorios de renovación  (MongoDB)
+#    Aviso cuando una suscripción activa con renovación automática está por
+#    vencer (próximos 7 días). Suscripciones en la colección `Suscripcion`
+#    con `plan` embebido y `renovacionAutomatica` booleano.
 # ──────────────────────────────────────────────────────────
 def _recordatorios_renovacion(usuario_id):
-    sql = """
-        SELECT
-            s.idSuscripcion,
-            u.alias,
-            tp.nombrePlan,
-            s.fechaFin,
-            DATEDIFF(DAY, CAST(GETDATE() AS DATE), s.fechaFin) AS diasRestantes
-        FROM Pagos.Suscripcion s
-        JOIN Usuario.Usuario u  ON u.idUsuario = s.Usuario_idUsuario
-        JOIN Pagos.TipoPlan tp  ON tp.idTipoPlan = s.TipoPlan_idTipoPlan
-        WHERE s.Usuario_idUsuario   = %s
-          AND s.renovacionAutomatica = 'S'
-          AND s.estadoSuscripcion    = 'activa'
-          AND s.fechaFin >= CAST(GETDATE() AS DATE)
-          AND s.fechaFin <= DATEADD(DAY, 7, CAST(GETDATE() AS DATE))
-        ORDER BY s.fechaFin;
-    """
+    from bson import ObjectId
+    from usuarios.mongo_service import get_database
+
+    oid = ObjectId(str(usuario_id)) if ObjectId.is_valid(str(usuario_id)) else None
+    if not oid:
+        return []
+    db = get_database()
+    user = db['Usuarios'].find_one(
+        {'$or': [{'_id': oid}, {'usuarioId': oid}]},
+        {'perfilOyente.alias': 1, 'primerNombre': 1})
+    alias = (((user or {}).get('perfilOyente') or {}).get('alias')
+             or (user or {}).get('primerNombre') or 'oyente')
+
+    hoy = date.today()
+    limite = hoy + timedelta(days=7)
     notifs = []
-    for r in _rows(sql, [usuario_id]):
-        dias = r.get('diasRestantes') or 0
+    for s in db['Suscripcion'].find({'usuarioId': oid, 'estadoSuscripcion': 'activa'}):
+        if not s.get('renovacionAutomatica'):
+            continue
+        fin = _a_date(s.get('fechaFin'))
+        if not fin or not (hoy <= fin <= limite):
+            continue
+        dias = (fin - hoy).days
+        plan = (s.get('plan') or {}).get('nombrePlan') or 'tu plan'
         notifs.append({
             'tipo':   'renovacion',
             'icono':  'card_membership',
             'titulo': 'Renovación de suscripción',
             'mensaje': (
-                f'Hola {r["alias"]}, tu suscripción al plan "{r["nombrePlan"]}" '
-                f'vence el {_fmt(r["fechaFin"])} ({dias} días). '
+                f'Hola {alias}, tu suscripción al plan "{plan}" '
+                f'vence el {_fmt(fin)} ({dias} días). '
                 f'Se renovará automáticamente. Asegúrate de tener saldo disponible.'
             ),
-            'fecha':     r['fechaFin'],
-            'fecha_str': _fmt(r['fechaFin']),
+            'fecha':     fin,
+            'fecha_str': _fmt(fin),
         })
     return notifs
 

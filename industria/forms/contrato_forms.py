@@ -1,40 +1,42 @@
-"""Forms CRUD de ContratoDiscografica."""
+"""Form (sin ORM) para ContratoDiscografica sobre MongoDB."""
 
 from django import forms
-from ..models import ContratoDiscografica
-from usuarios.models import Artista
-from .discografica_forms import Discografica
+
+from ..mongo_service import (
+    artistas_choices, discograficas_choices, ESTADOS_CONTRATO,
+)
+
+_INPUT = {'class': 'form-control'}
+_SELECT = {'class': 'form-select'}
 
 
-class ContratoForm(forms.ModelForm):
-    artista = forms.ModelChoiceField(
-        label='Artista',
-        queryset=Artista.objects.all().order_by('nombre_artistico'),
-        empty_label='-- Selecciona un artista --',
-        widget=forms.Select(attrs={'class': 'form-select'}),
-    )
-    discografica = forms.ModelChoiceField(
-        label='Discográfica',
-        queryset=Discografica.objects.all().order_by('nombre_discografica'),
-        empty_label='-- Selecciona una discográfica --',
-        widget=forms.Select(attrs={'class': 'form-select'}),
-    )
+class ContratoForm(forms.Form):
+    artista = forms.ChoiceField(
+        label='Artista', choices=[], widget=forms.Select(attrs=_SELECT))
+    discografica = forms.ChoiceField(
+        label='Discográfica', choices=[], widget=forms.Select(attrs=_SELECT))
+    fecha_inicio = forms.DateField(
+        label='Fecha de inicio',
+        widget=forms.DateInput(attrs={**_INPUT, 'type': 'date'}))
+    fecha_fin = forms.DateField(
+        label='Fecha de fin', required=False,
+        widget=forms.DateInput(attrs={**_INPUT, 'type': 'date'}))
+    porcentaje_artista = forms.DecimalField(
+        label='% Artista', min_value=0, max_value=100, decimal_places=2,
+        widget=forms.NumberInput(attrs={**_INPUT, 'step': '0.01', 'min': 0, 'max': 100}))
+    porcentaje_discografica = forms.DecimalField(
+        label='% Discográfica', min_value=0, max_value=100, decimal_places=2,
+        widget=forms.NumberInput(attrs={**_INPUT, 'step': '0.01', 'min': 0, 'max': 100}))
+    estado_contrato = forms.ChoiceField(
+        label='Estado', choices=[(e, e) for e in ESTADOS_CONTRATO],
+        widget=forms.Select(attrs=_SELECT))
 
-    class Meta:
-        model = ContratoDiscografica
-        fields = [
-            'artista', 'discografica',
-            'fecha_inicio', 'fecha_fin',
-            'porcentaje_artista', 'porcentaje_discografica',
-            'estado_contrato',
-        ]
-        widgets = {
-            'fecha_inicio':            forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'fecha_fin':               forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'porcentaje_artista':      forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': 0, 'max': 100}),
-            'porcentaje_discografica': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': 0, 'max': 100}),
-            'estado_contrato':         forms.Select(attrs={'class': 'form-select'}),
-        }
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['artista'].choices = (
+            [('', '-- Selecciona un artista --')] + artistas_choices())
+        self.fields['discografica'].choices = (
+            [('', '-- Selecciona una discográfica --')] + discograficas_choices())
 
     def clean(self):
         cleaned = super().clean()

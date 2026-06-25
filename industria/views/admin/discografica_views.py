@@ -1,14 +1,12 @@
-"""CRUD de Discográficas (Administrador)."""
+"""CRUD de Discográficas (Administrador) — MongoDB."""
 
 from django.views import View
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.urls import reverse
-from django.db import DatabaseError
 
 from usuarios.mixins import RequiereAdmin
-from ...models import Discografica
 from ...forms import DiscograficaForm
+from ... import mongo_service as ms
 
 
 class DiscograficaListView(RequiereAdmin, View):
@@ -16,10 +14,10 @@ class DiscograficaListView(RequiereAdmin, View):
 
     def get(self, request):
         q = (request.GET.get('q') or '').strip()
-        qs = Discografica.objects.all().order_by('nombre_discografica')
-        if q:
-            qs = qs.filter(nombre_discografica__icontains=q)
-        return render(request, self.template_name, {'discograficas': qs, 'q': q})
+        return render(request, self.template_name, {
+            'discograficas': ms.listar_discograficas(busqueda=q or None),
+            'q': q,
+        })
 
 
 class DiscograficaCreateView(RequiereAdmin, View):
@@ -32,12 +30,11 @@ class DiscograficaCreateView(RequiereAdmin, View):
     def post(self, request):
         form = DiscograficaForm(request.POST)
         if form.is_valid():
-            try:
-                form.save()
-                messages.success(request, 'Discográfica creada correctamente.')
-                return redirect('industria:discografica_list')
-            except DatabaseError as e:
-                messages.error(request, f'Error al guardar: {e}')
+            d = form.cleaned_data
+            ms.crear_discografica(d['nombre_discografica'], d['pais_origen'],
+                                  d['correo_contacto'], d['telefono_contacto'])
+            messages.success(request, 'Discográfica creada correctamente.')
+            return redirect('industria:discografica_list')
         return render(request, self.template_name, {'form': form, 'modo': 'create'})
 
 
@@ -45,30 +42,40 @@ class DiscograficaUpdateView(RequiereAdmin, View):
     template_name = 'industria/admin/discografica_form.html'
 
     def get(self, request, pk):
-        obj = get_object_or_404(Discografica, pk=pk)
+        obj = ms.get_discografica(pk)
+        if not obj:
+            messages.error(request, 'Discográfica no encontrada.')
+            return redirect('industria:discografica_list')
+        form = DiscograficaForm(initial={
+            'nombre_discografica': obj.nombre_discografica,
+            'pais_origen': obj.pais_origen,
+            'correo_contacto': obj.correo_contacto,
+            'telefono_contacto': obj.telefono_contacto,
+        }, exclude_pk=pk)
         return render(request, self.template_name,
-                      {'form': DiscograficaForm(instance=obj), 'obj': obj, 'modo': 'update'})
+                      {'form': form, 'obj': obj, 'modo': 'update'})
 
     def post(self, request, pk):
-        obj = get_object_or_404(Discografica, pk=pk)
-        form = DiscograficaForm(request.POST, instance=obj)
+        obj = ms.get_discografica(pk)
+        if not obj:
+            messages.error(request, 'Discográfica no encontrada.')
+            return redirect('industria:discografica_list')
+        form = DiscograficaForm(request.POST, exclude_pk=pk)
         if form.is_valid():
-            try:
-                form.save()
-                messages.success(request, 'Discográfica actualizada.')
-                return redirect('industria:discografica_list')
-            except DatabaseError as e:
-                messages.error(request, f'Error al actualizar: {e}')
+            d = form.cleaned_data
+            ms.actualizar_discografica(pk, d['nombre_discografica'], d['pais_origen'],
+                                       d['correo_contacto'], d['telefono_contacto'])
+            messages.success(request, 'Discográfica actualizada.')
+            return redirect('industria:discografica_list')
         return render(request, self.template_name,
                       {'form': form, 'obj': obj, 'modo': 'update'})
 
 
 class DiscograficaDeleteView(RequiereAdmin, View):
     def post(self, request, pk):
-        obj = get_object_or_404(Discografica, pk=pk)
-        try:
-            obj.delete()
-            messages.success(request, f'Discográfica "{obj.nombre_discografica}" eliminada.')
-        except DatabaseError as e:
-            messages.error(request, f'No se pudo eliminar (revisa contratos asociados): {e}')
+        ok, msg = ms.eliminar_discografica(pk)
+        if ok:
+            messages.success(request, f'Discográfica "{msg}" eliminada.')
+        else:
+            messages.error(request, msg)
         return redirect('industria:discografica_list')

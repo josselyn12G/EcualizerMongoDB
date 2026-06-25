@@ -34,7 +34,7 @@
     <tbody>
       {% for d in discograficas %}
       <tr>
-        <td>#{{ d.id_discografica }}</td>
+        <td>#{{ d.id_discografica|slice:"-6:" }}</td>
         <td><strong>{{ d.nombre_discografica }}</strong></td>
         <td>{{ d.pais_origen|default:"—" }}</td>
         <td>{{ d.correo_contacto }}</td>

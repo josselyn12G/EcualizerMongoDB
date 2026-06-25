@@ -1,14 +1,18 @@
-"""CRUD de Contratos con Discográficas (Administrador)."""
+"""CRUD de Contratos con Discográficas (Administrador) — MongoDB.
+
+En Mongo cada contrato tiene un `contratoId` único, así que se identifica por
+un solo `pk` (ObjectId), a diferencia del modelo SQL con clave compuesta.
+"""
 
 from django.views import View
-from django.http import Http404
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect
 from django.contrib import messages
-from django.db import DatabaseError, connection
 
 from usuarios.mixins import RequiereAdmin
-from ...models import ContratoDiscografica
 from ...forms import ContratoForm
+from ... import mongo_service as ms
+
+ESTADOS = [(e, e) for e in ms.ESTADOS_CONTRATO]
 
 
 class ContratoListView(RequiereAdmin, View):
@@ -16,14 +20,10 @@ class ContratoListView(RequiereAdmin, View):
 
     def get(self, request):
         estado = request.GET.get('estado') or ''
-        qs = ContratoDiscografica.objects.select_related(
-            'artista', 'discografica').order_by('-fecha_inicio')
-        if estado:
-            qs = qs.filter(estado_contrato=estado)
         return render(request, self.template_name, {
-            'contratos': qs,
+            'contratos': ms.listar_contratos(estado=estado or None),
             'estado_sel': estado,
-            'estados': ContratoDiscografica.ESTADO_CHOICES,
+            'estados': ESTADOS,
         })
 
 
@@ -37,95 +37,62 @@ class ContratoCreateView(RequiereAdmin, View):
     def post(self, request):
         form = ContratoForm(request.POST)
         if form.is_valid():
-            try:
-                form.save()
-                messages.success(request, 'Contrato creado correctamente.')
-                return redirect('industria:contrato_list')
-            except DatabaseError as e:
-                messages.error(request, f'Error al guardar: {e}')
+            d = form.cleaned_data
+            ms.crear_contrato(
+                artista_id=d['artista'], discografica_id=d['discografica'],
+                fecha_inicio=d['fecha_inicio'], fecha_fin=d.get('fecha_fin'),
+                pct_artista=d['porcentaje_artista'],
+                pct_disco=d['porcentaje_discografica'],
+                estado=d['estado_contrato'])
+            messages.success(request, 'Contrato creado correctamente.')
+            return redirect('industria:contrato_list')
         return render(request, self.template_name, {'form': form, 'modo': 'create'})
-
-
-# ──────────────────────────────────────────────────────────
-# NOTA IMPORTANTE — Clave primaria compuesta
-# La tabla [Industria].[ContratoDiscografica] tiene PK compuesta:
-#   (Artista_idUsuario, Discografica_idDiscografica, idContrato)
-# `idContrato` NO es único por sí solo (es un correlativo por artista
-# y discográfica). Por eso identificamos cada contrato por las TRES
-# columnas, y persistimos con SQL explícito para no afectar varias
-# filas con el mismo idContrato.
-# ──────────────────────────────────────────────────────────
-
-def _get_contrato(artista, disco, num):
-    obj = ContratoDiscografica.objects.filter(
-        artista_id=artista,
-        discografica_id=disco,
-        id_contrato=num,
-    ).first()
-    if obj is None:
-        raise Http404('Contrato no encontrado.')
-    return obj
 
 
 class ContratoUpdateView(RequiereAdmin, View):
     template_name = 'industria/admin/contrato_form.html'
 
-    def get(self, request, artista, disco, num):
-        obj = _get_contrato(artista, disco, num)
+    def get(self, request, pk):
+        obj = ms.get_contrato(pk)
+        if not obj:
+            messages.error(request, 'Contrato no encontrado.')
+            return redirect('industria:contrato_list')
+        form = ContratoForm(initial={
+            'artista': obj.artista_id,
+            'discografica': obj.discografica_id,
+            'fecha_inicio': obj.fecha_inicio,
+            'fecha_fin': obj.fecha_fin,
+            'porcentaje_artista': obj.porcentaje_artista,
+            'porcentaje_discografica': obj.porcentaje_discografica,
+            'estado_contrato': obj.estado_contrato,
+        })
         return render(request, self.template_name,
-                      {'form': ContratoForm(instance=obj), 'obj': obj, 'modo': 'update'})
+                      {'form': form, 'obj': obj, 'modo': 'update'})
 
-    def post(self, request, artista, disco, num):
-        obj = _get_contrato(artista, disco, num)
-        form = ContratoForm(request.POST, instance=obj)
+    def post(self, request, pk):
+        obj = ms.get_contrato(pk)
+        if not obj:
+            messages.error(request, 'Contrato no encontrado.')
+            return redirect('industria:contrato_list')
+        form = ContratoForm(request.POST)
         if form.is_valid():
             d = form.cleaned_data
-            try:
-                # UPDATE explícito sobre la clave compuesta ORIGINAL para
-                # garantizar que solo se modifique ESTA fila.
-                with connection.cursor() as cur:
-                    cur.execute(
-                        """
-                        UPDATE Industria.ContratoDiscografica
-                        SET Artista_idUsuario          = %s,
-                            Discografica_idDiscografica = %s,
-                            fechaInicio                = %s,
-                            fechaFin                   = %s,
-                            porcentajeArtista          = %s,
-                            porcentajeDiscografica     = %s,
-                            estadoContrato             = %s
-                        WHERE Artista_idUsuario          = %s
-                          AND Discografica_idDiscografica = %s
-                          AND idContrato                 = %s
-                        """,
-                        [d['artista'].pk, d['discografica'].pk,
-                         d['fecha_inicio'], d['fecha_fin'],
-                         d['porcentaje_artista'], d['porcentaje_discografica'],
-                         d['estado_contrato'],
-                         artista, disco, num],
-                    )
-                messages.success(request, 'Contrato actualizado.')
-                return redirect('industria:contrato_list')
-            except DatabaseError as e:
-                messages.error(request, f'Error al actualizar: {e}')
+            ms.actualizar_contrato(
+                pk, artista_id=d['artista'], discografica_id=d['discografica'],
+                fecha_inicio=d['fecha_inicio'], fecha_fin=d.get('fecha_fin'),
+                pct_artista=d['porcentaje_artista'],
+                pct_disco=d['porcentaje_discografica'],
+                estado=d['estado_contrato'])
+            messages.success(request, 'Contrato actualizado.')
+            return redirect('industria:contrato_list')
         return render(request, self.template_name,
                       {'form': form, 'obj': obj, 'modo': 'update'})
 
 
 class ContratoDeleteView(RequiereAdmin, View):
-    def post(self, request, artista, disco, num):
-        try:
-            with connection.cursor() as cur:
-                cur.execute(
-                    """
-                    DELETE FROM Industria.ContratoDiscografica
-                    WHERE Artista_idUsuario          = %s
-                      AND Discografica_idDiscografica = %s
-                      AND idContrato                 = %s
-                    """,
-                    [artista, disco, num],
-                )
-            messages.success(request, f'Contrato #{num} eliminado.')
-        except DatabaseError as e:
-            messages.error(request, f'No se pudo eliminar: {e}')
+    def post(self, request, pk):
+        if ms.eliminar_contrato(pk):
+            messages.success(request, 'Contrato eliminado.')
+        else:
+            messages.error(request, 'No se pudo eliminar el contrato.')
         return redirect('industria:contrato_list')

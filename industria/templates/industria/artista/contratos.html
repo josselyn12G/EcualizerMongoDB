@@ -75,7 +75,7 @@
     <tbody>
       {% for c in contratos %}
       <tr>
-        <td><strong>#{{ c.id_contrato }}</strong></td>
+        <td><strong>#{{ c.id_contrato|slice:"-6:" }}</strong></td>
         <td>{{ c.discografica.nombre_discografica }}</td>
         <td>{{ c.discografica.pais_origen|default:"—" }}</td>
         <td>{{ c.fecha_inicio|date:"d/m/Y" }}</td>
