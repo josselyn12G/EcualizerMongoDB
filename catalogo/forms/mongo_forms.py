@@ -1,8 +1,7 @@
 """Formularios (sin ORM) para el catálogo sobre MongoDB."""
 from django import forms
 
-TIPO_ALBUM_CHOICES = [('Single', 'Single'), ('EP', 'EP'), ('Album', 'Album')]
-ESTADO_ALBUM_CHOICES = [('activo', 'Activo'), ('inactivo', 'Inactivo'), ('eliminado', 'Eliminado')]
+ESTADO_ALBUM_CHOICES =[('activo', 'Activo'), ('inactivo', 'Inactivo'), ('eliminado', 'Eliminado')]
 ESTADO_CANCION_CHOICES = [('activa', 'Activa'), ('inactiva', 'Inactiva'),
                           ('bloqueada', 'Bloqueada'), ('eliminada', 'Eliminada')]
 CALIDAD_CHOICES = [(128, '128 kbps'), (192, '192 kbps'), (256, '256 kbps'), (320, '320 kbps')]
@@ -19,15 +18,12 @@ class MongoAlbumForm(forms.Form):
     fecha_lanzamiento = forms.DateField(
         label='Fecha de lanzamiento',
         widget=forms.DateInput(attrs={**_INPUT, 'type': 'date'}))
-    tipo = forms.ChoiceField(label='Tipo de álbum', choices=TIPO_ALBUM_CHOICES,
-                             widget=forms.Select(attrs=_SELECT))
+    tipo = forms.CharField(
+        label='Tipo de álbum', max_length=40, required=False,
+        widget=forms.TextInput(attrs={
+            **_INPUT, 'placeholder': 'Ej: Single, EP, Álbum, En vivo…'}))
     descripcion = forms.CharField(label='Descripción', required=False,
                                   widget=forms.Textarea(attrs=_AREA))
-
-    def __init__(self, *args, tipo_choices=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        if tipo_choices:
-            self.fields['tipo'].choices = [(t, t) for t in tipo_choices]
 
     def clean_titulo(self):
         t = self.cleaned_data.get('titulo', '').strip()
@@ -65,8 +61,10 @@ class MongoCancionForm(forms.Form):
         widget=forms.DateInput(attrs={**_INPUT, 'type': 'date'}))
     calidad = forms.ChoiceField(label='Calidad', choices=CALIDAD_CHOICES,
                                 widget=forms.Select(attrs=_SELECT))
-    genero = forms.CharField(label='Género principal', required=False,
-                             widget=forms.TextInput(attrs=_INPUT))
+    genero = forms.CharField(
+        label='Géneros (separa varios con comas)', required=False,
+        widget=forms.TextInput(attrs={
+            **_INPUT, 'placeholder': 'Ej: Rock, Pop, Jazz'}))
     letra = forms.CharField(label='Letra (opcional)', required=False,
                             widget=forms.Textarea(attrs=_AREA))
 

@@ -368,7 +368,7 @@ SELECT @jsonUsuarios AS [JSON_Usuarios] FOR XML PATH('');
 
 
 -- -------------------------------------------------------------------------------------
--- 13. COLECCIÓN: usuario_album_guardado
+-- 13. COLECCIÓN: AlbumGuardado
 -- -------------------------------------------------------------------------------------
 -- Se declara una variable de tipo NVARCHAR(MAX) para almacenar el JSON completo generado de los álbumes guardados
 DECLARE @jsonAlbumGuardado NVARCHAR(MAX);
@@ -385,4 +385,4 @@ SET @jsonAlbumGuardado = (
     FROM Biblioteca.UsuarioAlbum ua -- Tabla principal desde donde se obtienen los álbumes guardados por los usuarios
     FOR JSON PATH
 );
-SELECT @jsonAlbumGuardado AS [JSON_usuario_album_guardado] FOR XML PATH(''); -- Muestra el JSON generado para los álbumes guardados por los usuarios
+SELECT @jsonAlbumGuardado AS [JSON_AlbumGuardado] FOR XML PATH(''); -- Muestra el JSON generado para los álbumes guardados por los usuarios

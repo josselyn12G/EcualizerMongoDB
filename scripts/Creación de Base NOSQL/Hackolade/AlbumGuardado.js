@@ -1,6 +1,6 @@
 use Ecualizer;
 
-db.createCollection("usuario_album_guardado", {
+db.createCollection("AlbumGuardado", {
     "capped": false,
     "validator": {
         "$jsonSchema": {
@@ -48,7 +48,7 @@ db.createCollection("usuario_album_guardado", {
     "validationAction": "warn"
 });
 
-db.usuario_album_guardado.createIndex({
+db.AlbumGuardado.createIndex({
     "usuarioId": 1,
     "albumId": 1
 },
@@ -57,7 +57,7 @@ db.usuario_album_guardado.createIndex({
     "unique": true
 });
 
-db.usuario_album_guardado.createIndex({
+db.AlbumGuardado.createIndex({
     "tituloAlbum": 1
 },
 {

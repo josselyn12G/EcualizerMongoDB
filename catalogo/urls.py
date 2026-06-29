@@ -43,14 +43,6 @@ from .views.administrador.cancion_views import (
     AdminCancionReportView,
     AdminCancionGeneroAddView, AdminCancionGeneroRemoveView,
 )
-from .views.administrador.genero_views import (
-    AdminGeneroListView, AdminGeneroCreateView, AdminGeneroUpdateView,
-    AdminGeneroDetailView, AdminGeneroDeleteView,
-)
-from .views.administrador.tipo_album_views import (
-    AdminTipoAlbumListView, AdminTipoAlbumCreateView, AdminTipoAlbumUpdateView,
-    AdminTipoAlbumDetailView, AdminTipoAlbumDeleteView,
-)
 
 
 app_name = 'catalogo'
@@ -179,42 +171,4 @@ urlpatterns = [
     path('admin/canciones/<str:pk>/genero/<str:nombre_genero>/quitar/',
          AdminCancionGeneroRemoveView.as_view(),
          name='admin_cancion_genero_remove'),
-
-    # ═════════════════════════════════════════════════════
-    # ADMIN · GeneroMusical · CRUD
-    # ═════════════════════════════════════════════════════
-    path('admin/generos/',
-         AdminGeneroListView.as_view(),
-         name='admin_genero_list'),
-    path('admin/generos/nuevo/',
-         AdminGeneroCreateView.as_view(),
-         name='admin_genero_create'),
-    path('admin/generos/<str:pk>/',
-         AdminGeneroDetailView.as_view(),
-         name='admin_genero_detail'),
-    path('admin/generos/<str:pk>/editar/',
-         AdminGeneroUpdateView.as_view(),
-         name='admin_genero_update'),
-    path('admin/generos/<str:pk>/eliminar/',
-         AdminGeneroDeleteView.as_view(),
-         name='admin_genero_delete'),
-
-    # ═════════════════════════════════════════════════════
-    # ADMIN · TipoAlbum · CRUD
-    # ═════════════════════════════════════════════════════
-    path('admin/tipos-album/',
-         AdminTipoAlbumListView.as_view(),
-         name='admin_tipo_album_list'),
-    path('admin/tipos-album/nuevo/',
-         AdminTipoAlbumCreateView.as_view(),
-         name='admin_tipo_album_create'),
-    path('admin/tipos-album/<str:pk>/',
-         AdminTipoAlbumDetailView.as_view(),
-         name='admin_tipo_album_detail'),
-    path('admin/tipos-album/<str:pk>/editar/',
-         AdminTipoAlbumUpdateView.as_view(),
-         name='admin_tipo_album_update'),
-    path('admin/tipos-album/<str:pk>/eliminar/',
-         AdminTipoAlbumDeleteView.as_view(),
-         name='admin_tipo_album_delete'),
 ]

@@ -7349,7 +7349,7 @@ db.Usuarios.insertMany([
         }
     }
 ]);
-db.usuario_album_guardado.insertMany([
+db.AlbumGuardado.insertMany([
     {
         "albumGuardadoId": 1,
         "usuarioId": {

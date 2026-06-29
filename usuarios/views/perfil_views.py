@@ -31,7 +31,7 @@ from analitica.services.oyente_service import (
     sp_generos_favoritos_usuario,
     sp_recomendaciones_semanales,
 )
-from biblioteca.services import get_canciones_liked
+from biblioteca.mongo_service import get_canciones_liked
 
 
 def _is_sql_uid(uid):

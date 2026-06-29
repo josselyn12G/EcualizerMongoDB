@@ -16,7 +16,6 @@ from ...services.catalogo_mongo import (
     actualizar_album,
     desactivar_album,
     eliminar_album,
-    catalogo_tipos_album,
 )
 
 
@@ -48,12 +47,12 @@ class ArtistaAlbumCreateView(RequiereArtista, View):
 
     def get(self, request):
         return render(request, self.template_name, {
-            'form': MongoAlbumForm(tipo_choices=catalogo_tipos_album()),
+            'form': MongoAlbumForm(),
             'modo': 'create',
         })
 
     def post(self, request):
-        form = MongoAlbumForm(request.POST, tipo_choices=catalogo_tipos_album())
+        form = MongoAlbumForm(request.POST)
         if not form.is_valid():
             return render(request, self.template_name, {'form': form, 'modo': 'create'})
         d = form.cleaned_data
@@ -112,7 +111,7 @@ class ArtistaAlbumUpdateView(RequiereArtista, View):
             'fecha_lanzamiento': album.fecha_lanzamiento_album,
             'tipo': getattr(album.tipo_album, 'nombre_tipo', 'Album'),
             'descripcion': album.descripcion_album or '',
-        }, tipo_choices=catalogo_tipos_album())
+        })
         return render(request, self.template_name, {
             'form': form, 'album': album, 'modo': 'update',
         })
@@ -123,7 +122,7 @@ class ArtistaAlbumUpdateView(RequiereArtista, View):
         if not album:
             messages.error(request, 'Álbum no encontrado.')
             return redirect('catalogo:artista_album_list')
-        form = MongoAlbumForm(request.POST, tipo_choices=catalogo_tipos_album())
+        form = MongoAlbumForm(request.POST)
         if not form.is_valid():
             return render(request, self.template_name, {
                 'form': form, 'album': album, 'modo': 'update',

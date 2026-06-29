@@ -11,7 +11,6 @@ from django.contrib import messages
 from usuarios.mixins import RequiereArtista
 from ...services.cancion_mongo import (
     listar_canciones,
-    listar_generos_disponibles,
     get_cancion_ns,
     crear_cancion,
     actualizar_cancion,
@@ -19,6 +18,17 @@ from ...services.cancion_mongo import (
 )
 from ...services.catalogo_mongo import listar_albumes
 from ...forms.mongo_forms import MongoCancionForm
+
+
+def _parse_generos(texto):
+    """Convierte 'Rock, Pop, Rock' en ['Rock', 'Pop'] (sin duplicados, en orden)."""
+    vistos, salida = set(), []
+    for g in (texto or '').split(','):
+        g = g.strip()
+        if g and g.lower() not in vistos:
+            vistos.add(g.lower())
+            salida.append(g)
+    return salida
 
 
 def _album_choices(artista_id):
@@ -90,25 +100,20 @@ class ArtistaCancionCreateView(RequiereArtista, View):
         return render(request, self.template_name, {
             'form': form,
             'modo': 'create',
-            'all_generos': listar_generos_disponibles(),
-            'generos_actuales_ids': set(),
         })
 
     def post(self, request):
         artista_id = request.session['usuario_id']
         choices = _album_choices(artista_id)
         form = MongoCancionForm(request.POST, album_choices=choices)
-        generos_sel = request.POST.getlist('generos') or []
         if not form.is_valid():
             return render(request, self.template_name, {
                 'form': form, 'modo': 'create',
-                'all_generos': listar_generos_disponibles(),
-                'generos_actuales_ids': set(generos_sel),
             })
 
         data = form.cleaned_data
-        genero_str = data.get('genero', '').strip()
-        generos = list({g for g in generos_sel if g}) or ([genero_str] if genero_str else [])
+        # El esquema de Cancion exige al menos un género (minItems:1).
+        generos = _parse_generos(data.get('genero')) or ['General']
 
         try:
             crear_cancion(
@@ -127,8 +132,6 @@ class ArtistaCancionCreateView(RequiereArtista, View):
             messages.error(request, f'Error al crear canción: {e}')
             return render(request, self.template_name, {
                 'form': form, 'modo': 'create',
-                'all_generos': listar_generos_disponibles(),
-                'generos_actuales_ids': set(generos_sel),
             })
         return redirect('catalogo:artista_cancion_list')
 
@@ -176,14 +179,13 @@ class ArtistaCancionUpdateView(RequiereArtista, View):
             'numero_pista': cancion.numero_pista,
             'calidad': cancion.calidad_kbps,
             'letra': cancion.letra_cancion or '',
+            'genero': ', '.join(sorted(_generos_actuales(cancion))),
         }
         form = MongoCancionForm(initial=initial, album_choices=choices)
         return render(request, self.template_name, {
             'form': form,
             'cancion': cancion,
             'modo': 'update',
-            'all_generos': listar_generos_disponibles(),
-            'generos_actuales_ids': _generos_actuales(cancion),
         })
 
     def post(self, request, pk):
@@ -195,17 +197,14 @@ class ArtistaCancionUpdateView(RequiereArtista, View):
 
         choices = _album_choices(artista_id)
         form = MongoCancionForm(request.POST, album_choices=choices)
-        generos_sel = request.POST.getlist('generos') or []
         if not form.is_valid():
             return render(request, self.template_name, {
                 'form': form, 'cancion': cancion, 'modo': 'update',
-                'all_generos': listar_generos_disponibles(),
-                'generos_actuales_ids': set(generos_sel),
             })
 
         data = form.cleaned_data
-        genero_str = data.get('genero', '').strip()
-        generos = list({g for g in generos_sel if g}) or ([genero_str] if genero_str else None)
+        # Lista vacía → actualizar_cancion conserva los géneros existentes.
+        generos = _parse_generos(data.get('genero'))
 
         try:
             actualizar_cancion(
@@ -224,8 +223,6 @@ class ArtistaCancionUpdateView(RequiereArtista, View):
             messages.error(request, f'Error al editar: {e}')
             return render(request, self.template_name, {
                 'form': form, 'cancion': cancion, 'modo': 'update',
-                'all_generos': listar_generos_disponibles(),
-                'generos_actuales_ids': set(generos_sel),
             })
         return redirect('catalogo:artista_cancion_list')
 

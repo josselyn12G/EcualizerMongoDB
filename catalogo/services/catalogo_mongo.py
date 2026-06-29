@@ -18,8 +18,6 @@ from bson import ObjectId
 
 from usuarios.mongo_service import get_database
 
-TIPOS_ALBUM = ('Single', 'EP', 'Album')
-
 
 def _col(n):
     return get_database()[n]
@@ -210,157 +208,15 @@ def eliminar_album(pk, artista_id=None):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CATÁLOGO CANÓNICO DE GÉNEROS / TIPOS  (fuente única para artista/admin/oyente)
+# CATÁLOGO DE GÉNEROS  (derivado de los géneros realmente usados)
 #
-# Los géneros y tipos viven embebidos en Cancion/Albums, pero para que el
-# catálogo sea COHERENTE entre el artista (al crear), el administrador (CRUD)
-# y el oyente (filtros), mantenemos además dos colecciones canónicas:
-#   - GenerosMusicales: {nombreGenero, descripcionGenero}
-#   - TiposAlbum:       {nombreTipo, descripcionTipo}
-# El "catálogo" expuesto = colección canónica ∪ lo realmente usado en datos.
+# Ya no existe una colección canónica de géneros: el artista los escribe
+# libremente al crear/editar una canción y quedan embebidos en Cancion.
+# Para los filtros del oyente y las sugerencias del admin, el "catálogo" se
+# obtiene de los géneros distintos presentes en las canciones.
 # ══════════════════════════════════════════════════════════════════════
 def catalogo_generos():
-    """Lista ordenada de nombres de género (canónicos + usados en canciones)."""
-    nombres = set()
-    for d in _col('GenerosMusicales').find({}, {'nombreGenero': 1}):
-        if d.get('nombreGenero'):
-            nombres.add(d['nombreGenero'])
-    for n in _col('Cancion').distinct('generos.nombreGenero'):
-        if n:
-            nombres.add(n)
-    return sorted(nombres)
+    """Lista ordenada de los géneros usados en las canciones."""
+    return sorted({n for n in _col('Cancion').distinct('generos.nombreGenero') if n})
 
 
-def catalogo_tipos_album():
-    """Lista ordenada de tipos de álbum (defaults + canónicos + usados)."""
-    nombres = set(TIPOS_ALBUM)
-    for d in _col('TiposAlbum').find({}, {'nombreTipo': 1}):
-        if d.get('nombreTipo'):
-            nombres.add(d['nombreTipo'])
-    for n in _col('Albums').distinct('tipoAlbum.nombreTipo'):
-        if n:
-            nombres.add(n)
-    return sorted(nombres)
-
-
-# ══════════════════════════════════════════════════════════════════════
-# GÉNEROS (admin)
-# ══════════════════════════════════════════════════════════════════════
-def crear_genero_mongo(nombre, descripcion=''):
-    """Registra un género en el catálogo canónico. False si ya existía."""
-    nombre = (nombre or '').strip()
-    if not nombre:
-        return False
-    if _col('GenerosMusicales').count_documents({'nombreGenero': nombre}, limit=1):
-        return False
-    _col('GenerosMusicales').insert_one({
-        'nombreGenero': nombre,
-        'descripcionGenero': (descripcion or '').strip() or None,
-    })
-    return True
-
-
-def listar_generos_mongo(busqueda=None):
-    """Lista TODOS los géneros (canónicos + usados) con su conteo de canciones."""
-    conteos = {}
-    for i in _col('Cancion').aggregate([
-        {'$unwind': '$generos'},
-        {'$group': {'_id': '$generos.nombreGenero', 'n': {'$sum': 1}}},
-    ]):
-        if i['_id']:
-            conteos[i['_id']] = i['n']
-    nombres = catalogo_generos()
-    if busqueda:
-        q = busqueda.lower()
-        nombres = [n for n in nombres if q in (n or '').lower()]
-    return [{
-        'idGeneroMusical': n,
-        'nombreGenero':    n,
-        'totalCanciones':  conteos.get(n, 0),
-    } for n in nombres]
-
-
-def renombrar_genero_mongo(nombre_actual, nombre_nuevo):
-    """Renombra un género en las canciones y en el catálogo canónico."""
-    nombre_nuevo = (nombre_nuevo or '').strip()
-    if not nombre_nuevo:
-        return False
-    _col('Cancion').update_many(
-        {'generos.nombreGenero': nombre_actual},
-        {'$set': {'generos.$[g].nombreGenero': nombre_nuevo}},
-        array_filters=[{'g.nombreGenero': nombre_actual}],
-    )
-    _col('GenerosMusicales').update_many(
-        {'nombreGenero': nombre_actual},
-        {'$set': {'nombreGenero': nombre_nuevo}},
-    )
-    return True
-
-
-def eliminar_genero_mongo(nombre):
-    """Elimina un género de las canciones y del catálogo canónico."""
-    _col('Cancion').update_many(
-        {'generos.nombreGenero': nombre},
-        {'$pull': {'generos': {'nombreGenero': nombre}}},
-    )
-    _col('GenerosMusicales').delete_many({'nombreGenero': nombre})
-    return True
-
-
-# ══════════════════════════════════════════════════════════════════════
-# TIPOS DE ÁLBUM EMBEBIDOS (admin)
-# ══════════════════════════════════════════════════════════════════════
-def listar_tipos_album_mongo(busqueda=None):
-    """Lista TODOS los tipos de álbum (defaults + canónicos + usados) con conteo."""
-    conteos, descrs = {}, {}
-    for i in _col('Albums').aggregate([
-        {'$group': {
-            '_id': '$tipoAlbum.nombreTipo',
-            'descripcion': {'$first': '$tipoAlbum.descripcionTipo'},
-            'n': {'$sum': 1},
-        }},
-    ]):
-        if i['_id']:
-            conteos[i['_id']] = i['n']
-            descrs[i['_id']] = i.get('descripcion') or ''
-    for d in _col('TiposAlbum').find({}, {'nombreTipo': 1, 'descripcionTipo': 1}):
-        if d.get('nombreTipo') and not descrs.get(d['nombreTipo']):
-            descrs[d['nombreTipo']] = d.get('descripcionTipo') or ''
-    nombres = catalogo_tipos_album()
-    if busqueda:
-        q = busqueda.lower()
-        nombres = [n for n in nombres if q in (n or '').lower()]
-    return [{
-        'idTipoAlbum':   n,
-        'nombreTipo':    n,
-        'descripcionTipo': descrs.get(n, ''),
-        'totalAlbumes':  conteos.get(n, 0),
-    } for n in nombres]
-
-
-def renombrar_tipo_album_mongo(nombre_actual, nombre_nuevo):
-    """Renombra un tipo de álbum en los álbumes y en el catálogo canónico."""
-    nombre_nuevo = (nombre_nuevo or '').strip()
-    if not nombre_nuevo:
-        return False
-    _col('Albums').update_many(
-        {'tipoAlbum.nombreTipo': nombre_actual},
-        {'$set': {'tipoAlbum.nombreTipo': nombre_nuevo}},
-    )
-    _col('TiposAlbum').update_many(
-        {'nombreTipo': nombre_actual},
-        {'$set': {'nombreTipo': nombre_nuevo}},
-    )
-    return True
-
-
-def agregar_tipo_album_mongo(nombre, descripcion=''):
-    """Registra un tipo de álbum en el catálogo canónico. False si ya existía."""
-    nombre = (nombre or '').strip()
-    if not nombre or nombre in catalogo_tipos_album():
-        return False
-    _col('TiposAlbum').insert_one({
-        'nombreTipo': nombre,
-        'descripcionTipo': (descripcion or '').strip() or None,
-    })
-    return True

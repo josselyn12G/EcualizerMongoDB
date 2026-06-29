@@ -1311,9 +1311,9 @@ db.Regalias.createIndex({},
     "name": "idx_contrato_periodo"
 });
 
-// Creación de la colección "usuario_album_guardado" con su esquema de validación y los índices necesarios para optimizar las consultas por usuario y álbum. Esta colección representa la relación entre los usuarios y los álbumes que han guardado en su biblioteca personal dentro de la plataforma. Cada documento registra la acción de guardar un álbum específico por parte de un usuario, permitiendo gestionar colecciones personales, accesos rápidos a contenido favorito y funcionalidades relacionadas con la biblioteca musical. El diseño del esquema incorpora referencias a las entidades involucradas, así como campos desnormalizados para facilitar consultas frecuentes sin necesidad de realizar operaciones de agregación o búsquedas adicionales. Los índices en "usuarioId" y "albumId" garantizan la unicidad de la relación entre un usuario y un álbum, mientras que el índice en "tituloAlbum" mejora el rendimiento de las consultas relacionadas con la visualización de la biblioteca personal.
+// Creación de la colección "AlbumGuardado" con su esquema de validación y los índices necesarios para optimizar las consultas por usuario y álbum. Esta colección representa la relación entre los usuarios y los álbumes que han guardado en su biblioteca personal dentro de la plataforma. Cada documento registra la acción de guardar un álbum específico por parte de un usuario, permitiendo gestionar colecciones personales, accesos rápidos a contenido favorito y funcionalidades relacionadas con la biblioteca musical. El diseño del esquema incorpora referencias a las entidades involucradas, así como campos desnormalizados para facilitar consultas frecuentes sin necesidad de realizar operaciones de agregación o búsquedas adicionales. Los índices en "usuarioId" y "albumId" garantizan la unicidad de la relación entre un usuario y un álbum, mientras que el índice en "tituloAlbum" mejora el rendimiento de las consultas relacionadas con la visualización de la biblioteca personal.
 
-db.createCollection("usuario_album_guardado", {
+db.createCollection("AlbumGuardado", {
     "capped": false,
     "validator": {
         "$jsonSchema": {
@@ -1361,7 +1361,7 @@ db.createCollection("usuario_album_guardado", {
     "validationAction": "warn"
 });
 
-db.usuario_album_guardado.createIndex({
+db.AlbumGuardado.createIndex({
     "usuarioId": 1,
     "albumId": 1
 },
@@ -1370,7 +1370,7 @@ db.usuario_album_guardado.createIndex({
     "unique": true
 });
 
-db.usuario_album_guardado.createIndex({
+db.AlbumGuardado.createIndex({
     "tituloAlbum": 1
 },
 {

@@ -8,7 +8,6 @@ from django.contrib import messages
 
 from usuarios.mixins import RequiereAdmin
 from ...forms.mongo_forms import MongoAlbumAdminForm, AlbumReporteForm
-from ...services.catalogo_mongo import catalogo_tipos_album
 from ...services.catalogo_mongo import (
     listar_albumes,
     get_album_ns,
@@ -71,7 +70,7 @@ class AdminAlbumUpdateView(RequiereAdmin, View):
             'tipo': getattr(album.tipo_album, 'nombre_tipo', 'Album'),
             'descripcion': album.descripcion_album or '',
             'estado': album.estado_album,
-        }, tipo_choices=catalogo_tipos_album())
+        })
         return render(request, self.template_name, {
             'form': form, 'album': album, 'modo': 'update',
         })
@@ -81,7 +80,7 @@ class AdminAlbumUpdateView(RequiereAdmin, View):
         if not album:
             messages.error(request, 'Álbum no encontrado.')
             return redirect('catalogo:admin_album_list')
-        form = MongoAlbumAdminForm(request.POST, tipo_choices=catalogo_tipos_album())
+        form = MongoAlbumAdminForm(request.POST)
         if not form.is_valid():
             return render(request, self.template_name, {
                 'form': form, 'album': album, 'modo': 'update',

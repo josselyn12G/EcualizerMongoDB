@@ -411,10 +411,10 @@ def get_artistas_seguidos(usuario_id):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# GUARDAR ÁLBUMES  (colección usuario_album_guardado)
+# GUARDAR ÁLBUMES  (colección AlbumGuardado)
 # ══════════════════════════════════════════════════════════════════════
 def _guardados_col():
-    return _col('usuario_album_guardado')
+    return _col('AlbumGuardado')
 
 
 def is_album_guardado(usuario_id, album_id):
