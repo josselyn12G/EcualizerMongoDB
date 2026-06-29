@@ -132,26 +132,22 @@
   <div class="pl-hero__tag">{{ playlist.tipoPlaylist }} · {{ playlist.tipoVisibilidad }}</div>
   <div class="pl-hero__title">{{ playlist.nombrePlaylist }}</div>
   <div class="pl-hero__sub">
-    {{ total }} canción{{ total|pluralize:"es" }}
+    <span id="plCount">{{ total }}</span> canciones
     {% if playlist.descripcionPlaylist %} · {{ playlist.descripcionPlaylist }}{% endif %}
   </div>
 </div>
 
-{% if canciones %}
-<div style="margin-bottom:1rem;">
-  <button type="button" class="btn-play-all" onclick="playFrom(0)">
+<div style="margin-bottom:1rem;" id="playAllWrap" {% if not canciones %}hidden{% endif %}>
+  <button type="button" class="btn-play-all" id="btnPlayAll">
     <span class="material-icons">play_arrow</span> Reproducir
   </button>
 </div>
-{% endif %}
 
-{% if canciones %}
-<div class="pop-list">
+<div class="pop-list" id="popList" {% if not canciones %}hidden{% endif %}>
   {% for c in canciones %}
-  <div class="pop-row">
+  <div class="pop-row" data-id="{{ c.idCancion }}" data-name="{{ c.nombreCancion }}">
     <div class="pop-row__rank">{{ c.posicionPlaylist }}</div>
-    <div class="pop-row__cover pop-row__cover--play" title="Reproducir"
-         onclick="playFrom({{ forloop.counter0 }})">
+    <div class="pop-row__cover pop-row__cover--play" title="Reproducir" data-play>
       <span class="material-icons">play_arrow</span>
     </div>
     <div>
@@ -162,22 +158,23 @@
       <span class="material-icons">headphones</span>{{ c.totalReproducciones|default:0 }}
     </div>
     <div class="pop-row__time">{{ c.duracion }}s</div>
-    <button type="button" class="btn-remove" title="Eliminar de playlist"
-        onclick="quitarCancion({{ c.idCancion }}, '{{ c.nombreCancion|escapejs }}')">
+    <button type="button" class="btn-remove" title="Eliminar de playlist" data-remove>
       <span class="material-icons">remove_circle_outline</span>
     </button>
   </div>
   {% endfor %}
 </div>
-{% else %}
-<div style="text-align:center; padding:2rem 1rem; color:rgba(255,255,255,0.4);">
+
+<div id="popEmpty" style="text-align:center; padding:2rem 1rem; color:rgba(255,255,255,0.4);"
+     {% if canciones %}hidden{% endif %}>
   <span class="material-icons" style="font-size:2.5rem; opacity:0.35; display:block; margin-bottom:0.5rem;">queue_music</span>
   <p>Esta playlist no tiene canciones todavía.</p>
 </div>
-{% endif %}
 
-<!-- Modal ÚNICO para quitar canción (fuera de .pop-list para que el overlay
-     cubra toda la pantalla y no quede debajo de las secciones) -->
+{# Token CSRF para las peticiones AJAX #}
+<span id="csrfHolder" style="display:none;">{% csrf_token %}</span>
+
+<!-- Modal para quitar canción -->
 <div id="rmModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:2000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
   <div style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.1); border-radius:18px; padding:2rem; max-width:400px; width:90%; text-align:center;">
     <span class="material-icons" style="font-size:3rem; color:#ef4444; margin-bottom:1rem; display:block;">remove_circle</span>
@@ -186,35 +183,17 @@
       ¿Quitar <strong id="rmNombre" style="color:#fff;"></strong> de esta playlist?
     </p>
     <div style="display:flex; gap:0.75rem; justify-content:center;">
-      <button type="button" onclick="cerrarRm()"
+      <button type="button" id="rmCancel"
               style="background:rgba(255,255,255,0.08); color:#fff; border:none; border-radius:50px; padding:0.6rem 1.5rem; font-size:0.9rem; cursor:pointer;">
         Cancelar
       </button>
-      <form id="rmForm" method="post" action="" style="display:inline;">
-        {% csrf_token %}
-        <button type="submit"
-                style="background:#ef4444; color:#fff; border:none; border-radius:50px; padding:0.6rem 1.5rem; font-size:0.9rem; font-weight:700; cursor:pointer;">
-          Sí, quitar
-        </button>
-      </form>
+      <button type="button" id="rmConfirm"
+              style="background:#ef4444; color:#fff; border:none; border-radius:50px; padding:0.6rem 1.5rem; font-size:0.9rem; font-weight:700; cursor:pointer;">
+        Sí, quitar
+      </button>
     </div>
   </div>
 </div>
-
-<script>
-  // URL base de "eliminar canción" con un id placeholder (0) que sustituimos.
-  var RM_TPL = "{% url 'biblioteca:eliminar_cancion_playlist' playlist.idPlaylist 0 %}";
-  function quitarCancion(id, nombre){
-    document.getElementById('rmNombre').textContent = nombre;
-    document.getElementById('rmForm').setAttribute('action', RM_TPL.replace(/\/0\/?$/, '/' + id + '/'));
-    document.getElementById('rmModal').style.display = 'flex';
-  }
-  function cerrarRm(){ document.getElementById('rmModal').style.display = 'none'; }
-  // Cerrar al hacer clic en el fondo oscuro
-  document.getElementById('rmModal').addEventListener('click', function(e){
-    if (e.target === this) cerrarRm();
-  });
-</script>
 
 <!-- Agregar canción (buscador del catálogo) -->
 <div class="add-cancion-card">
@@ -225,18 +204,14 @@
   </div>
   <div class="add-song-list" id="songList">
     {% for c in todas_canciones %}
-    <div class="add-song-row" data-text="{{ c.nombreCancion|lower }} {{ c.nombreArtistico|lower }}">
+    <div class="add-song-row" data-id="{{ c.idCancion }}" data-text="{{ c.nombreCancion|lower }} {{ c.nombreArtistico|lower }}">
       <div class="add-song-info">
         <div class="add-song-name">{{ c.nombreCancion }}</div>
         <div class="add-song-artist">{{ c.nombreArtistico }}</div>
       </div>
-      <form method="post" action="{% url 'biblioteca:agregar_cancion_playlist' playlist.idPlaylist %}">
-        {% csrf_token %}
-        <input type="hidden" name="cancion_id" value="{{ c.idCancion }}">
-        <button type="submit" class="btn-add-mini" title="Agregar a la playlist">
-          <span class="material-icons">add</span>
-        </button>
-      </form>
+      <button type="button" class="btn-add-mini" title="Agregar a la playlist" data-add>
+        <span class="material-icons">add</span>
+      </button>
     </div>
     {% empty %}
     <div class="add-song-empty">No hay canciones en el catálogo.</div>
@@ -247,31 +222,113 @@
 
 <script>
 (function(){
-  var input = document.getElementById('songSearch');
-  var rows  = Array.prototype.slice.call(document.querySelectorAll('#songList .add-song-row'));
-  var empty = document.getElementById('songEmpty');
-  if (!input) return;
-  input.addEventListener('input', function(){
-    var q = input.value.toLowerCase().trim();
-    var visibles = 0;
-    rows.forEach(function(r){
-      var match = q === '' || (r.dataset.text || '').indexOf(q) !== -1;
-      r.style.display = match ? '' : 'none';
-      if (match) visibles++;
-    });
-    if (empty) empty.style.display = visibles === 0 ? '' : 'none';
-  });
-})();
-</script>
+  var ADD_URL = "{% url 'biblioteca:agregar_cancion_playlist' playlist.idPlaylist %}";
+  var RM_TPL  = "{% url 'biblioteca:eliminar_cancion_playlist' playlist.idPlaylist 0 %}";
 
-{# Reproducción de la playlist en orden + autoplay #}
-<script>
-  var PLAYLIST_IDS = [{% for c in canciones %}{{ c.idCancion }}{% if not forloop.last %}, {% endif %}{% endfor %}];
-  function playFrom(i){
-    if (window.EzPlayer && PLAYLIST_IDS.length) {
-      EzPlayer.playQueue(PLAYLIST_IDS, i);
-    }
+  function csrf(){ var el = document.querySelector('#csrfHolder input[name=csrfmiddlewaretoken]'); return el ? el.value : ''; }
+  function esc(s){ var d = document.createElement('div'); d.textContent = (s == null ? '' : s); return d.innerHTML; }
+  function rows(){ return Array.prototype.slice.call(document.querySelectorAll('#popList .pop-row')); }
+  function ids(){ return rows().map(function(r){ return r.dataset.id; }); }
+
+  // ── Reproducción + autoplay (la cola la maneja EzPlayer) ──
+  function playFrom(i){ var a = ids(); if (window.EzPlayer && a.length) EzPlayer.playQueue(a, i); }
+  function playSong(id){ var a = ids(); var i = a.indexOf(id); if (i < 0) i = 0; if (window.EzPlayer && a.length) EzPlayer.playQueue(a, i); }
+  window.playFrom = playFrom;
+
+  var btnAll = document.getElementById('btnPlayAll');
+  if (btnAll) btnAll.addEventListener('click', function(){ playFrom(0); });
+
+  function refresh(){
+    var rs = rows();
+    rs.forEach(function(r, i){ var rk = r.querySelector('.pop-row__rank'); if (rk) rk.textContent = i + 1; });
+    var n = rs.length;
+    var cnt = document.getElementById('plCount'); if (cnt) cnt.textContent = n;
+    document.getElementById('popList').hidden     = n === 0;
+    document.getElementById('playAllWrap').hidden = n === 0;
+    document.getElementById('popEmpty').hidden    = n !== 0;
   }
+
+  // ── Delegación en la playlist: reproducir / quitar ──
+  var popList = document.getElementById('popList');
+  popList.addEventListener('click', function(e){
+    var row = e.target.closest('.pop-row');
+    if (!row) return;
+    if (e.target.closest('[data-play]'))   playSong(row.dataset.id);
+    else if (e.target.closest('[data-remove]')) abrirRm(row.dataset.id, row.dataset.name);
+  });
+
+  // ── Modal quitar (AJAX, sin recargar) ──
+  var rmId = null;
+  function abrirRm(id, nombre){ rmId = id; document.getElementById('rmNombre').textContent = nombre || ''; document.getElementById('rmModal').style.display = 'flex'; }
+  function cerrarRm(){ document.getElementById('rmModal').style.display = 'none'; rmId = null; }
+  document.getElementById('rmCancel').addEventListener('click', cerrarRm);
+  document.getElementById('rmModal').addEventListener('click', function(e){ if (e.target === this) cerrarRm(); });
+  document.getElementById('rmConfirm').addEventListener('click', function(){
+    if (!rmId) return;
+    var theId = rmId;
+    fetch(RM_TPL.replace(/\/0\/?$/, '/' + theId + '/'), {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrf() },
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d.ok) {
+        var row = document.querySelector('#popList .pop-row[data-id="' + theId + '"]');
+        if (row) row.remove();
+        refresh();
+        var add = document.querySelector('.add-song-row[data-id="' + theId + '"] .btn-add-mini');
+        if (add) { add.disabled = false; add.innerHTML = '<span class="material-icons">add</span>'; }
+      }
+      cerrarRm();
+    }).catch(cerrarRm);
+  });
+
+  // ── Agregar canción (AJAX, sin recargar) ──
+  function appendRow(c){
+    if (document.querySelector('#popList .pop-row[data-id="' + c.id + '"]')) return;
+    var row = document.createElement('div');
+    row.className = 'pop-row'; row.dataset.id = c.id; row.dataset.name = c.nombre || '';
+    row.innerHTML =
+      '<div class="pop-row__rank"></div>' +
+      '<div class="pop-row__cover pop-row__cover--play" title="Reproducir" data-play><span class="material-icons">play_arrow</span></div>' +
+      '<div><div class="pop-row__title">' + esc(c.nombre) + '</div><div class="pop-row__sub">' + esc(c.artista) + ' · ' + esc(c.album) + '</div></div>' +
+      '<div class="pop-row__plays"><span class="material-icons">headphones</span>' + (c.plays || 0) + '</div>' +
+      '<div class="pop-row__time">' + (c.duracion || 0) + 's</div>' +
+      '<button type="button" class="btn-remove" title="Eliminar de playlist" data-remove><span class="material-icons">remove_circle_outline</span></button>';
+    document.getElementById('popList').appendChild(row);
+    refresh();
+  }
+
+  var songList = document.getElementById('songList');
+  if (songList) {
+    songList.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-add]');
+      if (!btn) return;
+      var rowc = e.target.closest('.add-song-row');
+      if (!rowc) return;
+      btn.disabled = true;
+      fetch(ADD_URL, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': csrf() },
+        body: new URLSearchParams({ cancion_id: rowc.dataset.id }),
+      }).then(function(r){ return r.json(); }).then(function(d){
+        if (!d.ok) { btn.disabled = false; return; }
+        appendRow(d.cancion);
+        btn.innerHTML = '<span class="material-icons">check</span>';
+      }).catch(function(){ btn.disabled = false; });
+    });
+  }
+
+  // ── Buscador del catálogo ──
+  var input = document.getElementById('songSearch');
+  if (input) {
+    var srows = Array.prototype.slice.call(document.querySelectorAll('#songList .add-song-row'));
+    var empty = document.getElementById('songEmpty');
+    input.addEventListener('input', function(){
+      var q = input.value.toLowerCase().trim(), vis = 0;
+      srows.forEach(function(r){ var m = q === '' || (r.dataset.text || '').indexOf(q) !== -1; r.style.display = m ? '' : 'none'; if (m) vis++; });
+      if (empty) empty.style.display = vis === 0 ? '' : 'none';
+    });
+  }
+})();
 </script>
 {% include "catalogo/usuario/_player.html" %}
 {% endif %}

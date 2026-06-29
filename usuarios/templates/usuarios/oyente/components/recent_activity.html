@@ -20,7 +20,7 @@
     </thead>
     <tbody>
       {% for track in historial %}
-      <tr class="playlist-row" {% if track.id %}onclick="EzPlayer && EzPlayer.play({{ track.id }})" style="cursor:pointer;"{% endif %}>
+      <tr class="playlist-row" {% if track.id %}onclick="window.EzPlayer && EzPlayer.play('{{ track.id }}')" style="cursor:pointer;"{% endif %}>
         <td class="col-num">
           <span class="material-icons track-play-icon">play_arrow</span>
           <span class="track-num">{{ forloop.counter|stringformat:"02d" }}</span>

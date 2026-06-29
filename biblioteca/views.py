@@ -282,19 +282,45 @@ class EliminarPlaylistView(RequiereOyente, View):
         return redirect('biblioteca:mis_playlists')
 
 
+def _is_ajax(request):
+    return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+
 class AgregarCancionPlaylistView(RequiereOyente, View):
 
     def post(self, request, pk):
         usuario_id = _uid(request)
         cancion_id = request.POST.get('cancion_id')
+        ajax = _is_ajax(request)
 
         if not cancion_id:
+            if ajax:
+                return _ajax_err('cancion_id requerido')
             return redirect('biblioteca:detalle_playlist', pk=pk)
 
         try:
-            ms.agregar_cancion_playlist(pk, usuario_id, cancion_id)
+            ok = ms.agregar_cancion_playlist(pk, usuario_id, cancion_id)
         except Exception as e:
             logger.error('Error agregando cancion a playlist: %s', e)
+            if ajax:
+                return _ajax_err(str(e))
+            return redirect('biblioteca:detalle_playlist', pk=pk)
+
+        if ajax:
+            if not ok:
+                return _ajax_err('La canción ya está en la playlist.')
+            # Datos para que el front construya la fila sin recargar.
+            from catalogo.services.cancion_mongo import get_cancion_ns
+            ns = get_cancion_ns(cancion_id)
+            cancion = {
+                'id':       cancion_id,
+                'nombre':   getattr(ns, 'nombre_cancion', '') if ns else '',
+                'artista':  (ns.album.artista.nombre_artistico if ns and ns.album else '') or '',
+                'album':    (ns.album.titulo_album if ns and ns.album else '') or '',
+                'duracion': getattr(ns, 'duracion', 0) if ns else 0,
+                'plays':    getattr(ns, 'total_reproducciones', 0) if ns else 0,
+            }
+            return JsonResponse({'ok': True, 'cancion': cancion})
 
         return redirect('biblioteca:detalle_playlist', pk=pk)
 
@@ -303,8 +329,14 @@ class EliminarCancionPlaylistView(RequiereOyente, View):
 
     def post(self, request, pk, cancion_pk):
         usuario_id = _uid(request)
+        ajax = _is_ajax(request)
         try:
             ms.quitar_cancion_playlist(pk, usuario_id, cancion_pk)
         except Exception as e:
             logger.error('Error eliminando cancion de playlist: %s', e)
+            if ajax:
+                return _ajax_err(str(e))
+            return redirect('biblioteca:detalle_playlist', pk=pk)
+        if ajax:
+            return JsonResponse({'ok': True})
         return redirect('biblioteca:detalle_playlist', pk=pk)

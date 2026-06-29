@@ -145,28 +145,6 @@
     cursor: pointer; font-size: 0.85rem;
   }
   .btn-an:hover { box-shadow: 0 4px 12px rgba(59,130,246,0.4); }
-
-  /* ── Tema CLARO para el contenido (más blanco, menos negro) ──
-     El sidebar/topbar siguen oscuros (como el panel admin); el área de
-     contenido pasa a blanco/azul claro con acentos azules. ── */
-  .main-content { background: #eef3fb; }
-  .kpi-card, .chart-card, .an-filter {
-    background: #ffffff; border-color: #dbe5f3;
-    box-shadow: 0 1px 3px rgba(13,43,84,0.06);
-  }
-  .kpi-card:hover, .chart-card:hover {
-    border-color: #93c5fd; box-shadow: 0 6px 18px rgba(37,99,235,0.12);
-  }
-  .kpi-card__icon { background: rgba(37,99,235,0.10); color: #2563eb; }
-  .kpi-card__label, .kpi-card__sub, .chart-card__hint, .an-filter label { color: #5b6b81; }
-  .kpi-card__value, .chart-card__title { color: #0e2c54; }
-  .chart-card__title .material-icons { color: #2563eb; }
-  .an-table thead th { color: #5b6b81; border-bottom-color: #e2e8f0; }
-  .an-table tbody td { color: #28354a; border-bottom-color: #eef2f7; }
-  .an-table tbody tr:hover { background: #f1f6fe; }
-  .an-table .accent { color: #2563eb; }
-  .an-empty { color: #94a3b8; }
-  .an-filter input, .an-filter select { background: #f4f8ff; border-color: #d8e3f2; color: #0f1f33; }
 </style>
 {% endblock %}
 
@@ -174,8 +152,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
   if (window.Chart) {
-    Chart.defaults.color = '#475569';
-    Chart.defaults.borderColor = 'rgba(13,43,84,0.10)';
+    Chart.defaults.color = 'rgba(255,255,255,0.72)';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.10)';
     Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
     Chart.defaults.plugins.legend.position = 'bottom';
     Chart.defaults.plugins.legend.labels.boxWidth = 10;

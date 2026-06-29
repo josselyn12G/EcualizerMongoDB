@@ -15,11 +15,11 @@
   }
   .mini-filter select,
   .mini-filter input {
-    background: #f4f8ff;
-    border: 1px solid #d8e3f2;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.12);
     border-radius: 6px;
     padding: 0.3rem 0.55rem;
-    color: #0f1f33; font-size: 0.78rem;
+    color: #fff; font-size: 0.78rem;
   }
   .mini-filter input[type="date"]   { width: 140px; }
   .mini-filter input[type="number"] { width: 100px; }
@@ -31,23 +31,6 @@
     cursor: pointer; font-size: 0.76rem;
   }
   .mini-filter .btn-mini .material-icons { font-size: 0.95rem; }
-
-  /* ── Fondo negro para la sección de Monetización ── */
-  .main-content { background: #000 !important; }
-  .kpi-card, .chart-card {
-    background: #0e0e10 !important;
-    border-color: #232326 !important;
-    box-shadow: none !important;
-  }
-  .chart-card__title, .kpi-card__value { color: #f5f5f7 !important; }
-  .kpi-card__label, .kpi-card__sub,
-  .chart-card__head .material-icons { color: #b5b5bd !important; }
-  .an-table thead th { color: #c9c9d1 !important; border-bottom-color: #232326 !important; }
-  .an-table tbody td { color: #e3e3e8 !important; border-bottom-color: #1c1c1f !important; }
-  .an-table tbody tr:hover { background: rgba(59,130,246,0.10) !important; }
-  .an-table .accent { color: #60a5fa !important; }
-  .an-empty { color: #8a8a93 !important; }
-  .mini-filter select, .mini-filter input { background: #161618; border-color: #2a2a2e; color: #e3e3e8; }
 </style>
 {% endblock %}
 
@@ -173,8 +156,8 @@
       </button>
     </form>
   </div>
-  <div style="color: #64748b; font-size:0.72rem; margin-bottom:0.5rem;">
-    Registros consolidados por <code>SP_CerrarFacturacionMensual</code> · sp_HistorialRegaliasArtista
+  <div style="color: rgba(255,255,255,0.5); font-size:0.72rem; margin-bottom:0.5rem;">
+    Registros consolidados de regalías · datos en vivo desde MongoDB
   </div>
   <table class="an-table">
     <thead>
@@ -239,8 +222,8 @@
       </button>
     </form>
   </div>
-  <div style="color: #64748b; font-size:0.72rem; margin-bottom:0.5rem;">
-    Simulación basada en reproducciones del rango · sp_ReporteRegaliasArtista
+  <div style="color: rgba(255,255,255,0.5); font-size:0.72rem; margin-bottom:0.5rem;">
+    Simulación basada en reproducciones del rango · datos en vivo desde MongoDB
   </div>
   <table class="an-table">
     <thead>

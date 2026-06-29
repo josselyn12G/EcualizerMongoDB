@@ -345,6 +345,40 @@ def historial_reproduccion(usuario_id, limit=50):
     return list(_col('Reproduccion').aggregate(pipeline))
 
 
+def historial_reciente_oyente(usuario_id, limit=8):
+    """Últimas canciones reproducidas por el oyente (agrupadas, recientes primero).
+
+    Devuelve las MISMAS claves que esperaba la consulta SQL del dashboard de
+    inicio (idCancion, nombreCancion, nombreArtistico, tituloAlbum, duracion)
+    para reutilizar `deezer_enrich_canciones` y la plantilla sin cambios.
+    """
+    oid = _oid(usuario_id)
+    if not oid:
+        return []
+    pipeline = [
+        {'$match': {'usuarioId': oid}},
+        {'$sort': {'fechaHora': -1}},
+        {'$group': {'_id': '$cancionId', 'ultima': {'$first': '$fechaHora'}}},
+        {'$sort': {'ultima': -1}},
+        {'$limit': limit},
+        {'$lookup': {'from': 'Cancion', 'localField': '_id',
+                     'foreignField': 'cancionId', 'as': '_c'}},
+        {'$set': {'_c': {'$arrayElemAt': ['$_c', 0]}}},
+        {'$lookup': {'from': 'Albums', 'localField': '_c.albumId',
+                     'foreignField': 'albumId', 'as': '_a'}},
+        {'$set': {'_a': {'$arrayElemAt': ['$_a', 0]}}},
+        {'$project': {
+            '_id': 0,
+            'idCancion':       {'$toString': '$_id'},
+            'nombreCancion':   {'$ifNull': ['$_c.tituloCancion', '—']},
+            'nombreArtistico': {'$ifNull': [{'$arrayElemAt': ['$_c.artistas.nombreArtistico', 0]}, '—']},
+            'tituloAlbum':     {'$ifNull': ['$_a.tituloAlbum', '—']},
+            'duracion':        {'$ifNull': ['$_c.duracion', 0]},
+        }},
+    ]
+    return list(_col('Reproduccion').aggregate(pipeline))
+
+
 def ranking_canciones_mes(limit=20):
     """Top N canciones del último mes (por reproducciones reales en Reproduccion).
 

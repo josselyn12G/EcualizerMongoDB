@@ -343,15 +343,15 @@
     // Reproduce una sola canción (resetea la cola a esa canción).
     play(cancionId) {
       if (!cancionId) return;
-      queue = [parseInt(cancionId, 10)];
+      queue = [String(cancionId)];
       queueIndex = 0;
-      load(cancionId);
+      load(queue[0]);
     },
     // Reproduce una lista de canciones en orden, con autoplay.
-    // ids: array de idCancion; start: índice inicial (por defecto 0).
+    // ids: array de idCancion (string); start: índice inicial (por defecto 0).
     playQueue(ids, start) {
       if (!ids || !ids.length) return;
-      queue = ids.map(x => parseInt(x, 10));
+      queue = ids.map(x => String(x));
       queueIndex = Math.max(0, Math.min(start || 0, queue.length - 1));
       load(queue[queueIndex]);
     },

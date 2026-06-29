@@ -69,10 +69,32 @@ class DashboardOyenteView(RequiereLogin, View):
             from pagos.mongo_service import plan_activo_oyente
             pa = plan_activo_oyente(uid)
             ctx['plan_activo'] = pa['nombrePlan'] if pa else 'Free'
+
+            # ── Historial de reproducciones (MongoDB) ──
+            historial = []
+            try:
+                from catalogo.services.cancion_mongo import historial_reciente_oyente
+                from catalogo.services import deezer_enrich_canciones
+                filas = historial_reciente_oyente(request.session.get('usuario_id'), 8)
+                deezer_enrich_canciones(filas)
+                for f in filas:
+                    seg = int(f.get('duracion') or 0)
+                    historial.append({
+                        'id':       f.get('idCancion'),
+                        'nombre':   f.get('nombreCancion', ''),
+                        'artista':  f.get('nombreArtistico', ''),
+                        'album':    f.get('tituloAlbum', ''),
+                        'duracion': f'{seg // 60}:{seg % 60:02d}',
+                        'cover':    f.get('coverUrl'),
+                    })
+            except Exception:
+                historial = []
+
             ctx.update({
                 'persona': persona,
                 'perfil': getattr(persona, 'usuario', None),
                 'saludo': _saludo_por_hora(),
+                'historial': historial,
             })
             return render(request, 'usuarios/oyente/dashboard.html', ctx)
 
@@ -193,14 +215,9 @@ class DashboardArtistaView(RequiereLogin, View):
             from .auth_views import _redirect_por_tipo
             return _redirect_por_tipo(request.session.get('tipo_usuario', ''))
 
-        persona = _get_persona(request)
-        uid = getattr(persona, 'id_usuario', None)
-
-        if not _is_sql_uid(uid):
-            ctx = build_empty_dashboard_stats('artista')
-            ctx.update({'persona': persona, 'perfil': getattr(persona, 'artista', None)})
-            return render(request, 'usuarios/artista/dashboard.html', ctx)
-
+        # Toda la analítica vive en MongoDB: el dashboard siempre delega a la
+        # vista del módulo analitica (las métricas se calculan por usuario_id
+        # de sesión, que es el ObjectId del artista en Mongo).
         from analitica.views.artista import DashboardArtistaView as _DashAnalitica
         return _DashAnalitica.as_view()(request)
 
